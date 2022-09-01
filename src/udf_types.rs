@@ -1,12 +1,10 @@
 //! Rust wrappers for the messy C types
 
-
 #[derive(Debug, PartialEq)]
-pub enum ConstOpt<T>  {
+pub enum ConstOpt<T> {
     Const(T),
-    NonConst
+    NonConst,
 }
-
 
 /// We use lifetimes so we don't copy the string converting to owned
 #[derive(Debug, PartialEq)]
@@ -35,10 +33,24 @@ pub enum RunArg<'a> {
     Decimal(&'a str),
 }
 
-
 #[derive(Debug, PartialEq)]
-pub struct UdfArg <'a>{
-    arg: InitArg<'a>,
-    maybe_null: bool,
-    attribute: &'a str
+pub struct UdfArg<'a> {
+    pub(crate) arg: InitArg<'a>,
+    pub(crate) maybe_null: bool,
+    pub(crate) attribute: &'a str,
+}
+
+
+
+// Quick namespace for the long names
+pub mod item_res {
+    use crate::udf_types_c::{
+        Item_result, Item_result_DECIMAL_RESULT, Item_result_INT_RESULT, Item_result_REAL_RESULT,
+        Item_result_STRING_RESULT,
+    };
+
+    pub const STRING_RESULT: Item_result = Item_result_STRING_RESULT;
+    pub const REAL_RESULT: Item_result = Item_result_REAL_RESULT;
+    pub const INT_RESULT: Item_result = Item_result_INT_RESULT;
+    pub const DECIMAL_RESULT: Item_result = Item_result_DECIMAL_RESULT;
 }
