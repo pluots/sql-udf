@@ -14,7 +14,7 @@ use std::{ptr, slice};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
-use crate::{InitArg, UdfArg, UdfInt};
+use crate::{InitArg, UdfArg};
 
 // From the MySQL docs, the init function has the following purposes:
 //
@@ -164,20 +164,21 @@ fn udf_func_init(initid: *mut UDF_INIT, args: *mut UDF_ARGS, message: *mut c_cha
                 (e.len() as u32) < MYSQL_ERRMSG_SIZE,
                 "internal exception: error message too long"
             );
-            let cstr =
-                CString::new(e).expect("internal exception: string contains null characters");
-
             // Safety: we have checked that our message fits in the buffer
-            // as_ptr() is valid for the internal length (with null)
-            unsafe {
-                ptr::copy_nonoverlapping(cstr.as_ptr(), message, cstr.as_bytes_with_nul().len());
-            }
-
+            unsafe { write_msg(&e, message) };
             return true;
         }
     };
 
     Box::into_raw(udf_struct);
+
+    let args = match process_args(args) {
+        Ok(v) => v,
+        Err(e) => {
+            unsafe { write_msg(&e, message) };
+            return true;
+        }
+    };
 
     // Function needs to set:
     //
@@ -192,4 +193,20 @@ fn udf_func_init(initid: *mut UDF_INIT, args: *mut UDF_ARGS, message: *mut c_cha
     // (*initid).maybe_null = true;
 
     false
+}
+
+/// Write a string message to a buffer
+///
+/// # Safety
+///
+/// It must be checked that the message fits in the buffer _with a null terminator_.
+/// I.e., msg.len() < buf_size.
+///
+/// # Panics
+///
+/// Panics if the message to be written contains \0
+unsafe fn write_msg(msg: &str, buf: *mut c_char) {
+    let cstr = CString::new(msg).expect("internal exception: string contains null characters");
+
+    ptr::copy_nonoverlapping(cstr.as_ptr(), buf, cstr.as_bytes_with_nul().len());
 }

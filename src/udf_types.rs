@@ -40,8 +40,6 @@ pub struct UdfArg<'a> {
     pub(crate) attribute: &'a str,
 }
 
-
-
 // Quick namespace for the long names
 pub mod item_res {
     use crate::udf_types_c::{

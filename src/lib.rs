@@ -19,7 +19,6 @@
 mod udf_types;
 mod udf_types_c;
 mod wrapper;
-mod constants;
 
 pub use udf_types::{InitArg, UdfArg};
 
