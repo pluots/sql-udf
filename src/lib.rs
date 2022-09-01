@@ -1,5 +1,9 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
+
 //!
 //!
 //! # Example
@@ -18,51 +22,31 @@
 //!
 //! Define the basic traits here
 
-mod udf_types;
-mod udf_types_ffi;
-mod wrapper;
+extern crate udf_derive;
+pub use udf_derive::register;
 
-use udf_types::ArgInfo;
-pub use udf_types::{InitArgInfo, MaybeArg};
+pub mod types;
+pub mod ffi;
 
-enum ItemUdfType {}
+use types::ArgInfo;
+pub use types::{InitArgInfo, MaybeArg};
 
-pub trait UdfBase {
+
+/// May be &str, f64, or i64
+/// Use result() if not null
+pub trait BasicUdf {
+    type Returns;
     /// Initialization function
     fn init(args: &[InitArgInfo]) -> Result<Self, String>
     where
         Self: Sized;
-}
-pub trait Str: UdfBase {
-    fn process<'a>(&self, args: &[ArgInfo]) -> Result<Option<&'a str>, String>;
-}
-pub trait StrNotNull: UdfBase {
-    fn process<'a>(&self, args: &[ArgInfo]) -> Result<&'a str, String>;
+
+    fn process<'a>(&self, args: &[ArgInfo]) -> Result<Self::Returns, String>;
 }
 
-// Maybe decimals need to set their lengths?
-pub trait Decimal: UdfBase {
-    fn process<'a>(&self, args: &[ArgInfo]) -> Result<Option<&'a str>, String>;
-}
-pub trait DecNotNull: UdfBase {
-    fn process<'a>(&self, args: &[ArgInfo]) -> Result<&'a str, String>;
-}
 
-pub trait Float: UdfBase {
-    fn process(&self, args: &[ArgInfo]) -> Result<Option<f64>, String>;
-}
-pub trait FloatNotNull: UdfBase {
-    fn process(&self, args: &[ArgInfo]) -> Result<f64, String>;
-}
-
-pub trait Integer: UdfBase {
-    fn process(&self, args: &[ArgInfo]) -> Result<Option<u64>, String>;
-}
-pub trait IntNotNull: UdfBase {
-    fn process(&self, args: &[ArgInfo]) -> Result<u64, String>;
-}
-
-pub trait Aggregate {
+/// This trait must be implemented if this function performs aggregation.
+pub trait AggregateUdf: BasicUdf {
     // Clear is required
     fn clear(&self) -> Result<(), String>;
     // Reset is not required
@@ -73,7 +57,7 @@ pub trait Aggregate {
     /// Remove only applies to MariaDB
     ///
     /// https://mariadb.com/kb/en/user-defined-functions-calling-sequences/#x_remove
-    fn remove(&self, args: &[ArgInfo]) -> Result<(), String> {
+    fn remove(&self, _args: &[ArgInfo]) -> Result<(), String> {
         Ok(())
     }
 }

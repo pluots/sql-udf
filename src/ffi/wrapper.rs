@@ -1,35 +1,27 @@
 #![allow(dead_code)]
-//! Interface
-//!
+//! Interface designed to safely wrap rust definitions within C bindings
 //!
 //! This file ties together C types and rust types, provides a wrapper
 //! Everything related to cffi wrapping goes here
 
-use crate::udf_types::item_res;
-use crate::udf_types::ConstOpt;
-use crate::udf_types_ffi::{Item_result, UDF_ARGS, UDF_INIT};
-use std::ffi::CString;
 use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
-use std::str;
-use std::{ptr, slice};
+use std::ffi::CString;
+use std::{ptr, slice, str};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
-use crate::{InitArgInfo, MaybeArg};
+use crate::{BasicUdf, InitArgInfo, MaybeArg};
+use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
+use crate::ffi::item_res;
+use crate::types::ConstOpt;
+
+
+
 
 /// Aggregate wrappers - error is a byte, not a pointer!
 /// Just store something there if there is an error
 
-struct MyUdf {
-    v: Vec<u8>,
-}
-
-impl MyUdf {
-    // #[udf(maybe_null)]
-    fn init(args: &[InitArgInfo]) -> Result<Self, String> {
-        Ok(MyUdf { v: Vec::new() })
-    }
-}
+// #[udf(name=MY_FUNC)]
 
 /// Returns an error if a string is not valid UTF-8
 ///
@@ -144,7 +136,7 @@ fn process_args<'a>(args: *const UDF_ARGS) -> Result<Vec<InitArgInfo<'a>>, Strin
 /// - Panics if the error message contains "\0", or if the message is too long (
 ///   greater than 511 bytes).
 /// - Panics if the provides error message string contains null characters
-unsafe extern "C" fn udf_func_init(
+pub unsafe fn init_wrapper<T: BasicUdf>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     message: *mut c_char,
@@ -161,7 +153,7 @@ unsafe extern "C" fn udf_func_init(
     // Set max_length, maybe_null, const_item, decimals from proc macro
 
     // If initialization fails, copy a message to the buffer
-    let udf_struct = match MyUdf::init(&args) {
+    let udf_struct = match T::init(&args) {
         Ok(v) => Box::new(v),
         Err(e) => {
             // Message must be strictly smaller than the buffer to leave room for
@@ -214,9 +206,9 @@ unsafe extern "C" fn udf_func_str(
 /// For our deinit function, all we need to do is take ownership of the
 /// value on the stack. The function ends, it goes out of scope and gets
 /// dropped.
-unsafe extern "C" fn udf_func_deinit(initid: *mut UDF_INIT) {
+unsafe fn deinit_wrapper<T: BasicUdf>(initid: *mut UDF_INIT) {
     // Safety: we constructed this box so it is formatted correctly
-    unsafe { Box::from_raw((*initid).ptr as *mut MyUdf) };
+    unsafe { Box::from_raw((*initid).ptr as *mut T) };
 }
 
 /// Write a string message to a buffer
@@ -235,9 +227,32 @@ unsafe fn write_buf_unchecked(msg: &str, buf: *mut c_char) {
     unsafe { ptr::copy_nonoverlapping(cstr.as_ptr(), buf, cstr.as_bytes_with_nul().len()) };
 }
 
-// Current idea: wrap this all into a struct. The struct can have a builder
-// pattern to configure it and use generics to choose type. This may be quicker
-// than derive macros. Functions to register. There would just be a single macro
-// needed to register it with a type.
-//
-// actually... this probably wouldn't work, there's no way to expose the ffi
+
+#[cfg(test)]
+mod tests {
+    use crate::{InitArgInfo, BasicUdf, ArgInfo, register};
+
+
+    // #[crate::register(a1, a2=banana)]
+    struct MyUdf {
+        // v: Vec<u8>,
+    }
+
+    impl BasicUdf for MyUdf {
+        type Returns =  String;
+
+        fn init(args: &[InitArgInfo]) -> Result<Self, String>
+        where
+            Self: Sized,
+        {
+            todo!()
+        }
+
+        fn process<'a>(&self, args: &[ArgInfo]) -> Result<String, String> {
+            todo!()
+        }
+    }
+
+
+    fn test1() {}
+}

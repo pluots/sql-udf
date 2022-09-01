@@ -46,16 +46,3 @@ pub struct ArgInfo<'a> {
     pub(crate) maybe_null: bool,
     pub(crate) attribute: &'a str,
 }
-
-// Quick namespace for the long names
-pub mod item_res {
-    use crate::udf_types_ffi::{
-        Item_result, Item_result_DECIMAL_RESULT, Item_result_INT_RESULT, Item_result_REAL_RESULT,
-        Item_result_STRING_RESULT,
-    };
-
-    pub const STRING_RESULT: Item_result = Item_result_STRING_RESULT;
-    pub const REAL_RESULT: Item_result = Item_result_REAL_RESULT;
-    pub const INT_RESULT: Item_result = Item_result_INT_RESULT;
-    pub const DECIMAL_RESULT: Item_result = Item_result_DECIMAL_RESULT;
-}

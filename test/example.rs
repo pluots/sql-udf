@@ -11,17 +11,3 @@ impl MyUdf {
 
     }
 }
-
-/// # Panics
-/// 
-/// The returned error string MUST be less than 
-
-register_udf! {
-    returns: integer,
-
-    clear: my_clear,
-    reset: my_reset,
-    add: my_add,
-    remove: my_remove
-
-}
