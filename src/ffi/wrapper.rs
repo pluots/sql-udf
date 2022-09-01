@@ -4,19 +4,16 @@
 //! This file ties together C types and rust types, provides a wrapper
 //! Everything related to cffi wrapping goes here
 
-use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::ffi::CString;
+use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::{ptr, slice, str};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
-use crate::{BasicUdf, InitArgInfo, MaybeArg};
 use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
 use crate::ffi::item_res;
 use crate::types::ConstOpt;
-
-
-
+use crate::{BasicUdf, InitArgInfo, MaybeArg};
 
 /// Aggregate wrappers - error is a byte, not a pointer!
 /// Just store something there if there is an error
@@ -227,11 +224,9 @@ unsafe fn write_buf_unchecked(msg: &str, buf: *mut c_char) {
     unsafe { ptr::copy_nonoverlapping(cstr.as_ptr(), buf, cstr.as_bytes_with_nul().len()) };
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::{InitArgInfo, BasicUdf, ArgInfo, register};
-
+    use crate::{register, ArgInfo, BasicUdf, InitArgInfo};
 
     // #[crate::register(a1, a2=banana)]
     struct MyUdf {
@@ -239,7 +234,7 @@ mod tests {
     }
 
     impl BasicUdf for MyUdf {
-        type Returns =  String;
+        type Returns = String;
 
         fn init(args: &[InitArgInfo]) -> Result<Self, String>
         where
@@ -252,7 +247,6 @@ mod tests {
             todo!()
         }
     }
-
 
     fn test1() {}
 }

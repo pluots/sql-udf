@@ -25,10 +25,12 @@ pub(crate) fn register(args: TokenStream, item: TokenStream) -> TokenStream {
         unsafe extern "C" fn #init_fn_name (
             initid: *mut udf::ffi::bindings::UDF_INIT,
             args: *const udf::ffi::bindings::UDF_ARGS,
-            message: *mut core::ffi::c_char,
+            message: *mut std::os::raw::c_char,
         ) -> bool
         {
-            unsafe { udf::ffi::wrapper::init_wrapper::<#ident::Returns>(initid, args, message) }
+            unsafe { 
+                udf::ffi::wrapper::init_wrapper::<#ident>(initid, args, message)
+            }
         }
     };
 
@@ -39,3 +41,5 @@ pub(crate) fn register(args: TokenStream, item: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
+
+// Maybe need a macro_rules! to evaluate the return type
