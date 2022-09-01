@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Interface
 //!
 //!
@@ -6,27 +7,18 @@
 
 use crate::udf_types::item_res;
 use crate::udf_types::ConstOpt;
-use crate::udf_types_c::{Item_result, UDF_ARGS, UDF_INIT};
+use crate::udf_types_ffi::{Item_result, UDF_ARGS, UDF_INIT};
 use std::ffi::CString;
-use std::os::raw::c_char;
+use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::str;
 use std::{ptr, slice};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
-use crate::{InitArg, UdfArg};
+use crate::{InitArgInfo, MaybeArg};
 
-// From the MySQL docs, the init function has the following purposes:
-//
-// - To check the number of arguments to XXX().
-// - To verify that the arguments are of a required type or, alternatively, to
-//   tell the server to coerce arguments to the required types when the main
-//   function is called.
-// - To allocate any memory required by the main function.
-// - To specify the maximum length of the result.
-// - To specify (for REAL functions) the maximum number of decimal places in
-//   the result.
-// - To specify whether the result can be NULL.
+/// Aggregate wrappers - error is a byte, not a pointer!
+/// Just store something there if there is an error
 
 struct MyUdf {
     v: Vec<u8>,
@@ -34,7 +26,7 @@ struct MyUdf {
 
 impl MyUdf {
     // #[udf(maybe_null)]
-    fn init() -> Result<Self, String> {
+    fn init(args: &[InitArgInfo]) -> Result<Self, String> {
         Ok(MyUdf { v: Vec::new() })
     }
 }
@@ -44,7 +36,7 @@ impl MyUdf {
 /// # Panics
 ///
 /// - Receives an invalid arg type
-fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
+fn process_args<'a>(args: *const UDF_ARGS) -> Result<Vec<InitArgInfo<'a>>, String> {
     let mut ret = Vec::new();
 
     let arg_count: usize;
@@ -78,10 +70,10 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
         let arg_enum = if arg_ptrs[i].is_null() {
             // Args are not const, so we can't check values
             match arg_types[i] {
-                item_res::STRING_RESULT => InitArg::String(ConstOpt::NonConst),
-                item_res::REAL_RESULT => InitArg::Real(ConstOpt::NonConst),
-                item_res::INT_RESULT => InitArg::Int(ConstOpt::NonConst),
-                item_res::DECIMAL_RESULT => InitArg::Decimal(ConstOpt::NonConst),
+                item_res::STRING_RESULT => MaybeArg::String(ConstOpt::NonConst),
+                item_res::REAL_RESULT => MaybeArg::Real(ConstOpt::NonConst),
+                item_res::INT_RESULT => MaybeArg::Int(ConstOpt::NonConst),
+                item_res::DECIMAL_RESULT => MaybeArg::Decimal(ConstOpt::NonConst),
                 other => panic!("invalid arg type {} received", other),
             }
         } else {
@@ -91,8 +83,7 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
             if arg_type == item_res::STRING_RESULT || arg_type == item_res::DECIMAL_RESULT {
                 // String and decimal are both string-like
 
-                // Safety: we have already checked for null, caller guarantees
-                // lengths
+                // Safety: we have already checked for null, caller guarantees lengths
                 let bytearr =
                     unsafe { slice::from_raw_parts(arg_ptrs[i], arg_lengths[i] as usize) };
                 let const_str = match str::from_utf8(bytearr) {
@@ -100,8 +91,8 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
                     Err(_) => return Err("invalid utf8".to_owned()),
                 };
                 match arg_type {
-                    item_res::STRING_RESULT => InitArg::String(ConstOpt::Const(const_str)),
-                    item_res::DECIMAL_RESULT => InitArg::Decimal(ConstOpt::Const(const_str)),
+                    item_res::STRING_RESULT => MaybeArg::String(ConstOpt::Const(const_str)),
+                    item_res::DECIMAL_RESULT => MaybeArg::Decimal(ConstOpt::Const(const_str)),
                     _ => unreachable!(),
                 }
             } else if arg_type == item_res::INT_RESULT || arg_type == item_res::REAL_RESULT {
@@ -110,10 +101,10 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
 
                 match arg_type {
                     item_res::INT_RESULT => {
-                        InitArg::Int(ConstOpt::Const(unsafe { *(arg_ptrs[i] as *const i64) }))
+                        MaybeArg::Int(ConstOpt::Const(unsafe { *(arg_ptrs[i] as *const i64) }))
                     }
                     item_res::REAL_RESULT => {
-                        InitArg::Real(ConstOpt::Const(unsafe { *(arg_ptrs[i] as *const f64) }))
+                        MaybeArg::Real(ConstOpt::Const(unsafe { *(arg_ptrs[i] as *const f64) }))
                     }
                     _ => unreachable!(),
                 }
@@ -125,7 +116,7 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
         let bytearr = unsafe { slice::from_raw_parts(attr_ptrs[i], attr_lengths[i] as usize) };
         let attr: &str = str::from_utf8(bytearr).expect("attribute is not valid utf-8");
 
-        ret.push(UdfArg {
+        ret.push(InitArgInfo {
             arg: arg_enum,
             maybe_null: maybe_null[i] != 0,
             attribute: attr,
@@ -153,9 +144,24 @@ fn process_args<'a>(args: *mut UDF_ARGS) -> Result<Vec<UdfArg<'a>>, String> {
 /// - Panics if the error message contains "\0", or if the message is too long (
 ///   greater than 511 bytes).
 /// - Panics if the provides error message string contains null characters
-fn udf_func_init(initid: *mut UDF_INIT, args: *mut UDF_ARGS, message: *mut c_char) -> bool {
+unsafe extern "C" fn udf_func_init(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    message: *mut c_char,
+) -> bool {
+    let args = match process_args(args) {
+        Ok(v) => v,
+        Err(e) => {
+            // Safety: we know our messages are short enough to fit in the buffer
+            unsafe { write_buf_unchecked(&e, message) };
+            return true;
+        }
+    };
+
+    // Set max_length, maybe_null, const_item, decimals from proc macro
+
     // If initialization fails, copy a message to the buffer
-    let udf_struct = match MyUdf::init() {
+    let udf_struct = match MyUdf::init(&args) {
         Ok(v) => Box::new(v),
         Err(e) => {
             // Message must be strictly smaller than the buffer to leave room for
@@ -165,34 +171,52 @@ fn udf_func_init(initid: *mut UDF_INIT, args: *mut UDF_ARGS, message: *mut c_cha
                 "internal exception: error message too long"
             );
             // Safety: we have checked that our message fits in the buffer
-            unsafe { write_msg(&e, message) };
+            unsafe { write_buf_unchecked(&e, message) };
             return true;
         }
     };
 
-    Box::into_raw(udf_struct);
-
-    let args = match process_args(args) {
-        Ok(v) => v,
-        Err(e) => {
-            unsafe { write_msg(&e, message) };
-            return true;
-        }
-    };
-
-    // Function needs to set:
-    //
-
-    // initid.
-
-    // if (*args).arg_count != 1 {
-    //     write_result(message, b"blake3_hash must have one argument");
-    //     return true;
-    // }
-    // *((*args).arg_type) = Item_result_STRING_RESULT;
-    // (*initid).maybe_null = true;
+    // Put the struct on the heap and get a pointer
+    let box_ptr = Box::into_raw(udf_struct);
+    // Safety: Must be cleaned up in deinit function, or will leak!
+    unsafe { (*initid).ptr = box_ptr as *mut c_char };
 
     false
+}
+
+unsafe extern "C" fn udf_func_double(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) // -> f64
+{
+}
+unsafe extern "C" fn udf_func_longlong(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) // -> ::std::os::raw::c_longlong
+{
+}
+unsafe extern "C" fn udf_func_str(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    result: *mut c_char,
+    length: *mut c_ulong,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) // -> *mut c_char
+{
+}
+
+/// For our deinit function, all we need to do is take ownership of the
+/// value on the stack. The function ends, it goes out of scope and gets
+/// dropped.
+unsafe extern "C" fn udf_func_deinit(initid: *mut UDF_INIT) {
+    // Safety: we constructed this box so it is formatted correctly
+    unsafe { Box::from_raw((*initid).ptr as *mut MyUdf) };
 }
 
 /// Write a string message to a buffer
@@ -205,8 +229,15 @@ fn udf_func_init(initid: *mut UDF_INIT, args: *mut UDF_ARGS, message: *mut c_cha
 /// # Panics
 ///
 /// Panics if the message to be written contains \0
-unsafe fn write_msg(msg: &str, buf: *mut c_char) {
+unsafe fn write_buf_unchecked(msg: &str, buf: *mut c_char) {
     let cstr = CString::new(msg).expect("internal exception: string contains null characters");
 
-    ptr::copy_nonoverlapping(cstr.as_ptr(), buf, cstr.as_bytes_with_nul().len());
+    unsafe { ptr::copy_nonoverlapping(cstr.as_ptr(), buf, cstr.as_bytes_with_nul().len()) };
 }
+
+// Current idea: wrap this all into a struct. The struct can have a builder
+// pattern to configure it and use generics to choose type. This may be quicker
+// than derive macros. Functions to register. There would just be a single macro
+// needed to register it with a type.
+//
+// actually... this probably wouldn't work, there's no way to expose the ffi

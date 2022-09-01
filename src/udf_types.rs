@@ -8,7 +8,7 @@ pub enum ConstOpt<T> {
 
 /// We use lifetimes so we don't copy the string converting to owned
 #[derive(Debug, PartialEq)]
-pub enum InitArg<'a> {
+pub enum MaybeArg<'a> {
     // INVALID_RESULT and ROW_RESULT are other options, but not valid for UDFs
     /// String result
     String(ConstOpt<&'a str>),
@@ -34,15 +34,22 @@ pub enum RunArg<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct UdfArg<'a> {
-    pub(crate) arg: InitArg<'a>,
+pub struct InitArgInfo<'a> {
+    pub(crate) arg: MaybeArg<'a>,
+    pub(crate) maybe_null: bool,
+    pub(crate) attribute: &'a str,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ArgInfo<'a> {
+    pub(crate) arg: RunArg<'a>,
     pub(crate) maybe_null: bool,
     pub(crate) attribute: &'a str,
 }
 
 // Quick namespace for the long names
 pub mod item_res {
-    use crate::udf_types_c::{
+    use crate::udf_types_ffi::{
         Item_result, Item_result_DECIMAL_RESULT, Item_result_INT_RESULT, Item_result_REAL_RESULT,
         Item_result_STRING_RESULT,
     };
