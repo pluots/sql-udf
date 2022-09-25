@@ -4,12 +4,24 @@ version = "0.1.0"
 edition = "2021"
 description = "UDF procedural macros implementation"
 repository = "https://github.com/pluots/udf/tree/main/udf_derive"
+# autotests = false
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0.99", features = ["full"] }
-quote = "1.0.21"
+heck = "0.4.0"
 proc-macro2 = "1.0.42"
 proc-macro-error = "1.0.4"
+quote = "1.0.21"
+syn = { version = "1.0.99", features = ["full", "extra-traits"] }
+
+[dev-dependencies]
+trybuild = { version = "1.0.65", features = ["diff"] }
+
+# [[test]]
+# name = "tests"
+# path = "tests/harness.rs"
+
+# [dev-dependencies]
+# syn = { version = "1.0.99", features = ["full", "extra-traits"] }

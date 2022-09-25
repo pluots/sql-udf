@@ -1,0 +1,29 @@
+[package]
+name = "udf"
+version = "0.1.0"
+rust-version = "1.65"
+edition = "2021"
+description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+mysqlclient-sys = "0.2.5"
+udf-derive = { path = "../udf_derive" }
+
+[dev-dependencies]
+lipsum = "0.8.2"
+# Needed for 
+uuid = { version = "1.1.2", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
+
+[[example]]
+name = "uuidv"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "basic_sum"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "lipsum"
+crate-type = ["cdylib"]
