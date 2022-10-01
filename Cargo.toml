@@ -1,11 +1,6 @@
-[package]
-name = "udf"
-version = "0.1.0"
-edition = "2021"
-description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-mysqlclient-sys = "0.2.5"
-udf-derive = { path = "udf_derive" }
+members = [
+    "udf",
+    "udf_macros"
+]

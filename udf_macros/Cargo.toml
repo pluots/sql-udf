@@ -1,0 +1,31 @@
+[package]
+name = "udf-macros"
+version = "0.1.0"
+edition = "2021"
+description = "UDF procedural macros implementation"
+repository = "https://github.com/pluots/udf/tree/main/udf_macros"
+publish = false
+# autotests = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+heck = "0.4.0"
+proc-macro2 = "1.0.42"
+proc-macro-error = "1.0.4"
+quote = "1.0.21"
+syn = { version = "1.0.99", features = ["full", "extra-traits"] }
+
+[dev-dependencies]
+trybuild = { version = "1.0.65", features = ["diff"] }
+
+[package.metadata.release]
+shared-version = true
+
+# [[test]]
+# name = "tests"
+# path = "tests/harness.rs"
+
+# [dev-dependencies]
+# syn = { version = "1.0.99", features = ["full", "extra-traits"] }
