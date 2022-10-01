@@ -4,9 +4,9 @@ version = "0.1.0"
 rust-version = "1.65"
 edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
-repository = "git@github.com:pluots/sql-udf.git"
+repository = "https://github.com/pluots/udf"
 readme = "../README.md"
-license = "../LICENSE"
+license = "Apache-2.0"
 keywords = ["sql", "udf"]
 
 [dependencies]
