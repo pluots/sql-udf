@@ -11,7 +11,7 @@ keywords = ["sql", "udf"]
 
 [dependencies]
 mysqlclient-sys = "0.2.5"
-udf-macros = { version = "0.1.0", path = "../udf_macros" }
+udf-macros = { path = "../udf_macros", version = "0.1.0"}
 
 [dev-dependencies]
 lipsum = "0.8.2"
