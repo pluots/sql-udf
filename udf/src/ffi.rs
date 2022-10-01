@@ -15,7 +15,7 @@ pub type SqlTypeTag = bindings::Item_result;
 ///
 /// This simply represents the possible types, but does not contain any values.
 /// [`SqlResult`] is the corresponding enum that actually contains data.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[non_exhaustive]
 #[repr(i8)]
 pub enum SqlType {

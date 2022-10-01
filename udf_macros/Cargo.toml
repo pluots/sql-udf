@@ -1,9 +1,9 @@
 [package]
-name = "udf-derive"
+name = "udf-macros"
 version = "0.1.0"
 edition = "2021"
 description = "UDF procedural macros implementation"
-repository = "https://github.com/pluots/udf/tree/main/udf_derive"
+repository = "https://github.com/pluots/udf/tree/main/udf_macros"
 # autotests = false
 
 [lib]

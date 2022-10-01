@@ -1,7 +1,6 @@
 //! Rust representation of SQL types
 
-use std::slice;
-use std::str;
+use std::{slice, str};
 
 use crate::ffi::bindings::Item_result;
 use crate::ffi::{SqlType, SqlTypeTag};
@@ -10,9 +9,10 @@ use crate::ffi::{SqlType, SqlTypeTag};
 ///
 /// This enum is similar to [`SqlType`], but actually contains the object.
 ///
-/// It is of note that both [`SqlResult::String`] and [`SqlResult::Decimal`] contain
-/// slices of `u8` rather than a representation like `&str`. This is because
-/// there is no guarantee that the data is `utf8`.
+/// It is of note that both [`SqlResult::String`] and [`SqlResult::Decimal`]
+/// contain slices of `u8` rather than a representation like `&str`. This is
+/// because there is no guarantee that the data is `utf8`. Use [`as_str()`] if
+/// you need an easy way to get a `&str`.
 #[derive(Debug, PartialEq, Clone)]
 pub enum SqlResult<'a> {
     // INVALID_RESULT and ROW_RESULT are other options, but not valid for UDFs
@@ -27,6 +27,8 @@ pub enum SqlResult<'a> {
 }
 
 impl<'a> SqlResult<'a> {
+    /// Construct a `SqlResult` from a pointer and a tag
+    ///
     /// Safety: pointer must not be null. If a string or decimal result, must be
     /// exactly `len` long.
     pub(crate) unsafe fn from_ptr(

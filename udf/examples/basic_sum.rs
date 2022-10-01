@@ -1,6 +1,5 @@
 use udf::prelude::*;
 
-#[udf::register]
 #[derive(Debug, PartialEq, Eq, Default)]
 struct SumInt {
     baseline: u64,
@@ -10,12 +9,15 @@ impl BasicUdf for SumInt {
     type Returns<'a> = i64;
 
     /// Here we evaluate all const arguments possible
-    fn init(args: &[SqlArg<Init>]) -> Result<Self, String> {
+    fn init<'a>(args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         let baseline = 0u64;
-        for arg in args {}
+        for mut arg in args {
+            arg.set_type_coercion(udf::SqlType::Decimal);
+        }
         Ok(Self { baseline })
     }
-    fn process<'a>(&'a mut self, args: &[SqlArg<Process>]) -> Result<Self::Returns<'a>, String> {
+
+    fn process<'a>(&'a mut self, _args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError> {
         todo!()
     }
 }

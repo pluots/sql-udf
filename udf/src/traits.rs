@@ -1,17 +1,17 @@
 //! Module containing traits to be implemented by a user
 
-use crate::types::{Init, Process, SqlArg};
+use crate::{types::{ArgList, Init, Process, SqlArg}, ProcessError};
 
 /// This trait specifies the functions needed for a standard (non-aggregate) UDF
 ///
-/// Implement this on a struct that is desired to
+/// Implement this on a struct that is desired to carry data between calls to,
+/// `init`, `process`, `clear`, `add`, and `remove`. If there is no data to be
+/// shared, it may be zero-sized (e.g. `struct MyFunc{}`).
 ///
-/// The struct will carry data between
+/// If the UDF is only basic, the process is:
 ///
-/// The higher level overview is that this will:
-///
-/// - Call the `init(...)` function to perform setup
-/// - Call the `process(...)` function to perform cleanup
+/// - Call the `init(...)` function to perform setup and validate arguments
+/// - Call the `process(...)` function to create a result from those arguments
 ///
 /// The UDF specification also calls out a `deinit()` function to deallocate any
 /// memory, but this is not needed here (this wrapper and Rust handles this for
@@ -32,8 +32,11 @@ pub trait BasicUdf: Sized {
     /// It is expected that this function do the following:
     ///
     /// - Validate the type quantity of arguments
-    /// - Set
-    fn init(args: &[SqlArg<Init>]) -> Result<Self, String>;
+    /// - Set argument type coercion if needed
+    ///
+    /// Error handling options are limited in all other functions, so make sure
+    /// you check
+    fn init<'a>(args: &'a ArgList<'a, Init>) -> Result<Self, String>;
 
     /// Process the actual values
     ///
@@ -44,23 +47,29 @@ pub trait BasicUdf: Sized {
     /// return a reference to that".
     ///
     /// If there is an error, the SQL server will return `NULL`.
-    fn process<'a>(&'a mut self, args: &[SqlArg<Process>]) -> Result<Self::Returns<'a>, ()>;
+    fn process<'a>(&'a mut self, args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError>;
 }
 
 /// This trait must be implemented if this function performs aggregation.
 pub trait AggregateUdf: BasicUdf {
     // Clear is required
     fn clear(&mut self) -> Result<(), u8>;
+
     // Reset is not required
     // If there is an error, we will need to box it and put it on the stack
     // fn reset(&self, args: &[SqlArg]) -> Result<(), String>;
-    fn add(&mut self, args: &[SqlArg<Process>], error: u8) -> Result<(), u8>;
+    fn add(&mut self, args: &ArgList<Process>, error: u8) -> Result<(), u8>;
 
     /// Remove only applies to MariaDB, so a default is supplied that does
     /// nothing.
     ///
     /// <https://mariadb.com/kb/en/user-defined-functions-calling-sequences/#x_remove>
-    fn remove(&mut self, _args: &[SqlArg<Process>], error: u8) -> Result<(), u8> {
+    fn remove(&mut self, _args: &ArgList<Process>, error: u8) -> Result<(), u8> {
         Ok(())
     }
 }
+
+
+/// A trait that is assigned by the `#[register]` proc macro for some internal
+/// checks.
+pub trait BasicUdfRegistered {}

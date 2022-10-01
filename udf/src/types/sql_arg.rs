@@ -1,6 +1,7 @@
 //! Rust representation of SQL arguments
 
 use core::fmt::Debug;
+use std::cell::Cell;
 use std::marker::PhantomData;
 
 use crate::ffi::{SqlType, SqlTypeTag};
@@ -27,20 +28,27 @@ use crate::types::SqlResult;
 #[derive(Debug, PartialEq)]
 pub struct SqlArg<'a, S: UdfState> {
     /// The actual argument type and value
-    pub arg: SqlResult<'a>,
-
-    /// Whether or not this argument may be `NULL`
-    pub maybe_null: bool,
+    pub value: SqlResult<'a>,
 
     /// A string representation of this argument's identifier
     pub attribute: &'a str,
+
+    /// Whether or not this argument may be `NULL`
+    ///
+    /// We provide a getter for this just to keep things consistent
+    pub(crate) maybe_null: bool,
 
     /// A pointer for location to change type. Must never be null.
     ///
     /// This is only needed when in the initialization phase, since we need to
     /// be able to set the type. We can look into moving this into an `extra`
     /// field instead of having `PhantomData`.
-    pub(crate) type_ptr: *mut SqlTypeTag,
+    ///
+    /// We use a `Cell` here which is a type of smart pointer that allows
+    /// "interior mutability". Essentially we have to do edits via methods
+    /// like `.get()` and `.replace()`, but in exchange mutability doesn't need
+    /// to propegate up.
+    pub(crate) arg_type: &'a Cell<SqlTypeTag>,
 
     /// Internal marker for typestate pattern
     pub(crate) marker: PhantomData<S>,
@@ -56,7 +64,7 @@ impl<'a> SqlArg<'a, Init> {
     /// There is no way to differentiate between "not const" and "const but
     /// NULL", hence the naming if this function
     pub fn maybe_const(&self) -> bool {
-        match self.arg {
+        match self.value {
             SqlResult::String(v) => v.is_some(),
             SqlResult::Real(v) => v.is_some(),
             SqlResult::Int(v) => v.is_some(),
@@ -64,16 +72,22 @@ impl<'a> SqlArg<'a, Init> {
         }
     }
 
+    /// Whether or not this argument may be `NULL`
+    pub fn maybe_null(&self) -> bool {
+        self.maybe_null
+    }
+
     /// Retrieve the current type coercision
     pub fn get_type_coercion(&self) -> SqlType {
-        unsafe { *self.type_ptr }.try_into().unwrap()
+        // `.get()` on our Cell will just copy the value
+        SqlType::try_from(self.arg_type.get()).unwrap()
     }
 
     /// Instruct the SQL application to coerce the argument's type. This does
     /// not change the underlying
-    pub fn set_type_coercion(&self, newtype: SqlType) {
-        // Safety: pointer validity guaranteed by struct constructor
-        unsafe { (*self.type_ptr) = newtype as SqlTypeTag };
+    pub fn set_type_coercion(&mut self, newtype: SqlType) {
+        // .replace() on our cell will do exactly what it sounds like
+        self.arg_type.replace(newtype as SqlTypeTag);
     }
 }
 
@@ -82,7 +96,7 @@ impl<'a> SqlArg<'a, Init> {
 /// This is a zero-sized type that is just used to hint to the compiler that an
 /// [`SqlArg`] was created in the `init` function, which allows for some special
 /// methods.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Init {}
 
 /// Typestate marker for the processing phase
@@ -90,7 +104,7 @@ pub struct Init {}
 /// This is a zero-sized type that indicates that an [`SqlArg`] was created in
 /// the `process` function. Currently there are no special methods when in this
 /// state.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Process {}
 
 /// A state of the UDF, representing either `Init` or `Process`

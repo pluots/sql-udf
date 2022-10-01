@@ -36,14 +36,25 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
+// Strict clippy
+#![warn(
+    // clippy::pedantic,
+    clippy::cargo,
+    // clippy::nursery,
+    // clippy::str_to_string,
+    // clippy::missing_inline_in_public_items,
+    // clippy::exhaustive_enums,
+    // clippy::pattern_type_mismatch
+)]
+
 extern crate udf_derive;
 pub use udf_derive::register;
 
 pub mod ffi;
-pub mod mock;
 pub mod prelude;
+pub mod traits;
 pub mod types;
-
+pub use traits::*;
 // Make this inline so we don't show the re-exports
-#[doc(inline)]
+// #[doc(inline)]
 pub use types::*;

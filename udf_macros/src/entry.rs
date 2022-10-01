@@ -12,7 +12,6 @@ use syn::{
 
 use crate::match_variant;
 
-
 // struct Args {
 //     vars: Set<Ident>,
 // }
@@ -62,12 +61,13 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     // if let Type::Path(v) =   {
 
     // }
-    
-    eprintln!("LOOK HERE {:#?}", parsed.trait_.unwrap());
+
+    // eprintln!("LOOK HERE {:#?}", parsed.trait_.unwrap());
 
     // Get the return type from the macro
     // There is only one type for this trait, which is "Returns"
-    let tmp: &ImplItemType = parsed.items
+    let tmp: &ImplItemType = parsed
+        .items
         .iter()
         .find_map(match_variant!(ImplItem::Type))
         .unwrap();
@@ -111,7 +111,6 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     input_cpy
 }
 
-
 /// Given the name of a type or struct, create a function that will be evaluated
 fn make_init_fn(type_ident: Ident, fn_name: Ident) -> proc_macro2::TokenStream {
     // Safety: we just minimally wrap the functions here, safety is handled
@@ -154,9 +153,6 @@ fn make_deinit_fn(struct_ident: Ident, fn_name: Ident) -> proc_macro2::TokenStre
         }
     }
 }
-
-
-
 
 // pub(crate) fn register(_args: TokenStream, item: TokenStream) -> TokenStream {
 //     let item_tmp = item.clone();

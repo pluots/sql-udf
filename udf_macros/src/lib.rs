@@ -1,4 +1,3 @@
-
 mod entry;
 
 use proc_macro::TokenStream;
@@ -6,26 +5,29 @@ use proc_macro::TokenStream;
 macro_rules! match_variant {
     ($variant:path) => {
         |x| {
-            if let $variant(value) = x { Some(value) } else { None }
+            if let $variant(value) = x {
+                Some(value)
+            } else {
+                None
+            }
         }
-    }
+    };
 }
 
 pub(crate) use match_variant;
 
-
 /// # Examples
-/// 
+///
 /// ```
 /// #[udf::register]
 /// struct X{}
-/// 
+///
 /// ```
-/// 
+///
 /// # Arguments
-/// 
+///
 /// This macro accepts the following optional arguments:
-/// 
+///
 /// - `#[udf::register(decimals = N)]` set the number of decimals (behind the
 ///   scenes this sets `initd.decimals`)
 /// - `#[udf::register(max_length = N)]` set the max length for strings or
@@ -36,9 +38,9 @@ pub(crate) use match_variant;
 ///   function. If this is not specified, your struct name will be converted to
 ///   snake case and used (e.g. `AddAllNumbers` would become `add_all_numbers`
 ///   by default).
-/// 
+///
 /// # Behind the scenes
-/// 
+///
 /// `initd.maybe_null` is set based on the `Return` type (whether optional or
 /// not)
 #[proc_macro_attribute]

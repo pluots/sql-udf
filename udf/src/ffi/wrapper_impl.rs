@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 
+use std::cmp::min;
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
@@ -13,72 +14,24 @@ use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
 use crate::ffi::SqlTypeTag;
 use crate::{BasicUdf, SqlArg, SqlResult, SqlType, UdfState};
 
-/// Returns an error if a string is not valid UTF-8
-///
-/// # Panics
-///
-/// - Receives an invalid arg type
-pub unsafe fn process_args<'a, S: UdfState>(
-    args: *const UDF_ARGS,
-) -> Result<Vec<SqlArg<'a, S>>, String> {
-    let mut ret = Vec::new();
-
-    let arg_count: usize;
-    let arg_types: &mut [SqlTypeTag];
-    let arg_ptrs: &[*const u8];
-    let arg_lens: &[u64];
-    let maybe_null: &[c_char];
-    let attr_ptrs: &[*const u8];
-    let attr_lens: &[u64];
-
-    // Load in the C struct
-    unsafe {
-        // Safety: Caller must ensure that all contents are `arg_count` in length
-        arg_count = (*args).arg_count as usize;
-        arg_types = dbg!(slice::from_raw_parts_mut((*args).arg_type, arg_count));
-        // Load as a u8 rather than i8, assuming that the encoding is utf8 or similar
-        // Safety: caller guarantees this slice is valid. Contained pointers may NOT
-        // be safe (this is checked later)
-        arg_ptrs = slice::from_raw_parts((*args).args as *const *const u8, arg_count);
-        arg_lens = slice::from_raw_parts((*args).lengths, arg_count);
-        maybe_null = slice::from_raw_parts((*args).maybe_null, arg_count);
-        // Same casting to u8 as above
-        // Safety: caller guarantees this slice is valid. Contained pointers may NOT
-        // be safe (this is checked later)
-        attr_ptrs = slice::from_raw_parts((*args).attributes as *const *const u8, arg_count);
-        attr_lens = slice::from_raw_parts((*args).attribute_lengths, arg_count);
+/// Add methods to the raw C struct
+impl UDF_INIT {
+    /// Consume a box and store its pointer in this `UDF_INIT`
+    ///
+    /// After calling this function, the caller is responsible for
+    /// cleaning up the
+    pub(crate) fn store_box<T>(&mut self, b: Box<T>) {
+        let box_ptr = Box::into_raw(b);
+        self.ptr = box_ptr as *mut c_char;
     }
 
-    // Iterate through all our argument slices
-    for (_, a_type, a_ptr, a_len, a_maybe_null, a_attr_ptr, a_attr_len) in arg_types
-        .iter_mut()
-        .zip(arg_ptrs.iter())
-        .zip(arg_lens.iter())
-        .zip(maybe_null.iter())
-        .zip(attr_ptrs.iter())
-        .zip(attr_lens.iter())
-        .enumerate()
-        // Expand the nested zip tuples, perform a simple deref
-        .map(|(i, (((((a, b), c), d), e), f))| (i, a, *b, *c, *d, *e, *f))
-    {
-        let arg = unsafe { SqlResult::from_ptr(a_ptr, *a_type, a_len as usize)? };
-
-        let attr_slice = unsafe { slice::from_raw_parts(a_attr_ptr, a_attr_len as usize) };
-
-        // Attributes are only ever valid utf8 so we should never expect this
-        let attr =
-            str::from_utf8(attr_slice).map_err(|e| format!("attribute identifier error: {e}"))?;
-
-        ret.push(SqlArg::<S> {
-            arg: arg,
-            maybe_null: a_maybe_null != 0,
-            attribute: attr,
-            type_ptr: a_type as *mut SqlTypeTag,
-            marker: PhantomData,
-        });
+    /// Given a generic type T, assume
+    ///
+    /// Safety: T _must_ be the type of this pointer
+    #[allow(unsafe_op_in_unsafe_fn)]
+    pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
+        Box::from_raw(self.ptr as *mut T)
     }
-
-    Ok(ret)
 }
 
 /// Write a string message to a buffer. Accepts a const generic size `N` that
@@ -88,21 +41,13 @@ pub unsafe fn process_args<'a, S: UdfState>(
 ///
 /// `N` must be the buffer size. If it is inaccurate, memory safety cannot be
 /// guaranteed.
-///
-/// # Panics
-///
-/// Panics if the message to be written contains \0 or if the message does not
-/// fit in the buffer
 pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
-    assert!(msg.len() < N, "internal exception: message overflow");
-    assert!(
-        !msg.contains('\0'),
-        "internal exception: string contains null characters"
-    );
+    // message plus null terminator must fit in buffer
+    let bytes_to_write = min(msg.len(), N - 1);
 
     unsafe {
-        ptr::copy_nonoverlapping(msg.as_ptr() as *const c_char, buf, msg.bytes().len());
-        *buf.add(msg.len()) = 0;
+        ptr::copy_nonoverlapping(msg.as_ptr() as *const c_char, buf, bytes_to_write);
+        *buf.add(bytes_to_write) = 0;
     }
 }
 
@@ -110,9 +55,9 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
 mod tests {
     use std::ffi::{c_int, c_void, CStr};
 
-    use crate::Init;
-
     use super::*;
+    use crate::types::ArgList;
+    use crate::Init;
 
     const MSG: &str = "message";
     const BUF_SIZE: usize = MSG.len() + 1;
@@ -130,12 +75,15 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn write_message_too_long() {
         const NEW_BUF_SIZE: usize = BUF_SIZE - 1;
 
         let mut mbuf = [1 as c_char; NEW_BUF_SIZE];
-        unsafe { write_msg_to_buf::<NEW_BUF_SIZE>(MSG, mbuf.as_mut_ptr()) };
+        unsafe {
+            write_msg_to_buf::<NEW_BUF_SIZE>(MSG, mbuf.as_mut_ptr());
+            let s = CStr::from_ptr(mbuf.as_ptr()).to_str().unwrap();
+            assert_eq!(*s, MSG[..MSG.len() - 1]);
+        };
     }
 
     #[test]
@@ -233,20 +181,19 @@ mod tests {
             attrs[3].len(),
         ];
 
-        let mut udf_args = UDF_ARGS {
+        let udf_args = UDF_ARGS {
             arg_count: ARG_COUNT as u32,
             arg_type: arg_types.as_mut_ptr(),
-            args: arg_ptrs.as_mut_ptr() as *mut *mut c_char,
+            args: arg_ptrs.as_mut_ptr() as *const *const c_char,
             lengths: arg_lens.as_mut_ptr(),
             maybe_null: maybe_null.as_mut_ptr() as *mut c_char,
-            attributes: attr_ptrs.as_mut_ptr() as *mut *mut c_char,
+            attributes: attr_ptrs.as_mut_ptr() as *const *const c_char,
             attribute_lengths: attr_lens.as_mut_ptr() as *mut c_ulong,
             extension: ptr::null_mut::<c_void>(),
         };
 
-        let res = unsafe { process_args::<Init>(&mut udf_args as *mut _) }.unwrap();
-
-        // println!("{res:#?}");
+        let arglist: ArgList<Init> = ArgList::new(udf_args);
+        let res: Vec<_> = arglist.into_iter().collect();
 
         let expected_args = [
             SqlResult::Int(Some(IVAL)),
@@ -256,10 +203,10 @@ mod tests {
         ];
 
         for i in 0..ARG_COUNT {
-            assert_eq!(res[i].arg, expected_args[i]);
+            assert_eq!(res[i].value, expected_args[i]);
             assert_eq!(res[i].maybe_null, maybe_null[i]);
             assert_eq!(res[i].attribute, attrs[i]);
-            assert_eq!(unsafe { *res[i].type_ptr }, arg_types[i]);
+            // assert_eq!(unsafe { *res[i].type_ptr }, arg_types[i]);
         }
     }
 }

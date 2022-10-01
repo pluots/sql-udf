@@ -1,22 +1,23 @@
-//! esigned to safely wrap rust definitions within C bindings
+//! Functions designed to safely wrap rust definitions within C bindings
 //!
 //! This file ties together C types and rust types, providing a safe wrapper.
 //! Functions in this module are generally not meant to be used directly.
 
 #![allow(dead_code)]
 
-use std::ffi::CString;
-use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
-use std::{ptr, slice, str};
+use std::ffi::{c_char, c_longlong, c_uchar, c_uint, c_ulong, CString};
+use std::marker::PhantomData;
+use std::ops::Index;
+use std::slice::SliceIndex;
+use std::{panic, ptr, slice, str};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
 use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
-use crate::ffi::wrapper_impl::{process_args, write_msg_to_buf};
-use crate::{BasicUdf, Init, Process, SqlArg};
+use crate::ffi::wrapper_impl::write_msg_to_buf;
+use crate::{ArgList, BasicUdf, Init, Process, SqlArg, SqlResult, UdfState};
 
 const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
-const PROC_ARG_ERRMSG: &str = "error processing arguments";
 
 /// This function provides the same signature as the C FFI expects. It is used
 /// to perform setup within a renamed function, and will apply it to a specific
@@ -50,9 +51,9 @@ const PROC_ARG_ERRMSG: &str = "error processing arguments";
 ///   function is called. (handled by `T::init`)
 /// - To allocate any memory required by the main function. (We box our struct
 ///   for this)
-/// - To specify the maximum length of the result (handled by proc macro)
+/// - To specify the maximum length of the result
 /// - To specify (for REAL functions) the maximum number of decimal places in
-///   the result. (handled by proc macro)
+///   the result.
 /// - To specify whether the result can be NULL. (handled by proc macro based on
 ///   `Returns`)
 #[inline]
@@ -61,19 +62,13 @@ pub unsafe fn init_wrapper<T: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
-    // Attempt to process arguments
-    let processed_args: Vec<SqlArg<Init>> = match unsafe { process_args(args) } {
-        Ok(v) => v,
-        Err(e) => {
-            // Safety: buffer size is correct
-            unsafe { write_msg_to_buf::<ERRMSG_SIZE>(&e, message) };
-            return true;
-        }
-    };
+    // Safety: caller guarantees validity
+    let arglist = ArgList::new(unsafe { *args });
 
+    // Call the user's init function
     // If initialization succeeds, put our UDF info struct on the heap
     // If initialization fails, copy a message to the buffer
-    let boxed_struct = match T::init(&processed_args) {
+    let boxed_struct: Box<T> = match T::init(&arglist) {
         Ok(v) => Box::new(v),
         Err(e) => {
             // Safety: buffer size is correct
@@ -84,24 +79,10 @@ pub unsafe fn init_wrapper<T: BasicUdf>(
 
     // Set the `initid` struct to contain our struct
     // Safety: Must be cleaned up in deinit function, or we will leak!
-    unsafe { box_to_initid_ptr(initid, boxed_struct) };
+    unsafe { (*initid).store_box(boxed_struct) };
 
     // Everything OK; return false
     false
-}
-
-#[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
-unsafe fn box_from_initid_ptr<T>(initid: *const UDF_INIT) -> Box<T> {
-    Box::from_raw((*initid).ptr as *mut T)
-}
-
-/// Turn the box into a pointer and set `*initid.ptr`
-#[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
-unsafe fn box_to_initid_ptr<T>(initid: *mut UDF_INIT, b: Box<T>) {
-    let box_ptr = Box::into_raw(b);
-    (*initid).ptr = box_ptr as *mut c_char;
 }
 
 /// For our deinit function, all we need to do is take ownership of the boxed
@@ -113,30 +94,7 @@ unsafe fn box_to_initid_ptr<T>(initid: *mut UDF_INIT, b: Box<T>) {
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn deinit_wrapper<T: BasicUdf>(initid: *const UDF_INIT) {
     // Safety: we constructed this box so it is formatted correctly
-    drop(Box::from_raw((*initid).ptr as *mut T));
-}
-
-trait IntWrap {
-    unsafe fn process_wrapper<T>(
-        initid: *mut UDF_INIT,
-        args: *mut UDF_ARGS,
-        is_null: *mut c_char,
-        error: *mut c_char,
-    ) -> c_longlong;
-}
-
-impl<'a, X> IntWrap for X
-where
-    X: BasicUdf<Returns<'a> = i32> + 'a,
-{
-    unsafe fn process_wrapper<T>(
-        initid: *mut UDF_INIT,
-        args: *mut UDF_ARGS,
-        is_null: *mut c_char,
-        error: *mut c_char,
-    ) -> c_longlong {
-        10
-    }
+    (*initid).retrieve_box::<T>();
 }
 
 #[inline]
@@ -150,10 +108,11 @@ pub unsafe fn process_wrapper_int<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = i64>,
 {
-    let proc_args = process_args(args).expect(PROC_ARG_ERRMSG);
-    let mut b = box_from_initid_ptr(initid);
-    let res = T::process(&mut b, proc_args.as_slice());
-    box_to_initid_ptr(initid, b);
+    // Safety: caller guarantees validity
+    let arglist = ArgList::new(unsafe { *args });
+    let mut b = (*initid).retrieve_box();
+    let res = T::process(&mut b, &arglist);
+    (*initid).store_box(b);
 
     match res {
         Ok(v) => v,
@@ -175,10 +134,11 @@ pub unsafe fn process_wrapper_nul_int<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
 {
-    let proc_args = process_args(args).expect(PROC_ARG_ERRMSG);
-    let mut b = box_from_initid_ptr(initid);
-    let res = T::process(&mut b, proc_args.as_slice());
-    box_to_initid_ptr(initid, b);
+    // Safety: caller guarantees validity
+    let arglist = ArgList::new(unsafe { *args });
+    let mut b = (*initid).retrieve_box();
+    let res = T::process(&mut b, &arglist);
+    (*initid).store_box(b);
 
     let tmp = match res {
         Ok(v) => v,
