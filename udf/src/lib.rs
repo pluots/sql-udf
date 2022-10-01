@@ -10,7 +10,7 @@
 //! rustup update beta
 //! ```
 //!
-//! 1.65 is scheduled to become stable on November 03 2022 UTC, so this message
+//! 1.65 is scheduled to become stable on 2022-11-03, so this message
 //! may not be relevant not long after time of writing.
 //!
 //! # Example

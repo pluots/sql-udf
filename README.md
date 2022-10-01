@@ -4,7 +4,7 @@ This crate aims to make it extremely simple to implement UDFs for SQL, in a way
 that is as safe as possible. 
 
 
-# UDF Theory
+## UDF Theory
 
 Basic SQL UDFs consist of three exposed functions:
 
