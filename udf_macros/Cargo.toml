@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 description = "UDF procedural macros implementation"
 repository = "https://github.com/pluots/udf/tree/main/udf_macros"
-publish = false
 # autotests = false
 
 [lib]
