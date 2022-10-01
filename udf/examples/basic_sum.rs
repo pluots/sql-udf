@@ -17,7 +17,10 @@ impl BasicUdf for SumInt {
         Ok(Self { baseline })
     }
 
-    fn process<'a>(&'a mut self, _args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError> {
+    fn process<'a>(
+        &'a mut self,
+        _args: &ArgList<Process>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
         todo!()
     }
 }

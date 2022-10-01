@@ -33,12 +33,13 @@ impl TryFrom<i8> for SqlType {
     type Error = String;
 
     /// Create an [`ItemResult`] from an integer
+    #[inline]
     fn try_from(tag: i8) -> Result<Self, Self::Error> {
         let val = match tag {
-            x if x == SqlType::String as i8 => SqlType::String,
-            x if x == SqlType::Real as i8 => SqlType::Real,
-            x if x == SqlType::Int as i8 => SqlType::Int,
-            x if x == SqlType::Decimal as i8 => SqlType::Decimal,
+            x if x == Self::String as i8 => Self::String,
+            x if x == Self::Real as i8 => Self::Real,
+            x if x == Self::Int as i8 => Self::Int,
+            x if x == Self::Decimal as i8 => Self::Decimal,
             _ => return Err("invalid arg type {tag} received".to_owned()),
         };
 
@@ -49,13 +50,14 @@ impl TryFrom<i8> for SqlType {
 impl TryFrom<SqlTypeTag> for SqlType {
     type Error = String;
 
-    /// Create an [`SqlType`] from an SqlTypeTag (a `c_int`)
+    /// Create an [`SqlType`] from an [`SqlTypeTag`] (a `c_int`)
+    #[inline]
     fn try_from(tag: SqlTypeTag) -> Result<Self, Self::Error> {
         let val = match tag {
-            x if x == SqlType::String as SqlTypeTag => SqlType::String,
-            x if x == SqlType::Real as SqlTypeTag => SqlType::Real,
-            x if x == SqlType::Int as SqlTypeTag => SqlType::Int,
-            x if x == SqlType::Decimal as SqlTypeTag => SqlType::Decimal,
+            x if x == Self::String as SqlTypeTag => Self::String,
+            x if x == Self::Real as SqlTypeTag => Self::Real,
+            x if x == Self::Int as SqlTypeTag => Self::Int,
+            x if x == Self::Decimal as SqlTypeTag => Self::Decimal,
             _ => return Err("invalid arg type {tag} received".to_owned()),
         };
 
@@ -67,12 +69,13 @@ impl TryFrom<&SqlResult<'_>> for SqlType {
     type Error = String;
 
     /// Create an [`SqlType`] from an [`SqlResult`]
+    #[inline]
     fn try_from(tag: &SqlResult) -> Result<Self, Self::Error> {
-        let val = match tag {
-            SqlResult::String(_) => SqlType::String,
-            SqlResult::Real(_) => SqlType::Real,
-            SqlResult::Int(_) => SqlType::Int,
-            SqlResult::Decimal(_) => SqlType::Decimal,
+        let val = match *tag {
+            SqlResult::String(_) => Self::String,
+            SqlResult::Real(_) => Self::Real,
+            SqlResult::Int(_) => Self::Int,
+            SqlResult::Decimal(_) => Self::Decimal,
         };
 
         Ok(val)

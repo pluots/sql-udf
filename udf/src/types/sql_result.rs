@@ -13,7 +13,11 @@ use crate::ffi::{SqlType, SqlTypeTag};
 /// contain slices of `u8` rather than a representation like `&str`. This is
 /// because there is no guarantee that the data is `utf8`. Use [`as_str()`] if
 /// you need an easy way to get a `&str`.
+///
+/// This enum is labeled `non_exhaustive` to leave room for future types and
+/// coercion options.
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum SqlResult<'a> {
     // INVALID_RESULT and ROW_RESULT are other options, but not valid for UDFs
     /// A string result
@@ -52,9 +56,10 @@ impl<'a> SqlResult<'a> {
             // Safety: `tag` guarantees type. If decimal or String, caller
             // guarantees length
             unsafe {
+                #[allow(clippy::cast_ptr_alignment)]
                 match marker {
-                    SqlType::Int => SqlResult::Int(Some(*(ptr as *const i64))),
-                    SqlType::Real => SqlResult::Real(Some(*(ptr as *const f64))),
+                    SqlType::Int => SqlResult::Int(Some(*(ptr.cast::<i64>()))),
+                    SqlType::Real => SqlResult::Real(Some(*(ptr.cast::<f64>()))),
                     SqlType::String => SqlResult::String(Some(slice::from_raw_parts(ptr, len))),
                     SqlType::Decimal => SqlResult::Decimal(Some(slice::from_raw_parts(ptr, len))),
                 }
@@ -67,23 +72,26 @@ impl<'a> SqlResult<'a> {
     /// Simply convert to a string
     ///
     /// Does not distinguish among errors (wrong type, `None` value, or invalid utf8)
+    #[inline]
     pub fn as_str(&'a self) -> Option<&'a str> {
-        match self {
+        match *self {
             Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(str::from_utf8(v).ok()?),
             _ => None,
         }
     }
 
+    #[inline]
     pub fn as_int(&'a self) -> Option<i64> {
-        match self {
-            Self::Int(Some(v)) => Some(*v),
+        match *self {
+            Self::Int(v) => v,
             _ => None,
         }
     }
 
+    #[inline]
     pub fn as_real(&'a self) -> Option<f64> {
-        match self {
-            Self::Real(Some(v)) => Some(*v),
+        match *self {
+            Self::Real(v) => v,
             _ => None,
         }
     }

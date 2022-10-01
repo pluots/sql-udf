@@ -19,7 +19,7 @@ const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
 
 /// A collection of SQL arguments
 ///
-/// This is rusty wrapper around SQL's UDF_ARGS struct, providing methods to
+/// This is rusty wrapper around SQL's `UDF_ARGS` struct, providing methods to
 /// easily work with arguments.
 pub struct ArgList<'a, S: UdfState> {
     base: UDF_ARGS,
@@ -29,6 +29,7 @@ pub struct ArgList<'a, S: UdfState> {
 
 /// Derived formatting is a bit ugly, so we clean it up
 impl<'a, S: UdfState> Debug for ArgList<'a, S> {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ArgList")
             .field("items", &self.as_vec())
@@ -71,6 +72,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     }
 
     /// Attempt to get an argument at a given index
+    #[allow(clippy::missing_inline_in_public_items)]
     pub fn get(&self, index: usize) -> Option<SqlArg<'a, S>> {
         // convenience
         let base = self.base;
@@ -80,17 +82,17 @@ impl<'a, S: UdfState> ArgList<'a, S> {
         }
 
         unsafe {
+            let arg_buf_ptr = (*base.args.add(index)).cast::<u8>();
+            let attr_buf_ptr = (*base.attributes.add(index)).cast::<u8>();
             let type_ptr = base.arg_type.add(index);
-            let arg_ptr = *base.args.add(index) as *const u8;
             let arg_len = *base.lengths.add(index);
-            let attr_ptr = *base.attributes.add(index) as *const u8;
             let attr_len = *base.attribute_lengths.add(index);
             let maybe_null = *base.maybe_null.add(index) != 0;
-            let arg = SqlResult::from_ptr(arg_ptr, *type_ptr, arg_len as usize).unwrap();
 
             // Attributes are identifiers in SQL and are always UTF8
-            let attr_slice = slice::from_raw_parts(attr_ptr, attr_len as usize);
+            let attr_slice = slice::from_raw_parts(attr_buf_ptr, attr_len as usize);
             let attribute = str::from_utf8(attr_slice).unwrap();
+            let arg = SqlResult::from_ptr(arg_buf_ptr, *type_ptr, arg_len as usize).unwrap();
 
             Some(SqlArg {
                 value: arg,
@@ -147,6 +149,7 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     type Item = SqlArg<'a, S>;
 
     /// Get the next argument
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         // Increment counter, check if we are out of bounds
         if self.n >= self.base.base.arg_count {
@@ -163,6 +166,7 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     /// (which allows some optimizations).
     ///
     /// See [`std::Iterator::size_hint`] for this method's use.
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         let remaining = (self.base.base.arg_count - self.n) as usize;
         (remaining, Some(remaining))

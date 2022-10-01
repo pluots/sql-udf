@@ -22,7 +22,10 @@ impl BasicUdf for UuidGenerateV4 {
     }
 
     /// Just create a v4 UUID and return it
-    fn process<'a>(&'a mut self, _args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError> {
+    fn process<'a>(
+        &'a mut self,
+        _args: &ArgList<Process>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
         let uuid = Uuid::new_v4();
         Ok(uuid.as_hyphenated().to_string())
     }

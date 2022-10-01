@@ -2,5 +2,5 @@
 //! most often used imports.
 
 pub use crate::register;
-pub use crate::traits::{BasicUdf,AggregateUdf};
-pub use crate::types::{ArgList, Init, Process, SqlArg, ProcessError};
+pub use crate::traits::{AggregateUdf, BasicUdf};
+pub use crate::types::{ArgList, Init, Process, ProcessError, SqlArg};

@@ -22,7 +22,7 @@ impl UDF_INIT {
     /// cleaning up the
     pub(crate) fn store_box<T>(&mut self, b: Box<T>) {
         let box_ptr = Box::into_raw(b);
-        self.ptr = box_ptr as *mut c_char;
+        self.ptr = box_ptr.cast::<c_char>();
     }
 
     /// Given a generic type T, assume
@@ -30,7 +30,7 @@ impl UDF_INIT {
     /// Safety: T _must_ be the type of this pointer
     #[allow(unsafe_op_in_unsafe_fn)]
     pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
-        Box::from_raw(self.ptr as *mut T)
+        Box::from_raw(self.ptr.cast::<T>())
     }
 }
 
@@ -46,7 +46,7 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
     let bytes_to_write = min(msg.len(), N - 1);
 
     unsafe {
-        ptr::copy_nonoverlapping(msg.as_ptr() as *const c_char, buf, bytes_to_write);
+        ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
         *buf.add(bytes_to_write) = 0;
     }
 }

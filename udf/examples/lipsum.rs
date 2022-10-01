@@ -56,7 +56,10 @@ impl BasicUdf for Lipsum {
         })
     }
 
-    fn process<'a>(&'a mut self, args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError> {
+    fn process<'a>(
+        &'a mut self,
+        args: &ArgList<Process>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
         // We have already checked that these values fit into usize in init
         // Do need to ensure our argument isn't null
         let n = args.get(0).unwrap().value.as_int().ok_or(ProcessError)? as usize;

@@ -44,7 +44,7 @@ pub const Item_result_ROW_RESULT: Item_result = 3;
 /// Result enum value representing a decimal (char *)
 pub const Item_result_DECIMAL_RESULT: Item_result = 4;
 
-/// Type of the identifier for an item result enum (Item_result_X values)
+/// Type of the identifier for an item result enum (`Item_result_X` values)
 pub type Item_result = ::std::os::raw::c_int;
 
 /// Representation of a sequence of SQL arguments
@@ -368,10 +368,10 @@ fn bindgen_test_layout_UDF_INIT() {
     test_field_extension();
 }
 
-/// UDFType enum value representing a standard UDF (unused)
+/// `UDFType` enum value representing a standard UDF (unused)
 pub const Item_udftype_UDFTYPE_FUNCTION: Item_udftype = 1;
 
-/// UDFType enum value representing an aggregate UDF (unused)
+/// `UDFType` enum value representing an aggregate UDF (unused)
 pub const Item_udftype_UDFTYPE_AGGREGATE: Item_udftype = 2;
 
 /// Type of a UDF function type indicator

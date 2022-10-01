@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use udf_derive::register;
+use udf_macros::register;
 
 // Registration is not allowed on non-impls
 struct X {}

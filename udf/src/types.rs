@@ -20,9 +20,10 @@ pub use crate::ffi::SqlType;
 pub struct ProcessError;
 
 impl fmt::Display for ProcessError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Processing error")
     }
 }
 
-impl std::error::Error for ProcessError { }
+impl std::error::Error for ProcessError {}

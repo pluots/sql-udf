@@ -1,6 +1,7 @@
 //! Module containing traits to be implemented by a user
 
-use crate::{types::{ArgList, Init, Process, SqlArg}, ProcessError};
+use crate::types::{ArgList, Init, Process, SqlArg};
+use crate::ProcessError;
 
 /// This trait specifies the functions needed for a standard (non-aggregate) UDF
 ///
@@ -31,11 +32,22 @@ pub trait BasicUdf: Sized {
     ///
     /// It is expected that this function do the following:
     ///
-    /// - Validate the type quantity of arguments
-    /// - Set argument type coercion if needed
+    /// # Errors
+    ///
+    /// If your function is not able to work with the given arguments, return a
+    /// helpful error message explaining why. Max error size is
+    /// `MYSQL_ERRMSG_SIZE` (512) bits, and will be truncated if any longer.
+    /// `MySql` recommends keeping these error messages under 80 characters to
+    /// fit in a terminal, but personal I'd prefer a helpful message than
+    /// something useless that fits in one line.
     ///
     /// Error handling options are limited in all other functions, so make sure
-    /// you check
+    /// you check thoroughly for any possible errors that may arise. These may
+    /// include:
+    ///
+    /// - Incorrect argument quantity or position
+    /// - Incorrect argument types
+    /// - Values that are `maybe_null()` when you cannot accept them
     fn init<'a>(args: &'a ArgList<'a, Init>) -> Result<Self, String>;
 
     /// Process the actual values
@@ -46,29 +58,46 @@ pub trait BasicUdf: Sized {
     /// return a reference to it, but `args` may not last as long so I cannot
     /// return a reference to that".
     ///
-    /// If there is an error, the SQL server will return `NULL`.
-    fn process<'a>(&'a mut self, args: &ArgList<Process>) -> Result<Self::Returns<'a>, ProcessError>;
+    /// # Errors
+    ///
+    /// If there is some sort of unrecoverable problem at this point, just return a
+    /// [`ProcessError`]. This will make the SQL server will return
+    /// `NULL`.
+    fn process<'a>(
+        &'a mut self,
+        args: &ArgList<Process>,
+    ) -> Result<Self::Returns<'a>, ProcessError>;
 }
 
 /// This trait must be implemented if this function performs aggregation.
 pub trait AggregateUdf: BasicUdf {
-    // Clear is required
+    /// Clear is required
+    ///
+    /// # Errors
+    ///
+    /// Errors for aggregate functions are not super useful.
     fn clear(&mut self) -> Result<(), u8>;
 
-    // Reset is not required
-    // If there is an error, we will need to box it and put it on the stack
-    // fn reset(&self, args: &[SqlArg]) -> Result<(), String>;
+    /// Add an item to aggregates
+    ///
+    /// # Errors
+    ///
+    ///
     fn add(&mut self, args: &ArgList<Process>, error: u8) -> Result<(), u8>;
 
-    /// Remove only applies to MariaDB, so a default is supplied that does
+    /// Remove only applies to `MariaDB`, so a default is supplied that does
     /// nothing.
     ///
+    /// # Errors
+    ///
+    /// As with [`clear()`] and [`add()`], this method takes an error
+    ///
     /// <https://mariadb.com/kb/en/user-defined-functions-calling-sequences/#x_remove>
+    #[inline]
     fn remove(&mut self, _args: &ArgList<Process>, error: u8) -> Result<(), u8> {
         Ok(())
     }
 }
-
 
 /// A trait that is assigned by the `#[register]` proc macro for some internal
 /// checks.

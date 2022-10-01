@@ -63,21 +63,23 @@ impl<'a> SqlArg<'a, Init> {
     ///
     /// There is no way to differentiate between "not const" and "const but
     /// NULL", hence the naming if this function
+    #[inline]
     pub fn maybe_const(&self) -> bool {
         match self.value {
-            SqlResult::String(v) => v.is_some(),
+            SqlResult::String(v) | SqlResult::Decimal(v) => v.is_some(),
             SqlResult::Real(v) => v.is_some(),
             SqlResult::Int(v) => v.is_some(),
-            SqlResult::Decimal(v) => v.is_some(),
         }
     }
 
     /// Whether or not this argument may be `NULL`
+    #[inline]
     pub fn maybe_null(&self) -> bool {
         self.maybe_null
     }
 
     /// Retrieve the current type coercision
+    #[inline]
     pub fn get_type_coercion(&self) -> SqlType {
         // `.get()` on our Cell will just copy the value
         SqlType::try_from(self.arg_type.get()).unwrap()
@@ -85,6 +87,7 @@ impl<'a> SqlArg<'a, Init> {
 
     /// Instruct the SQL application to coerce the argument's type. This does
     /// not change the underlying
+    #[inline]
     pub fn set_type_coercion(&mut self, newtype: SqlType) {
         // .replace() on our cell will do exactly what it sounds like
         self.arg_type.replace(newtype as SqlTypeTag);

@@ -47,7 +47,7 @@ const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
 /// Based on the SQL UDF spec, we need to perform the following here:
 /// - Verify the number of arguments to XXX() (handled by `T::init`)
 /// - Verify that the arguments are of a required type or, alternatively, to
-///   tell MySQL to coerce arguments to the required types when the main
+///   tell `MySQL` to coerce arguments to the required types when the main
 ///   function is called. (handled by `T::init`)
 /// - To allocate any memory required by the main function. (We box our struct
 ///   for this)
@@ -57,7 +57,7 @@ const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
 /// - To specify whether the result can be NULL. (handled by proc macro based on
 ///   `Returns`)
 #[inline]
-pub unsafe fn init_wrapper<T: BasicUdf>(
+pub unsafe fn wrap_init<T: BasicUdf>(
     initid: *mut UDF_INIT,
     args: *mut UDF_ARGS,
     message: *mut c_char,
@@ -92,14 +92,14 @@ pub unsafe fn init_wrapper<T: BasicUdf>(
 /// There is no specific wrapped function here
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe fn deinit_wrapper<T: BasicUdf>(initid: *const UDF_INIT) {
+pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // Safety: we constructed this box so it is formatted correctly
     (*initid).retrieve_box::<T>();
 }
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe fn process_wrapper_int<T>(
+pub unsafe fn wrap_process_int<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     is_null: *mut c_char,
@@ -112,20 +112,19 @@ where
     let arglist = ArgList::new(unsafe { *args });
     let mut b = (*initid).retrieve_box();
     let res = T::process(&mut b, &arglist);
-    (*initid).store_box(b);
+    // (*initid).store_box(b);
 
-    match res {
-        Ok(v) => v,
-        Err(_) => {
-            *error = 1;
-            0
-        }
+    if let Ok(v) = res {
+        v
+    } else {
+        *error = 1;
+        0
     }
 }
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe fn process_wrapper_nul_int<T>(
+pub unsafe fn wrap_process_int_null<T>(
     initid: *mut UDF_INIT,
     args: *mut UDF_ARGS,
     is_null: *mut c_char,
@@ -140,20 +139,18 @@ where
     let res = T::process(&mut b, &arglist);
     (*initid).store_box(b);
 
-    let tmp = match res {
-        Ok(v) => v,
-        Err(_) => {
-            *error = 1;
-            return 0;
-        }
-    };
-
-    match tmp {
-        Some(v) => v,
-        None => {
+    if let Ok(res_ok) = res {
+        // Result is an Ok(); set null as needed
+        if let Some(v) = res_ok {
+            v
+        } else {
             *is_null = 1;
             0
         }
+    } else {
+        // Result is an Err()
+        *error = 1;
+        0
     }
 }
 
