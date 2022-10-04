@@ -41,7 +41,7 @@ impl UDF_INIT {
 ///
 /// `N` must be the buffer size. If it is inaccurate, memory safety cannot be
 /// guaranteed.
-pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
+pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
     // message plus null terminator must fit in buffer
     let bytes_to_write = min(msg.len(), N - 1);
 
@@ -50,6 +50,29 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
         *buf.add(bytes_to_write) = 0;
     }
 }
+
+// WIP
+// pub unsafe fn handle_panic_res<const N: usize>(e: Box<dyn Any + Send>,buf: *mut c_char) {
+//     // message plus null terminator must fit in buffer
+//     let bytes_to_write = min(msg.len(), N - 1);
+
+//     unsafe {
+//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
+//         *buf.add(bytes_to_write) = 0;
+//     }
+// }
+
+
+// pub unsafe fn write_panic_res_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
+//     // message plus null terminator must fit in buffer
+//     let bytes_to_write = min(msg.len(), N - 1);
+
+//     unsafe {
+//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
+//         *buf.add(bytes_to_write) = 0;
+//     }
+// }
+
 
 #[cfg(test)]
 mod tests {
@@ -67,7 +90,7 @@ mod tests {
         let mut mbuf = [1 as c_char; BUF_SIZE];
 
         unsafe {
-            write_msg_to_buf::<BUF_SIZE>(MSG, mbuf.as_mut_ptr());
+            write_msg_to_buf::<BUF_SIZE>(MSG.as_bytes(), mbuf.as_mut_ptr());
             let s = CStr::from_ptr(mbuf.as_ptr()).to_str().unwrap();
 
             assert_eq!(s, MSG);
@@ -80,7 +103,7 @@ mod tests {
 
         let mut mbuf = [1 as c_char; NEW_BUF_SIZE];
         unsafe {
-            write_msg_to_buf::<NEW_BUF_SIZE>(MSG, mbuf.as_mut_ptr());
+            write_msg_to_buf::<NEW_BUF_SIZE>(MSG.as_bytes(), mbuf.as_mut_ptr());
             let s = CStr::from_ptr(mbuf.as_ptr()).to_str().unwrap();
             assert_eq!(*s, MSG[..MSG.len() - 1]);
         };

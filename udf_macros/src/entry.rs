@@ -132,7 +132,7 @@ fn make_init_fn(type_ident: Ident, fn_name: Ident) -> proc_macro2::TokenStream {
             // - `initd.maybe_null`
 
             unsafe {
-                udf::ffi::wrapper::init_wrapper::<#type_ident>(initid, args, message)
+                udf::ffi::wrapper::wrap_init::<#type_ident>(initid, args, message)
             }
         }
     }
@@ -145,8 +145,7 @@ fn make_deinit_fn(struct_ident: Ident, fn_name: Ident) -> proc_macro2::TokenStre
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::ffi::bindings::UDF_INIT,
-        )
-        {
+        ) {
             unsafe {
                 udf::ffi::wrapper::deinit_wrapper::<#struct_ident>(initid)
             }

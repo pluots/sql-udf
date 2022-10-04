@@ -5,11 +5,13 @@
 
 #![allow(dead_code)]
 
+use std::cell::Cell;
 use std::ffi::{c_char, c_longlong, c_uchar, c_uint, c_ulong, CString};
 use std::marker::PhantomData;
 use std::ops::Index;
 use std::slice::SliceIndex;
-use std::{panic, ptr, slice, str};
+use std::{ ptr, slice, str};
+use std::panic::{self, AssertUnwindSafe};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
@@ -62,27 +64,37 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
-    // Safety: caller guarantees validity
+    // SAFETY: caller guarantees validity of args ptr
     let arglist = ArgList::new(unsafe { *args });
+    
+    // ret holds our return type, we need to tell the compiler it is safe across
+    // unwind boundaries
+    let mut ret = false;
+    let mut ret_wrap = AssertUnwindSafe(&mut ret);
 
-    // Call the user's init function
-    // If initialization succeeds, put our UDF info struct on the heap
-    // If initialization fails, copy a message to the buffer
-    let boxed_struct: Box<T> = match T::init(&arglist) {
-        Ok(v) => Box::new(v),
-        Err(e) => {
-            // Safety: buffer size is correct
-            unsafe { write_msg_to_buf::<ERRMSG_SIZE>(&e, message) };
-            return true;
-        }
-    };
+    // Unwinding into C is UB so we need to catch potential panics at the FFI
+    // boundary Note to possible code readers: `panic::catch_unwind` should NOT
+    // be used anywhere except the FFI boundary, 
+    let panic_result = panic::catch_unwind(move || {
+        // Call the user's init function
+        // If initialization succeeds, put our UDF info struct on the heap
+        // If initialization fails, copy a message to the buffer
+        let boxed_struct: Box<T> = match T::init(&arglist) {
+            Ok(v) => Box::new(v),
+            Err(e) => {
+                // Safety: buffer size is correct
+                unsafe { write_msg_to_buf::<ERRMSG_SIZE>(&e.as_bytes(), message) };
+                **ret_wrap = true;
+                return;
+            }
+        };
 
-    // Set the `initid` struct to contain our struct
-    // Safety: Must be cleaned up in deinit function, or we will leak!
-    unsafe { (*initid).store_box(boxed_struct) };
+        // Set the `initid` struct to contain our struct
+        // Safety: Must be cleaned up in deinit function, or we will leak!
+        unsafe { (*initid).store_box(boxed_struct) };
+    }).unwrap_or_else(|e| ret = true);
 
-    // Everything OK; return false
-    false
+    ret
 }
 
 /// For our deinit function, all we need to do is take ownership of the boxed
@@ -93,8 +105,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
-    // Safety: we constructed this box so it is formatted correctly
-    (*initid).retrieve_box::<T>();
+    // SAFETY: we constructed this box so it is formatted correctly
+    // caller ensures validity of initid
+    panic::catch_unwind(||(*initid).retrieve_box::<T>()).ok();
 }
 
 #[inline]
@@ -126,7 +139,7 @@ where
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_int_null<T>(
     initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
+    args: *const UDF_ARGS,
     is_null: *mut c_char,
     error: *mut c_char,
 ) -> c_longlong
