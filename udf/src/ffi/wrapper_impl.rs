@@ -5,6 +5,7 @@
 use std::cmp::min;
 use std::ffi::CString;
 use std::marker::PhantomData;
+use std::num::NonZeroU8;
 use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::{ptr, slice, str};
 
@@ -12,7 +13,7 @@ use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
 use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
 use crate::ffi::SqlTypeTag;
-use crate::{BasicUdf, SqlArg, SqlResult, SqlType, UdfState};
+use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};
 
 /// Add methods to the raw C struct
 impl UDF_INIT {
@@ -41,7 +42,7 @@ impl UDF_INIT {
 ///
 /// `N` must be the buffer size. If it is inaccurate, memory safety cannot be
 /// guaranteed.
-pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
+pub(crate) unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
     // message plus null terminator must fit in buffer
     let bytes_to_write = min(msg.len(), N - 1);
 

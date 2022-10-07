@@ -2,10 +2,13 @@
 
 use std::fmt;
 
+mod config;
 mod sql_arg;
 mod sql_arg_list;
 mod sql_result;
 
+#[doc(inline)]
+pub use config::*;
 #[doc(inline)]
 pub use sql_arg::*;
 #[doc(inline)]

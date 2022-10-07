@@ -1,3 +1,5 @@
+use std::num::NonZeroU8;
+
 use udf::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -7,10 +9,11 @@ impl BasicUdf for SumInt {
     type Returns<'a> = Option<i64>;
 
     /// All we do here is
-    fn init<'a>(args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         for mut arg in args {
             arg.set_type_coercion(udf::SqlType::Int);
         }
+        cfg.set_const_item(true);
         Ok(Self {})
     }
 
@@ -18,6 +21,7 @@ impl BasicUdf for SumInt {
     fn process<'a>(
         &'a mut self,
         args: &ArgList<Process>,
+        _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
         let mut res = 0;
 

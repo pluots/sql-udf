@@ -10,7 +10,7 @@ impl BasicUdf for UuidGenerateV4 {
     type Returns<'a> = String;
 
     /// The only thing to validate here is that we have no arguments
-    fn init(args: &ArgList<Init>) -> Result<Self, String> {
+    fn init(cfg: &mut InitCfg, args: &ArgList<Init>) -> Result<Self, String> {
         if !args.is_empty() {
             return Err("No arguments expected".to_owned());
         }
@@ -25,6 +25,7 @@ impl BasicUdf for UuidGenerateV4 {
     fn process<'a>(
         &'a mut self,
         _args: &ArgList<Process>,
+        _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
         let uuid = Uuid::new_v4();
         Ok(uuid.as_hyphenated().to_string())

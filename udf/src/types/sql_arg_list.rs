@@ -1,3 +1,5 @@
+//! Define a list of arguments to a SQL function
+
 #![allow(dead_code)]
 
 use std::cell::Cell;
@@ -48,7 +50,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
         }
     }
 
-    /// Create a vector of arguments for
+    /// Create a vector of arguments for easy use
     #[inline]
     pub fn as_vec(&'a self) -> Vec<SqlArg<'a, S>> {
         self.iter().collect()
@@ -130,9 +132,9 @@ impl<'a, S: UdfState> IntoIterator for &'a mut ArgList<'a, S> {
     }
 }
 
-/// Iterator over arguments in a [`UdfArgList`]
+/// Iterator over arguments in a [`ArgList`]
 ///
-/// This struct is produced by invoking `into_iter()` on a [`UdfArgList`]
+/// This struct is produced by invoking `into_iter()` on a [`ArgList`]
 // #[derive(Debug, PartialEq, Clone)]
 pub struct Iter<'a, S: UdfState> {
     base: &'a ArgList<'a, S>,
@@ -166,7 +168,7 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     /// We know exactly how many items we have remaining, so can implement this
     /// (which allows some optimizations).
     ///
-    /// See [`std::Iterator::size_hint`] for this method's use.
+    /// See [`std::iter::Iterator::size_hint`] for this method's use.
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         let remaining = (self.base.base.arg_count - self.n) as usize;

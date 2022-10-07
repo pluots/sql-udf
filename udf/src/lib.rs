@@ -1,3 +1,4 @@
+//! A wrapper crate to make writing SQL UDFs easy
 //!
 //! Version note: Because of reliance on a feature called GATs, this library
 //! requires Rust version >= 1.65 which is currently in beta. If `rustup show`
@@ -11,7 +12,7 @@
 //! ```
 //!
 //! 1.65 is scheduled to become stable on 2022-11-03, so this message
-//! may not be relevant not long after time of writing.
+//! may become irrelevant not long after time of writing.
 //!
 //! # Example
 //!
@@ -20,7 +21,9 @@
 //!
 //!
 //! ```
-//!
+//! struct MyFunction {
+//!     intermediate: i64
+//! }
 //!
 //! ```
 //!

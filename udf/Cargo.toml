@@ -30,6 +30,26 @@ crate-type = ["cdylib"]
 name = "lipsum"
 crate-type = ["cdylib"]
 
+[[example]]
+name = "sequence"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "avgcost"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "is_const"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "median"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "metaphon"
+crate-type = ["cdylib"]
+
 
 [package.metadata.release]
 shared-version = true
