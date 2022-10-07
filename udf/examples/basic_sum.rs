@@ -6,31 +6,36 @@ struct SumInt {}
 impl BasicUdf for SumInt {
     type Returns<'a> = Option<i64>;
 
-    /// Here we evaluate all const arguments possible
+    /// All we do here is
     fn init<'a>(args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         for mut arg in args {
             arg.set_type_coercion(udf::SqlType::Int);
         }
-        Ok(Self {  })
+        Ok(Self {})
     }
 
+    /// This is the process
     fn process<'a>(
         &'a mut self,
         args: &ArgList<Process>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
         let mut res = 0;
 
+        // Iterate all arguments
         for arg in args {
+            // Try to get the argument as an integer (this should be possible
+            // for all args - we set type coercion). If we can get it, add it
+            // to our
             match arg.value.as_int() {
                 Some(v) => res += v,
                 None => return Err(ProcessError),
             }
         }
 
+        // At the end we have a nonnull successful result
         Ok(Some(res))
     }
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn sum_int_init(
@@ -55,7 +60,6 @@ pub unsafe extern "C" fn sum_int(
 ) -> std::ffi::c_longlong {
     unsafe { udf::ffi::wrapper::wrap_process_int_null::<SumInt>(initid, args, is_null, error) }
 }
-
 
 // #[cfg(test)]
 // mod tests {

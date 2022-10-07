@@ -9,9 +9,9 @@ use std::cell::Cell;
 use std::ffi::{c_char, c_longlong, c_uchar, c_uint, c_ulong, CString};
 use std::marker::PhantomData;
 use std::ops::Index;
-use std::slice::SliceIndex;
-use std::{ ptr, slice, str};
 use std::panic::{self, AssertUnwindSafe};
+use std::slice::SliceIndex;
+use std::{ptr, slice, str};
 
 use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
 
@@ -66,7 +66,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 ) -> bool {
     // SAFETY: caller guarantees validity of args ptr
     let arglist = ArgList::new(unsafe { *args });
-    
+
     // ret holds our return type, we need to tell the compiler it is safe across
     // unwind boundaries
     let mut ret = false;
@@ -74,7 +74,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 
     // Unwinding into C is UB so we need to catch potential panics at the FFI
     // boundary Note to possible code readers: `panic::catch_unwind` should NOT
-    // be used anywhere except the FFI boundary, 
+    // be used anywhere except the FFI boundary,
     let panic_result = panic::catch_unwind(move || {
         // Call the user's init function
         // If initialization succeeds, put our UDF info struct on the heap
@@ -92,7 +92,8 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         // Set the `initid` struct to contain our struct
         // Safety: Must be cleaned up in deinit function, or we will leak!
         unsafe { (*initid).store_box(boxed_struct) };
-    }).unwrap_or_else(|e| ret = true);
+    })
+    .unwrap_or_else(|e| ret = true);
 
     ret
 }
@@ -107,7 +108,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
-    panic::catch_unwind(||(*initid).retrieve_box::<T>()).ok();
+    panic::catch_unwind(|| (*initid).retrieve_box::<T>()).ok();
 }
 
 #[inline]

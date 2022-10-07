@@ -62,7 +62,6 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
 //     }
 // }
 
-
 // pub unsafe fn write_panic_res_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
 //     // message plus null terminator must fit in buffer
 //     let bytes_to_write = min(msg.len(), N - 1);
@@ -72,7 +71,6 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
 //         *buf.add(bytes_to_write) = 0;
 //     }
 // }
-
 
 #[cfg(test)]
 mod tests {

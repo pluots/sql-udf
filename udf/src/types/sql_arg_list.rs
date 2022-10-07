@@ -27,7 +27,8 @@ pub struct ArgList<'a, S: UdfState> {
     _marker: PhantomData<&'a S>,
 }
 
-/// Derived formatting is a bit ugly, so we clean it up
+/// Derived formatting is a bit ugly, so we clean it up by using the `Vec`
+/// format.
 impl<'a, S: UdfState> Debug for ArgList<'a, S> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
