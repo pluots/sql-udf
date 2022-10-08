@@ -51,9 +51,8 @@ macro_rules! format_ident_str {
 
 type PathColonPunc = Punctuated<PathSegment, Colon2>;
 
-
 /// Verify that an ItemImpl implements BasicUdf (in any of its pathing options)
-fn verify_impl_basicudf(itemimpl: &ItemImpl) -> Result<(), TokenStream> {
+fn verify_impl_basicudf(itemimpl: &ItemImpl) -> bool {
     let implemented = &itemimpl.trait_.as_ref().unwrap().1.segments;
     let acceptable_impls: [PathColonPunc; 3] = [
         parse_quote! {udf::traits::BasicUdf},
@@ -62,12 +61,25 @@ fn verify_impl_basicudf(itemimpl: &ItemImpl) -> Result<(), TokenStream> {
     ];
 
     if !acceptable_impls.contains(&implemented) {
-        return Err(Error::new_spanned(&implemented, "Expected trait")
-            .into_compile_error()
-            .into());
+        return false;
     }
 
-    return Ok(());
+    true
+}
+
+/// Verify that an ItemImpl implements BasicUdf (in any of its pathing options)
+fn verify_impl_aggudf(itemimpl: &ItemImpl) -> bool {
+    let implemented = &itemimpl.trait_.as_ref().unwrap().1.segments;
+    let acceptable_impls: [PathColonPunc; 3] = [
+        parse_quote! {udf::traits::AggregateUdf},
+        parse_quote! {udf::AggregateUdf},
+        parse_quote! {AggregateUdf},
+    ];
+
+    if !acceptable_impls.contains(&implemented) {
+        return false;
+    }
+    true
 }
 
 /// # Arguments
@@ -79,8 +91,13 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_cpy = input.clone();
     let parsed = parse_macro_input!(input as ItemImpl);
 
-    if let Err(e) = verify_impl_basicudf(&parsed) {
-        return e;
+    let impls_basic = verify_impl_basicudf(&parsed);
+    let impls_agg = verify_impl_aggudf(&parsed);
+
+    if !(impls_basic || impls_agg) {
+        return Error::new_spanned(&parsed, "Expected trait `BasicUdf` or `AggregateUdf`")
+            .into_compile_error()
+            .into();
     }
 
     // Extract the last part of the implemented path
@@ -96,14 +113,7 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     eprintln!("{ty:#?}");
 
-    // // Name of struct it is implemented on
-    // let type_ident = &tp.path.segments[0].ident;
-    // let x = parsed.trait_.unwrap().1;
-    // // if let Type::Path(v) =   {
-
-    // // }
-
-    // // eprintln!("LOOK HERE {:#?}", parsed.trait_.unwrap());
+    // Next: get the return type, change behavior based on that
 
     // // Get the return type from the macro
     // // There is only one type for this trait, which is "Returns"
