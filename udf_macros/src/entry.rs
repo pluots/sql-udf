@@ -113,15 +113,16 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
 
     eprintln!("{ty:#?}");
 
-    // Next: get the return type, change behavior based on that
+    // Get the return type from the macro
+    // There is only one type for this trait, which is "Returns"
+    let impl_item_type = &parsed
+        .items
+        .iter()
+        .find_map(match_variant!(ImplItem::Type))
+        .unwrap()
+        .ty;
 
-    // // Get the return type from the macro
-    // // There is only one type for this trait, which is "Returns"
-    // let tmp: &ImplItemType = parsed
-    //     .items
-    //     .iter()
-    //     .find_map(match_variant!(ImplItem::Type))
-    //     .unwrap();
+        
     // let impl_item_type = &tmp.ty;
 
     // // eprintln!("{impl_item_type:#?}");
