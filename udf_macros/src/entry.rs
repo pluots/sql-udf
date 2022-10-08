@@ -5,29 +5,39 @@ use heck::AsSnakeCase;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote};
+use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
+use syn::token::Colon2;
 use syn::{
-    parse_macro_input, parse_quote, DeriveInput, Ident, ImplItem, ImplItemType, Item, ItemImpl,
-    Path, Type, TypePath, TypeReference,
+    parse_macro_input, parse_quote, DeriveInput, Error, Ident, ImplItem, ImplItemType, Item,
+    ItemImpl, Path, PathSegment, Token, Type, TypePath, TypeReference,
 };
 
 use crate::match_variant;
 
-// struct Args {
-//     vars: Set<Ident>,
-// }
-
-// impl Parse for Args {
-//     fn parse(input: ParseStream) -> Result<Self> {
-//         let vars = Punctuated::<Ident, Token![,]>::parse_terminated(input)?;
-//         Ok(Args {
-//             vars: vars.into_iter().collect(),
-//         })
-//     }
-// }
-
 // fn make_fn_name(s: &str, ident: Ident) -> Ident {
 //     let formatted = format!(s, AsSnakeCase(ident.to_string())).as_str();
 //     Ident::new(formatted, Span::call_site());
+// }
+
+// #[derive(Debug)]
+// struct ItemStruct {
+//     impl_token: Token![impl],
+//     ident: Ident,
+//     // brace_token: token::Brace,
+//     // fields: Punctuated<Field, Token![,]>,
+// }
+
+// impl Parse for ItemStruct {
+//     fn parse(input: ParseStream) -> syn::Result<Self> {
+//         // let content;
+//         Ok(ItemStruct {
+//             impl_token: input.parse()?,
+//             ident: input.parse()?,
+//             // brace_token: braced!(content in input),
+//             // fields: content.parse_terminated(Field::parse_named)?,
+//         })
+//     }
 // }
 
 macro_rules! format_ident_str {
@@ -39,6 +49,27 @@ macro_rules! format_ident_str {
     };
 }
 
+type PathColonPunc = Punctuated<PathSegment, Colon2>;
+
+
+/// Verify that an ItemImpl implements BasicUdf (in any of its pathing options)
+fn verify_impl_basicudf(itemimpl: &ItemImpl) -> Result<(), TokenStream> {
+    let implemented = &itemimpl.trait_.as_ref().unwrap().1.segments;
+    let acceptable_impls: [PathColonPunc; 3] = [
+        parse_quote! {udf::traits::BasicUdf},
+        parse_quote! {udf::BasicUdf},
+        parse_quote! {BasicUdf},
+    ];
+
+    if !acceptable_impls.contains(&implemented) {
+        return Err(Error::new_spanned(&implemented, "Expected trait")
+            .into_compile_error()
+            .into());
+    }
+
+    return Ok(());
+}
+
 /// # Arguments
 ///
 /// - args: a stream of everything inside `(...)` (e.g.
@@ -47,66 +78,76 @@ macro_rules! format_ident_str {
 pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_cpy = input.clone();
     let parsed = parse_macro_input!(input as ItemImpl);
-    // eprintln!("{:#?}",item);
-    // let raw_input = parse_macro_input!(item as Item);
 
-    let tp = match *parsed.clone().self_ty {
-        Type::Path(v) => v,
-        _ => panic!("Impl looks incorrect"),
+    if let Err(e) = verify_impl_basicudf(&parsed) {
+        return e;
+    }
+
+    // Extract the last part of the implemented path
+    // e.g. crate::mod::MyStruct will return MyStruct
+    let ty = match *parsed.self_ty {
+        Type::Path(v) => v.path.segments.last().unwrap().clone(),
+        v => {
+            return Error::new_spanned(v, "expected a path")
+                .into_compile_error()
+                .into()
+        }
     };
 
-    // Name of struct it is implemented on
-    let type_ident = &tp.path.segments[0].ident;
-    let x = parsed.trait_.unwrap().1;
-    // if let Type::Path(v) =   {
+    eprintln!("{ty:#?}");
 
+    // // Name of struct it is implemented on
+    // let type_ident = &tp.path.segments[0].ident;
+    // let x = parsed.trait_.unwrap().1;
+    // // if let Type::Path(v) =   {
+
+    // // }
+
+    // // eprintln!("LOOK HERE {:#?}", parsed.trait_.unwrap());
+
+    // // Get the return type from the macro
+    // // There is only one type for this trait, which is "Returns"
+    // let tmp: &ImplItemType = parsed
+    //     .items
+    //     .iter()
+    //     .find_map(match_variant!(ImplItem::Type))
+    //     .unwrap();
+    // let impl_item_type = &tmp.ty;
+
+    // // eprintln!("{impl_item_type:#?}");
+
+    // let type_str_ref: TypeReference = parse_quote! {&'a str};
+    // // let type_str_ref_opt: TypeReference = parse_quote!{Option<&'a str>};
+
+    // let type_string: TypePath = parse_quote! {String};
+    // let type_string_opt: TypePath = parse_quote! {Option<String>};
+
+    // let type_int: TypePath = parse_quote! {i64};
+    // let type_int_opt: TypePath = parse_quote! {Option<i64>};
+
+    // let type_float: TypePath = parse_quote! {f64};
+    // let type_float_opt: TypePath = parse_quote! {Option<f64>};
+
+    // // eprintln!("{:#?}\n\n", impl_item_type);
+
+    // if let Type::Reference(xx) = impl_item_type {
+    //     // eprintln!("\n\nQQ:\n{qq:#?}, {}", str_ref == *xx);
+    //     eprintln!("str ref: {}", *xx == type_str_ref);
+    //     // eprintln!("str ref opt: {}",*xx==type_str_ref_opt);
+    // } else if let Type::Path(xx) = impl_item_type {
+    //     eprintln!("string: {}", *xx == type_string);
+    //     // eprintln!("str ref opt: {}",*xx==type_string_opt);
+    //     eprintln!("int: {}", *xx == type_int);
+    //     // eprintln!("str ref opt: {}",*xx==type_int_opt);
+    //     eprintln!("float: {}", *xx == type_float);
+    //     // eprintln!("str ref opt: {}",*xx==type_float_opt);
+    // } else {
+    //     eprintln!("panicing!");
+    //     panic!(
+    //         "expected `Result` to be one of `{:?}`, `{:?}`, `{:?}`, `{:?}` but got {:?}",
+    //         type_str_ref, type_string, type_int, type_float, impl_item_type
+    //     );
     // }
-
-    // eprintln!("LOOK HERE {:#?}", parsed.trait_.unwrap());
-
-    // Get the return type from the macro
-    // There is only one type for this trait, which is "Returns"
-    let tmp: &ImplItemType = parsed
-        .items
-        .iter()
-        .find_map(match_variant!(ImplItem::Type))
-        .unwrap();
-    let impl_item_type = &tmp.ty;
-
-    // eprintln!("{impl_item_type:#?}");
-
-    let type_str_ref: TypeReference = parse_quote! {&'a str};
-    // let type_str_ref_opt: TypeReference = parse_quote!{Option<&'a str>};
-
-    let type_string: TypePath = parse_quote! {String};
-    let type_string_opt: TypePath = parse_quote! {Option<String>};
-
-    let type_int: TypePath = parse_quote! {i64};
-    let type_int_opt: TypePath = parse_quote! {Option<i64>};
-
-    let type_float: TypePath = parse_quote! {f64};
-    let type_float_opt: TypePath = parse_quote! {Option<f64>};
-
-    // eprintln!("{:#?}\n\n", impl_item_type);
-
-    if let Type::Reference(xx) = impl_item_type {
-        // eprintln!("\n\nQQ:\n{qq:#?}, {}", str_ref == *xx);
-        eprintln!("str ref: {}", *xx == type_str_ref);
-        // eprintln!("str ref opt: {}",*xx==type_str_ref_opt);
-    } else if let Type::Path(xx) = impl_item_type {
-        eprintln!("string: {}", *xx == type_string);
-        // eprintln!("str ref opt: {}",*xx==type_string_opt);
-        eprintln!("int: {}", *xx == type_int);
-        // eprintln!("str ref opt: {}",*xx==type_int_opt);
-        eprintln!("float: {}", *xx == type_float);
-        // eprintln!("str ref opt: {}",*xx==type_float_opt);
-    } else {
-        eprintln!("panicing!");
-        panic!(
-            "expected `Result` to be one of `{:?}`, `{:?}`, `{:?}`, `{:?}` but got {:?}",
-            type_str_ref, type_string, type_int, type_float, impl_item_type
-        );
-    }
 
     input_cpy
 }

@@ -19,10 +19,6 @@ lipsum = "0.8.2"
 uuid = { version = "1.1.2", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
 
 [[example]]
-name = "uuidv"
-crate-type = ["cdylib"]
-
-[[example]]
 name = "basic_sum"
 crate-type = ["cdylib"]
 

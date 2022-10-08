@@ -178,14 +178,15 @@ pub trait AggregateUdf: BasicUdf {
     /// `remove` will be called on a row that should be removed from the current
     /// set (has moved out of the window).
     ///
-    /// This is optional, so a default is supplied that does nothing.
+    /// This is optional; a default is supplied so no action is needed. If you
+    /// would like to use `remove`, just reimplement it.
     ///
     /// <https://mariadb.com/kb/en/user-defined-functions-calling-sequences/#x_remove>
     ///
     /// # Errors
     ///
-    /// Errors are handled the same as with [`AggregateUdf::add()`], see the description
-    /// there
+    /// Errors are handled the same as with [`AggregateUdf::add()`], see the
+    /// description there
     #[inline]
     fn remove(
         &mut self,

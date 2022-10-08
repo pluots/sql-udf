@@ -11,7 +11,7 @@ impl BasicUdf for AvgCost {
     where
         Self: 'a;
 
-    fn init<'a>(cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(_cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         if args.len() != 2 {
             return Err("AVGCOST() requires two arguments".to_owned());
         }
@@ -60,13 +60,13 @@ impl AggregateUdf for AvgCost {
         error.map_or(Ok(()), |e| Err(e))?;
 
         let qty = args.get(0).unwrap().value.as_int().unwrap();
-        let newqty = self.total_qty+qty;
-        self.count+=1;
+        let newqty = self.total_qty + qty;
+        self.count += 1;
 
         // More work comes here
 
-        if self.total_qty==0 {
-            self.total_price=0.0;
+        if self.total_qty == 0 {
+            self.total_price = 0.0;
         }
 
         Ok(())
