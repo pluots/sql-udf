@@ -9,8 +9,6 @@ use std::num::NonZeroU8;
 use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::{ptr, slice, str};
 
-use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
-
 use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
 use crate::ffi::SqlTypeTag;
 use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};

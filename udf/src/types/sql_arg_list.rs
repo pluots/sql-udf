@@ -10,14 +10,10 @@ use std::ops::Index;
 use std::slice::SliceIndex;
 use std::{fmt, panic, ptr, slice, str};
 
-use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
-
 use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
 use crate::ffi::wrapper_impl::write_msg_to_buf;
 use crate::ffi::SqlTypeTag;
 use crate::{BasicUdf, Init, Process, SqlArg, SqlResult, UdfState};
-
-const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
 
 /// A collection of SQL arguments
 ///

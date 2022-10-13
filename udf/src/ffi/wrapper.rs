@@ -13,13 +13,12 @@ use std::panic::{self, AssertUnwindSafe};
 use std::slice::SliceIndex;
 use std::{ptr, slice, str};
 
-use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
-
 use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
 use crate::ffi::wrapper_impl::write_msg_to_buf;
-use crate::{ArgList, BasicUdf, Init, InitCfg, Process, ProcessError, SqlArg, SqlResult, UdfState};
-
-const ERRMSG_SIZE: usize = MYSQL_ERRMSG_SIZE as usize;
+use crate::{
+    ArgList, BasicUdf, Init, InitCfg, Process, ProcessError, SqlArg, SqlResult, UdfState,
+    MYSQL_ERRMSG_SIZE,
+};
 
 /// This function provides the same signature as the C FFI expects. It is used
 /// to perform setup within a renamed function, and will apply it to a specific
@@ -85,7 +84,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
             Ok(v) => Box::new(v),
             Err(e) => {
                 // Safety: buffer size is correct
-                write_msg_to_buf::<ERRMSG_SIZE>(e.as_bytes(), message);
+                write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(e.as_bytes(), message);
                 **ret_wrap = true;
                 return;
             }
