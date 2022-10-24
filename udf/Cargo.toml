@@ -1,6 +1,6 @@
 [package]
 name = "udf"
-version = "0.1.2"
+version = "0.2.0"
 rust-version = "1.65"
 edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
@@ -10,7 +10,7 @@ license = "Apache-2.0"
 keywords = ["sql", "udf"]
 
 [dependencies]
-udf-macros = { path = "../udf_macros", version = "0.1.0"}
+udf-macros = { path = "../udf_macros", version = "0.2.0" }
 
 [dev-dependencies]
 lipsum = "0.8.2"
