@@ -69,7 +69,7 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     // Extract the last part of the implemented path
     // e.g. crate::mod::MyStruct will return MyStruct
     let impl_for_name = match *parsed.self_ty {
-        Type::Path(v) => v.path.segments.last().unwrap().clone().ident,
+        Type::Path(ref v) => v.path.segments.last().unwrap().clone().ident,
         v => {
             return Error::new_spanned(v, "expected a path")
                 .into_compile_error()
@@ -87,8 +87,8 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
         .ty;
 
     // Find the matching type in a list
-    match make_type_list().iter().find(|x| x.type_ == *impl_item_type) {
-        Some(t) => make_all_fns(t, impl_for_name).into(),
+    let content = match make_type_list().iter().find(|x| x.type_ == *impl_item_type) {
+        Some(t) => make_basic_fns(t, impl_for_name),
         None => {
             let emsg = format!(
                 "expected `Result` to be one of `i64`, `f64`, `&str`, `String`, \
@@ -98,10 +98,17 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
                 .into_compile_error()
                 .into()
         }
+    };
+
+    quote! {
+        #parsed
+
+        #content
     }
+    .into()
 }
 
-fn make_all_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStream {
+fn make_basic_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStream {
     let init_fn_name = format_ident_str!("{}_init", dstruct_ident);
     let deinit_fn_name = format_ident_str!("{}_deinit", dstruct_ident);
     let process_fn_name = format_ident_str!("{}", dstruct_ident);
@@ -109,9 +116,9 @@ fn make_all_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStream 
     let init_fn = make_init_fn(&dstruct_ident, init_fn_name);
     let deinit_fn = make_deinit_fn(&dstruct_ident, deinit_fn_name);
     let process_fn = match rt.fn_sig {
-        FnSigType::Char => todo!(),
-        FnSigType::Int => todo!(),
-        FnSigType::Float => todo!(),
+        FnSigType::String => todo!(),
+        FnSigType::Int => make_proc_int_fn(&dstruct_ident, process_fn_name, rt.is_optional),
+        FnSigType::Float => make_proc_float_fn(&dstruct_ident, process_fn_name, rt.is_optional),
     };
     // let process_fn = make_str_proc_fn(&dstruct_ident, deinit_fn_name, rt.is_optional);
 
@@ -119,6 +126,8 @@ fn make_all_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStream 
         #init_fn
 
         #deinit_fn
+
+        #process_fn
     }
 }
 
@@ -131,17 +140,9 @@ fn make_init_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStre
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::ffi::bindings::UDF_INIT,
             args: *mut udf::ffi::bindings::UDF_ARGS,
-            message: *mut std::os::raw::c_char,
+            message: *mut std::ffi::c_char,
         ) -> bool
         {
-            // We set the following values based on our proc macro args
-            // - `initid.max_length`
-            // - `initd.decimals`
-            // - `initd.const_item`
-
-            // The following is set based on the return type
-            // - `initd.maybe_null`
-
             unsafe {
                 udf::ffi::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
             }
@@ -157,34 +158,73 @@ fn make_deinit_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenSt
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::ffi::bindings::UDF_INIT,
         ) {
+            unsafe { udf::ffi::wrapper::wrap_deinit::<#dstruct_ident>(initid) }
+        }
+    }
+}
+
+fn make_proc_int_fn(
+    dstruct_ident: &Ident,
+    fn_name: Ident,
+    nullable: bool,
+) -> proc_macro2::TokenStream {
+    // Safety: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    let fn_title = if nullable {
+        quote! { udf::ffi::wrapper::wrap_process_int_null::<#dstruct_ident> }
+    } else {
+        quote! { udf::ffi::wrapper::wrap_process_int::<#dstruct_ident> }
+    };
+
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::ffi::bindings::UDF_INIT,
+            args: *mut udf::ffi::bindings::UDF_ARGS,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) -> ::std::ffi::c_longlong {
             unsafe {
-                udf::ffi::wrapper::deinit_wrapper::<#dstruct_ident>(initid)
+                #fn_title(
+                    initid,
+                    args,
+                    is_null,
+                    error
+                )
             }
         }
     }
 }
 
-// pub(crate) fn register(_args: TokenStream, item: TokenStream) -> TokenStream {
-//     let item_tmp = item.clone();
-//     let raw_input = parse_macro_input!(item as Item);
+fn make_proc_float_fn(
+    dstruct_ident: &Ident,
+    fn_name: Ident,
+    nullable: bool,
+) -> proc_macro2::TokenStream {
+    // Safety: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    let fn_title = if nullable {
+        quote! { udf::ffi::wrapper::wrap_process_float_null::<#dstruct_ident> }
+    } else {
+        quote! { udf::ffi::wrapper::wrap_process_float::<#dstruct_ident> }
+    };
 
-//     // We aren't doing a derive macro but DeriveInput helps us easily get the identifier
-//     // type_ident is the name of our struct (or enum)
-//     let type_ident = parse_macro_input!(item_tmp as DeriveInput).ident;
-//     let init_fn_name = format_ident_str!("{}_init", type_ident);
-//     let process_fn_name = format_ident_str!("{}", type_ident);
-//     let deinit_fn_name = format_ident_str!("{}_deinit", type_ident);
-
-//     let init_fn = make_init_fn(type_ident.clone(), init_fn_name);
-//     let deinit_fn = make_deinit_fn(type_ident, deinit_fn_name);
-
-//     let expanded = quote! {
-//         #raw_input
-
-//         #init_fn
-
-//         #deinit_fn
-//     };
-
-//     TokenStream::from(expanded)
-// }
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::ffi::bindings::UDF_INIT,
+            args: *mut udf::ffi::bindings::UDF_ARGS,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) -> f64 {
+            unsafe {
+                #fn_title(
+                    initid,
+                    args,
+                    is_null,
+                    error
+                )
+            }
+        }
+    }
+}

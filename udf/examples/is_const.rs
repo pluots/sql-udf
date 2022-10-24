@@ -3,6 +3,7 @@ struct IsConst {
     is_const: bool,
 }
 
+// #[register]
 impl BasicUdf for IsConst {
     type Returns<'a> = &'static str;
 

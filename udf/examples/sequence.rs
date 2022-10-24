@@ -8,6 +8,7 @@ struct Sequence {
     last_val: i64,
 }
 
+#[register]
 impl BasicUdf for Sequence {
     type Returns<'a> = i64
     where

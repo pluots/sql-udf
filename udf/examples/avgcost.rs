@@ -6,6 +6,7 @@ struct AvgCost {
     total_price: f64,
 }
 
+#[register]
 impl BasicUdf for AvgCost {
     type Returns<'a> = Option<f64>
     where

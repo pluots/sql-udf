@@ -117,8 +117,8 @@ pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
 pub unsafe fn wrap_process_int<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
-    is_null: *mut c_char,
-    error: *mut c_char,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
 ) -> c_longlong
 where
     for<'a> T: BasicUdf<Returns<'a> = i64>,
@@ -142,8 +142,8 @@ where
 pub unsafe fn wrap_process_int_null<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
-    is_null: *mut c_char,
-    error: *mut c_char,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
 ) -> c_longlong
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
@@ -169,7 +169,7 @@ where
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "C" fn udf_func_real<T>(
+pub unsafe extern "C" fn wrap_process_float<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     is_null: *mut c_uchar,
@@ -193,7 +193,7 @@ where
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "C" fn udf_func_real_null<T>(
+pub unsafe extern "C" fn wrap_process_float_null<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     is_null: *mut c_uchar,
