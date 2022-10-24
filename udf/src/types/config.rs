@@ -1,3 +1,5 @@
+
+
 use std::ffi::c_uint;
 
 use crate::ffi::bindings::UDF_INIT;
@@ -10,6 +12,7 @@ use crate::ffi::bindings::UDF_INIT;
 /// uses `ulong` which is a different size on Windows and Linux
 pub struct InitCfg(UDF_INIT);
 
+#[allow(clippy::useless_conversion, clippy::unnecessary_cast)]
 impl InitCfg {
     pub(crate) unsafe fn from_ptr(ptr: *mut UDF_INIT) -> Self {
         // unsafe { Self { base: &mut *ptr } }
@@ -54,13 +57,13 @@ impl InitCfg {
         self.0.decimals = 1 << 24;
     }
 
-    /// Get the current const_item value
+    /// Get the current `const_item` value
     #[inline]
     pub fn get_const_item(&self) -> bool {
         self.0.const_item
     }
 
-    /// Set a new const_item value
+    /// Set a new `const_item` value
     ///
     /// Set this to true if your function always returns the same values with
     /// the same arguments

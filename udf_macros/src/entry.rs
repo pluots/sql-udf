@@ -44,8 +44,8 @@ fn impls_path(itemimpl: &ItemImpl, expected: ImplType) -> bool {
     ];
 
     match expected {
-        ImplType::Basic => basic_paths.contains(&implemented),
-        ImplType::Aggregate => arg_paths.contains(&implemented),
+        ImplType::Basic => basic_paths.contains(implemented),
+        ImplType::Aggregate => arg_paths.contains(implemented),
     }
 }
 
@@ -96,7 +96,6 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
             );
             Error::new_spanned(impl_item_type, emsg)
                 .into_compile_error()
-                .into()
         }
     };
 

@@ -110,7 +110,7 @@ Once that has been done, `CREATE FUNCTION` can be used in MariaDB/MySql to load
 it.
 
 ```bash
-cp /home/target/release/examples/libbasic_sum.so /usr/lib/mysql/plugin/
+cp /target/release/examples/libbasic_sum.so /usr/lib/mysql/plugin/
 ```
 
 ```sql
@@ -138,6 +138,35 @@ required - this includes the current beta and nightly channels, and scheduled to
 become stable on 2022-11-03.
 
 ```sh
-docker run --rm -it -v $(pwd):/home rustlang/rust:nightly \
-  bash -c "cd home; cargo build --release --example basic_sum"
+# This will mount your current directory at /build, and use a new .docker-dargo
+# directory for cargo's cache. It will use your same target folder.
+# Change the `bash -c` command based on what you want to build.
+docker run --rm -it \
+  -v $(pwd):/build \
+  -e CARGO_HOME=/build/.docker-cargo \
+  rustlang/rust:nightly \
+  bash -c "cd /build; cargo build --release --examples"
+```
+
+## Testing in docker
+
+```sh
+docker run --rm -it  \
+  -v $(pwd)/target:/target \
+  -e MARIADB_ROOT_PASSWORD=banana \
+  mariadb bash
+```
+
+
+```
+docker run --rm -it  \
+  -v $(pwd)/target:/target \
+  -e MARIADB_ROOT_PASSWORD=banana \
+  --name mariadb_test \
+  mariadb
+docker exec -it mariadb_test bash
+cp /target/release/examples/*.so /usr/lib/mysql/plugin/
+mysql -pbanana
+CREATE FUNCTION  sql_sequence returns integer soname 'libsequence.so';
+select sql_sequence(1);
 ```

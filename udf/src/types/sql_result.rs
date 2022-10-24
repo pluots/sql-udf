@@ -1,5 +1,6 @@
 //! Rust representation of SQL types
 
+
 use std::{slice, str};
 
 use crate::ffi::bindings::Item_result;
@@ -29,6 +30,7 @@ pub enum SqlResult<'a> {
     /// This is a string that is to be represented as a decimal
     Decimal(Option<&'a [u8]>),
 }
+
 
 impl<'a> SqlResult<'a> {
     /// Construct a `SqlResult` from a pointer and a tag
@@ -80,6 +82,7 @@ impl<'a> SqlResult<'a> {
         }
     }
 
+    #[inline]
     pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
         match *self {
             Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(v),

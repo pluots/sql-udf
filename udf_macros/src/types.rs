@@ -1,4 +1,4 @@
-use syn::{parse_quote, PathSegment, Type, TypePath};
+use syn::{parse_quote, Type};
 
 /// Allowable signatures
 pub enum ImplType {

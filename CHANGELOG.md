@@ -6,6 +6,8 @@
 
 ### Added
 
+- Completed basic support for `#[register]` procedural macro
+
 ### Changed
 
 ### Removed

@@ -14,7 +14,6 @@ udf-macros = { path = "../udf_macros", version = "0.1.0"}
 
 [dev-dependencies]
 lipsum = "0.8.2"
-# Needed for 
 uuid = { version = "1.1.2", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
 
 [[example]]

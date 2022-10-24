@@ -1,5 +1,5 @@
-// use std::num::NonZeroU8;
-
+/// Create a function called sum_int that coerces all arguments to integers and
+/// adds them.
 use udf::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Default)]
@@ -15,6 +15,7 @@ impl BasicUdf for SumInt {
         for mut arg in args {
             arg.set_type_coercion(udf::SqlType::Int);
         }
+        // This will produce the same result
         cfg.set_const_item(true);
         Ok(Self {})
     }

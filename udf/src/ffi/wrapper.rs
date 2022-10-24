@@ -64,6 +64,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
+    dbg!();
     // SAFETY: caller guarantees validity of args ptr
     let arglist = ArgList::new(*args);
 
@@ -71,11 +72,12 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     // unwind boundaries
     let mut ret = false;
     let mut ret_wrap = AssertUnwindSafe(&mut ret);
-
+    dbg!();
     // Unwinding into C is UB so we need to catch potential panics at the FFI
     // boundary Note to possible code readers: `panic::catch_unwind` should NOT
     // be used anywhere except the FFI boundary,
     panic::catch_unwind(move || {
+        dbg!();
         // Call the user's init function
         // If initialization succeeds, put our UDF info struct on the heap
         // If initialization fails, copy a message to the buffer
@@ -95,6 +97,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         (*initid).store_box(boxed_struct);
     })
     .unwrap_or_else(|e| ret = true);
+    dbg!();
 
     ret
 }
@@ -109,7 +112,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
+    dbg!();
     panic::catch_unwind(|| (*initid).retrieve_box::<T>()).ok();
+    dbg!();
 }
 
 #[inline]
@@ -124,14 +129,21 @@ where
     for<'a> T: BasicUdf<Returns<'a> = i64>,
 {
     // SAFETY: caller guarantees validity
+    dbg!();
     let arglist = ArgList::new(*args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
+
     let res = T::process(&mut b, &arglist, err);
 
+    (*initid).store_box(b);
+    dbg!();
+
     if let Ok(v) = res {
+        dbg!();
         v
     } else {
+        dbg!();
         *error = 1;
         0
     }
@@ -151,7 +163,10 @@ where
     let arglist = ArgList::new(*args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
+
     let res = T::process(&mut b, &arglist, err);
+
+    (*initid).store_box(b);
 
     if let Ok(res_ok) = res {
         // Result is an Ok(); set null as needed
@@ -168,6 +183,7 @@ where
     }
 }
 
+#[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C" fn wrap_process_float<T>(
     initid: *mut UDF_INIT,
@@ -182,7 +198,10 @@ where
     let arglist = ArgList::new(*args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
+
     let res = T::process(&mut b, &arglist, err);
+
+    (*initid).store_box(b);
 
     if let Ok(v) = res {
         v
@@ -192,6 +211,7 @@ where
     }
 }
 
+#[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C" fn wrap_process_float_null<T>(
     initid: *mut UDF_INIT,
@@ -205,7 +225,10 @@ where
     let arglist = ArgList::new(*args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
+
     let res = T::process(&mut b, &arglist, err);
+
+    (*initid).store_box(b);
 
     if let Ok(res_ok) = res {
         // Result is an Ok(); set null as needed
