@@ -32,7 +32,7 @@ pub enum SqlType {
 impl TryFrom<i8> for SqlType {
     type Error = String;
 
-    /// Create an [`ItemResult`] from an integer
+    /// Create an [`SqlType`] from an integer
     #[inline]
     fn try_from(tag: i8) -> Result<Self, Self::Error> {
         let val = match tag {

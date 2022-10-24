@@ -10,17 +10,11 @@ license = "Apache-2.0"
 keywords = ["sql", "udf"]
 
 [dependencies]
-mysqlclient-sys = "0.2.5"
 udf-macros = { path = "../udf_macros", version = "0.1.0"}
 
 [dev-dependencies]
 lipsum = "0.8.2"
-# Needed for 
 uuid = { version = "1.1.2", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
-
-[[example]]
-name = "uuidv"
-crate-type = ["cdylib"]
 
 [[example]]
 name = "basic_sum"
@@ -28,6 +22,26 @@ crate-type = ["cdylib"]
 
 [[example]]
 name = "lipsum"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "sequence"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "avgcost"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "is_const"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "median"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "metaphon"
 crate-type = ["cdylib"]
 
 

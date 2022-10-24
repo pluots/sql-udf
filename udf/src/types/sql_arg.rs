@@ -62,9 +62,9 @@ impl<'a> SqlArg<'a, Init> {
     /// provides a simple test to see if this is true.
     ///
     /// There is no way to differentiate between "not const" and "const but
-    /// NULL", hence the naming if this function
+    /// NULL"
     #[inline]
-    pub fn maybe_const(&self) -> bool {
+    pub fn is_const(&self) -> bool {
         match self.value {
             SqlResult::String(v) | SqlResult::Decimal(v) => v.is_some(),
             SqlResult::Real(v) => v.is_some(),
@@ -86,7 +86,7 @@ impl<'a> SqlArg<'a, Init> {
     }
 
     /// Instruct the SQL application to coerce the argument's type. This does
-    /// not change the underlying
+    /// not change the underlying value visible in `.value`.
     #[inline]
     pub fn set_type_coercion(&mut self, newtype: SqlType) {
         // .replace() on our cell will do exactly what it sounds like
@@ -97,7 +97,7 @@ impl<'a> SqlArg<'a, Init> {
 /// Typestate marker for the initialization phase
 ///
 /// This is a zero-sized type that is just used to hint to the compiler that an
-/// [`SqlArg`] was created in the `init` function, which allows for some special
+/// [`SqlArg`] was created in the `init` function, which allows for some extra
 /// methods.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Init {}

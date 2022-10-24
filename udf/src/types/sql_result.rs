@@ -1,5 +1,6 @@
 //! Rust representation of SQL types
 
+
 use std::{slice, str};
 
 use crate::ffi::bindings::Item_result;
@@ -11,8 +12,8 @@ use crate::ffi::{SqlType, SqlTypeTag};
 ///
 /// It is of note that both [`SqlResult::String`] and [`SqlResult::Decimal`]
 /// contain slices of `u8` rather than a representation like `&str`. This is
-/// because there is no guarantee that the data is `utf8`. Use [`as_str()`] if
-/// you need an easy way to get a `&str`.
+/// because there is no guarantee that the data is `utf8`. Use
+/// [`SqlResult::as_str()`] if you need an easy way to get a `&str`.
 ///
 /// This enum is labeled `non_exhaustive` to leave room for future types and
 /// coercion options.
@@ -29,6 +30,7 @@ pub enum SqlResult<'a> {
     /// This is a string that is to be represented as a decimal
     Decimal(Option<&'a [u8]>),
 }
+
 
 impl<'a> SqlResult<'a> {
     /// Construct a `SqlResult` from a pointer and a tag
@@ -76,6 +78,14 @@ impl<'a> SqlResult<'a> {
     pub fn as_str(&'a self) -> Option<&'a str> {
         match *self {
             Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(str::from_utf8(v).ok()?),
+            _ => None,
+        }
+    }
+
+    #[inline]
+    pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
+        match *self {
+            Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(v),
             _ => None,
         }
     }

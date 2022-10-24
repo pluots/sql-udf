@@ -1,3 +1,4 @@
+//! A wrapper crate to make writing SQL UDFs easy
 //!
 //! Version note: Because of reliance on a feature called GATs, this library
 //! requires Rust version >= 1.65 which is currently in beta. If `rustup show`
@@ -11,7 +12,7 @@
 //! ```
 //!
 //! 1.65 is scheduled to become stable on 2022-11-03, so this message
-//! may not be relevant not long after time of writing.
+//! may become irrelevant not long after time of writing.
 //!
 //! # Example
 //!
@@ -20,7 +21,9 @@
 //!
 //!
 //! ```
-//!
+//! struct MyFunction {
+//!     intermediate: i64
+//! }
 //!
 //! ```
 //!
@@ -68,7 +71,14 @@ pub mod ffi;
 pub mod prelude;
 pub mod traits;
 pub mod types;
+
 pub use traits::*;
 // Make this inline so we don't show the re-exports
 // #[doc(inline)]
 pub use types::*;
+
+/// Max error message size, 0x200 = 512 bytes
+///
+/// The crate `mysqlclient_sys` links this variable, but easier to just copy the
+/// single number here.
+const MYSQL_ERRMSG_SIZE: usize = 0x200;

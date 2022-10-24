@@ -45,14 +45,14 @@ pub const Item_result_ROW_RESULT: Item_result = 3;
 pub const Item_result_DECIMAL_RESULT: Item_result = 4;
 
 /// Type of the identifier for an item result enum (`Item_result_X` values)
-pub type Item_result = ::std::os::raw::c_int;
+pub type Item_result = ::std::ffi::c_int;
 
 /// Representation of a sequence of SQL arguments
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct UDF_ARGS {
     /// Number of arguments present
-    pub arg_count: ::std::os::raw::c_uint,
+    pub arg_count: ::std::ffi::c_uint,
 
     /// Buffer of item_result pointers that indicate argument type
     ///
@@ -61,23 +61,23 @@ pub struct UDF_ARGS {
 
     /// Buffer of pointers to the arguments. Arguments may be of any type
     /// (specified in `arg_type`).
-    pub args: *const *const ::std::os::raw::c_char,
+    pub args: *const *const ::std::ffi::c_char,
 
     /// Buffer of lengths for string arguments
-    pub lengths: *const ::std::os::raw::c_ulong,
+    pub lengths: *const ::std::ffi::c_ulong,
 
     /// Indicates whether the argument may be null or not
-    pub maybe_null: *const ::std::os::raw::c_char,
+    pub maybe_null: *const ::std::ffi::c_char,
 
     /// Buffer of string pointers that hold variable names, for use with error
     /// messages
-    pub attributes: *const *const ::std::os::raw::c_char,
+    pub attributes: *const *const ::std::ffi::c_char,
 
     /// Buffer of lengths of attributes
-    pub attribute_lengths: *const ::std::os::raw::c_ulong,
+    pub attribute_lengths: *const ::std::ffi::c_ulong,
 
     /// Extension is currently unused
-    pub extension: *const ::std::os::raw::c_void,
+    pub extension: *const ::std::ffi::c_void,
 }
 
 #[test]
@@ -237,19 +237,19 @@ pub struct UDF_INIT {
     pub maybe_null: bool,
 
     /// This is used for real-returning functions
-    pub decimals: ::std::os::raw::c_uint,
+    pub decimals: ::std::ffi::c_uint,
 
     /// This is used for string functions
-    pub max_length: ::std::os::raw::c_ulong,
+    pub max_length: ::std::ffi::c_ulong,
 
     /// free pointer for function data
-    pub ptr: *mut ::std::os::raw::c_char,
+    pub ptr: *mut ::std::ffi::c_char,
 
     /// True if function always returns the same value
     pub const_item: bool,
 
     /// Unused at this time
-    pub extension: *mut ::std::os::raw::c_void,
+    pub extension: *mut ::std::ffi::c_void,
 }
 
 #[test]
@@ -375,14 +375,14 @@ pub const Item_udftype_UDFTYPE_FUNCTION: Item_udftype = 1;
 pub const Item_udftype_UDFTYPE_AGGREGATE: Item_udftype = 2;
 
 /// Type of a UDF function type indicator
-pub type Item_udftype = ::std::os::raw::c_uint;
+pub type Item_udftype = ::std::ffi::c_uint;
 
 /// Function signature of an `xxx_init(...)` function
 pub type Udf_func_init = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
         args: *mut UDF_ARGS,
-        message: *mut ::std::os::raw::c_char,
+        message: *mut ::std::ffi::c_char,
     ) -> bool,
 >;
 
@@ -394,8 +394,8 @@ pub type Udf_func_add = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
         args: *mut UDF_ARGS,
-        is_null: *mut ::std::os::raw::c_uchar,
-        error: *mut ::std::os::raw::c_uchar,
+        is_null: *mut ::std::ffi::c_uchar,
+        error: *mut ::std::ffi::c_uchar,
     ),
 >;
 
@@ -403,8 +403,8 @@ pub type Udf_func_add = ::std::option::Option<
 pub type Udf_func_clear = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
-        is_null: *mut ::std::os::raw::c_uchar,
-        error: *mut ::std::os::raw::c_uchar,
+        is_null: *mut ::std::ffi::c_uchar,
+        error: *mut ::std::ffi::c_uchar,
     ),
 >;
 
@@ -413,8 +413,8 @@ pub type Udf_func_double = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
         args: *mut UDF_ARGS,
-        is_null: *mut ::std::os::raw::c_uchar,
-        error: *mut ::std::os::raw::c_uchar,
+        is_null: *mut ::std::ffi::c_uchar,
+        error: *mut ::std::ffi::c_uchar,
     ) -> f64,
 >;
 
@@ -423,9 +423,9 @@ pub type Udf_func_longlong = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
         args: *mut UDF_ARGS,
-        is_null: *mut ::std::os::raw::c_uchar,
-        error: *mut ::std::os::raw::c_uchar,
-    ) -> ::std::os::raw::c_longlong,
+        is_null: *mut ::std::ffi::c_uchar,
+        error: *mut ::std::ffi::c_uchar,
+    ) -> ::std::ffi::c_longlong,
 >;
 
 /// Function signature of an `xxx(...)` function returning a SQL string
@@ -433,11 +433,11 @@ pub type Udf_func_string = ::std::option::Option<
     unsafe extern "C" fn(
         initid: *mut UDF_INIT,
         args: *mut UDF_ARGS,
-        result: *mut ::std::os::raw::c_char,
-        length: *mut ::std::os::raw::c_ulong,
-        is_null: *mut ::std::os::raw::c_uchar,
-        error: *mut ::std::os::raw::c_uchar,
-    ) -> *mut ::std::os::raw::c_char,
+        result: *mut ::std::ffi::c_char,
+        length: *mut ::std::ffi::c_ulong,
+        is_null: *mut ::std::ffi::c_uchar,
+        error: *mut ::std::ffi::c_uchar,
+    ) -> *mut ::std::ffi::c_char,
 >;
 
 /// Function signature of a void functin (unused)

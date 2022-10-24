@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use std::num::NonZeroU8;
+
 use lipsum::{lipsum, lipsum_from_seed};
 use udf::prelude::*;
 
@@ -17,7 +19,7 @@ impl BasicUdf for Lipsum {
     type Returns<'a> = &'a str;
 
     /// We expect LIPSUM(n) or LIPSUM(n, m)
-    fn init(args: &ArgList<Init>) -> Result<Self, String> {
+    fn init(cfg: &mut InitCfg, args: &ArgList<Init>) -> Result<Self, String> {
         if args.is_empty() || args.len() > 2 {
             return Err(format!("Expected 1 or 2 args; got {}", args.len()));
         }
@@ -59,6 +61,7 @@ impl BasicUdf for Lipsum {
     fn process<'a>(
         &'a mut self,
         args: &ArgList<Process>,
+        _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
         // We have already checked that these values fit into usize in init
         // Do need to ensure our argument isn't null

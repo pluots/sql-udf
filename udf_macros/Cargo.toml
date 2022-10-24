@@ -12,12 +12,14 @@ proc-macro = true
 
 [dependencies]
 heck = "0.4.0"
+lazy_static = "1.4.0"
 proc-macro2 = "1.0.42"
 quote = "1.0.21"
 syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 trybuild = { version = "1.0.65", features = ["diff"] }
+udf = { path = "../udf", version = "0.1.0"}
 
 [package.metadata.release]
 shared-version = true

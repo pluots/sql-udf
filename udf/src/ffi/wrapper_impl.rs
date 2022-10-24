@@ -5,14 +5,13 @@
 use std::cmp::min;
 use std::ffi::CString;
 use std::marker::PhantomData;
+use std::num::NonZeroU8;
 use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::{ptr, slice, str};
 
-use mysqlclient_sys::MYSQL_ERRMSG_SIZE;
-
 use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
 use crate::ffi::SqlTypeTag;
-use crate::{BasicUdf, SqlArg, SqlResult, SqlType, UdfState};
+use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};
 
 /// Add methods to the raw C struct
 impl UDF_INIT {
@@ -41,7 +40,7 @@ impl UDF_INIT {
 ///
 /// `N` must be the buffer size. If it is inaccurate, memory safety cannot be
 /// guaranteed.
-pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
+pub(crate) unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
     // message plus null terminator must fit in buffer
     let bytes_to_write = min(msg.len(), N - 1);
 
@@ -50,6 +49,27 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
         *buf.add(bytes_to_write) = 0;
     }
 }
+
+// WIP
+// pub unsafe fn handle_panic_res<const N: usize>(e: Box<dyn Any + Send>,buf: *mut c_char) {
+//     // message plus null terminator must fit in buffer
+//     let bytes_to_write = min(msg.len(), N - 1);
+
+//     unsafe {
+//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
+//         *buf.add(bytes_to_write) = 0;
+//     }
+// }
+
+// pub unsafe fn write_panic_res_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
+//     // message plus null terminator must fit in buffer
+//     let bytes_to_write = min(msg.len(), N - 1);
+
+//     unsafe {
+//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
+//         *buf.add(bytes_to_write) = 0;
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -67,7 +87,7 @@ mod tests {
         let mut mbuf = [1 as c_char; BUF_SIZE];
 
         unsafe {
-            write_msg_to_buf::<BUF_SIZE>(MSG, mbuf.as_mut_ptr());
+            write_msg_to_buf::<BUF_SIZE>(MSG.as_bytes(), mbuf.as_mut_ptr());
             let s = CStr::from_ptr(mbuf.as_ptr()).to_str().unwrap();
 
             assert_eq!(s, MSG);
@@ -80,7 +100,7 @@ mod tests {
 
         let mut mbuf = [1 as c_char; NEW_BUF_SIZE];
         unsafe {
-            write_msg_to_buf::<NEW_BUF_SIZE>(MSG, mbuf.as_mut_ptr());
+            write_msg_to_buf::<NEW_BUF_SIZE>(MSG.as_bytes(), mbuf.as_mut_ptr());
             let s = CStr::from_ptr(mbuf.as_ptr()).to_str().unwrap();
             assert_eq!(*s, MSG[..MSG.len() - 1]);
         };
