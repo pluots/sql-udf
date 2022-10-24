@@ -151,22 +151,23 @@ docker run --rm -it \
 ## Testing in docker
 
 ```sh
+# Start a mariadb server headless
 docker run --rm -it  \
   -v $(pwd)/target:/target \
   -e MARIADB_ROOT_PASSWORD=banana \
-  mariadb bash
-```
-
-
-```
-docker run --rm -it  \
-  -v $(pwd)/target:/target \
-  -e MARIADB_ROOT_PASSWORD=banana \
-  --name mariadb_test \
+  --name mariadb_udf_test \
   mariadb
-docker exec -it mariadb_test bash
+
+# Open a terminal in another window
+docker exec -it mariadb_udf_test bash
+
+# Copy output .so files
 cp /target/release/examples/*.so /usr/lib/mysql/plugin/
 mysql -pbanana
-CREATE FUNCTION  sql_sequence returns integer soname 'libsequence.so';
+CREATE OR REPLACE FUNCTION  sql_sequence returns integer soname 'libsequence.so';
+CREATE OR REPLACE FUNCTION  sum_int returns integer soname 'libbasic_sum.so';
+
+select sum_int(1, 2.2, '4');
+# sequences work best with a table
 select sql_sequence(1);
 ```

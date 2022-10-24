@@ -49,7 +49,7 @@ pub type Item_result = ::std::ffi::c_int;
 
 /// Representation of a sequence of SQL arguments
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct UDF_ARGS {
     /// Number of arguments present
     pub arg_count: ::std::ffi::c_uint,
@@ -231,7 +231,7 @@ fn bindgen_test_layout_UDF_ARGS() {
 }
 /// Information about the result of a user defined function
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct UDF_INIT {
     /// True if the function can return NULL
     pub maybe_null: bool,

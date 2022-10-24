@@ -212,7 +212,7 @@ mod tests {
             extension: ptr::null_mut::<c_void>(),
         };
 
-        let arglist: ArgList<Init> = ArgList::new(udf_args);
+        let arglist: &ArgList<Init> = unsafe {ArgList::from_arg_ptr(&udf_args)};
         let res: Vec<_> = arglist.into_iter().collect();
 
         let expected_args = [

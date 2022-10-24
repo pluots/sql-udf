@@ -1,5 +1,3 @@
-
-
 use std::ffi::c_uint;
 
 use crate::ffi::bindings::UDF_INIT;
@@ -14,11 +12,6 @@ pub struct InitCfg(UDF_INIT);
 
 #[allow(clippy::useless_conversion, clippy::unnecessary_cast)]
 impl InitCfg {
-    pub(crate) unsafe fn from_ptr(ptr: *mut UDF_INIT) -> Self {
-        // unsafe { Self { base: &mut *ptr } }
-        unsafe { Self(*ptr) }
-    }
-
     #[inline]
     pub fn get_maybe_null(&self) -> bool {
         self.0.maybe_null
@@ -70,5 +63,27 @@ impl InitCfg {
     #[inline]
     pub fn set_const_item(&mut self, v: bool) {
         self.0.const_item = v;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem::{align_of, size_of};
+
+    use super::*;
+
+    // Verify no size issues
+    #[test]
+    fn initcfg_size() {
+        assert_eq!(
+            size_of::<UDF_INIT>(),
+            size_of::<InitCfg>(),
+            concat!("Size of: ", stringify!(UDF_INIT))
+        );
+        assert_eq!(
+            align_of::<UDF_INIT>(),
+            align_of::<InitCfg>(),
+            concat!("Alignment of ", stringify!(UDF_ARGS))
+        );
     }
 }

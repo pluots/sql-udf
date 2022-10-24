@@ -1,6 +1,5 @@
 //! Rust representation of SQL types
 
-
 use std::{slice, str};
 
 use crate::ffi::bindings::Item_result;
@@ -31,11 +30,10 @@ pub enum SqlResult<'a> {
     Decimal(Option<&'a [u8]>),
 }
 
-
 impl<'a> SqlResult<'a> {
     /// Construct a `SqlResult` from a pointer and a tag
     ///
-    /// Safety: pointer must not be null. If a string or decimal result, must be
+    /// SAFETY: pointer must not be null. If a string or decimal result, must be
     /// exactly `len` long.
     pub(crate) unsafe fn from_ptr(
         ptr: *const u8,
@@ -55,7 +53,7 @@ impl<'a> SqlResult<'a> {
                 SqlType::Decimal => SqlResult::Decimal(None),
             }
         } else {
-            // Safety: `tag` guarantees type. If decimal or String, caller
+            // SAFETY: `tag` guarantees type. If decimal or String, caller
             // guarantees length
             unsafe {
                 #[allow(clippy::cast_ptr_alignment)]

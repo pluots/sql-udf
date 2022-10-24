@@ -94,8 +94,7 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
                 "expected `Result` to be one of `i64`, `f64`, `&str`, `String`, \
                 or their `Option<...>` types, but got {impl_item_type:?}",
             );
-            Error::new_spanned(impl_item_type, emsg)
-                .into_compile_error()
+            Error::new_spanned(impl_item_type, emsg).into_compile_error()
         }
     };
 
@@ -132,7 +131,7 @@ fn make_basic_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStrea
 
 /// Given the name of a type or struct, create a function that will be evaluated
 fn make_init_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStream {
-    // Safety: we just minimally wrap the functions here, safety is handled
+    // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
         #[no_mangle]
@@ -150,7 +149,7 @@ fn make_init_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStre
 }
 
 fn make_deinit_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStream {
-    // Safety: we just minimally wrap the functions here, safety is handled
+    // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
         #[no_mangle]
@@ -167,7 +166,7 @@ fn make_proc_int_fn(
     fn_name: Ident,
     nullable: bool,
 ) -> proc_macro2::TokenStream {
-    // Safety: we just minimally wrap the functions here, safety is handled
+    // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     let fn_title = if nullable {
         quote! { udf::ffi::wrapper::wrap_process_int_null::<#dstruct_ident> }
@@ -200,7 +199,7 @@ fn make_proc_float_fn(
     fn_name: Ident,
     nullable: bool,
 ) -> proc_macro2::TokenStream {
-    // Safety: we just minimally wrap the functions here, safety is handled
+    // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     let fn_title = if nullable {
         quote! { udf::ffi::wrapper::wrap_process_float_null::<#dstruct_ident> }

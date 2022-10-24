@@ -21,7 +21,7 @@ use crate::{BasicUdf, Init, Process, SqlArg, SqlResult, UdfState};
 /// easily work with arguments.
 pub struct ArgList<'a, S: UdfState> {
     base: UDF_ARGS,
-    // We use this zero-sized marker
+    // We use this zero-sized marker to hold our state
     _marker: PhantomData<&'a S>,
 }
 
@@ -37,13 +37,13 @@ impl<'a, S: UdfState> Debug for ArgList<'a, S> {
 }
 
 impl<'a, S: UdfState> ArgList<'a, S> {
-    /// Create an `ArgList` type from a raw `UDF_ARGS` struct
+    /// Create an `ArgList` type on a `UDF_ARGS` struct
+    /// 
+    /// Need to verify whether static lifetime is correct
     #[inline]
-    pub(crate) fn new(base: UDF_ARGS) -> Self {
-        Self {
-            base,
-            _marker: PhantomData,
-        }
+    #[allow(unsafe_op_in_unsafe_fn)]
+    pub(crate) unsafe fn from_arg_ptr(ptr: *const UDF_ARGS) -> &'static Self {
+        unsafe { &*ptr.cast::<ArgList<'_, S>>() }
     }
 
     /// Create a vector of arguments for easy use
@@ -74,7 +74,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     #[allow(clippy::missing_inline_in_public_items)]
     pub fn get(&self, index: usize) -> Option<SqlArg<'a, S>> {
         // convenience
-        let base = self.base;
+        let base = &self.base;
 
         if index >= base.arg_count as usize {
             return None;
@@ -169,5 +169,43 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let remaining = (self.base.base.arg_count - self.n) as usize;
         (remaining, Some(remaining))
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use std::mem::{align_of, size_of};
+
+    use super::*;
+
+    // Verify no size issues
+    #[test]
+    fn args_size_init() {
+        assert_eq!(
+            size_of::<UDF_ARGS>(),
+            size_of::<ArgList<Init>>(),
+            concat!("Size of: ", stringify!(UDF_ARGS))
+        );
+        assert_eq!(
+            align_of::<UDF_ARGS>(),
+            align_of::<ArgList<Init>>(),
+            concat!("Alignment of ", stringify!(UDF_ARGS))
+        );
+    }
+
+    // Verify no size issues
+    #[test]
+    fn args_size_process() {
+        assert_eq!(
+            size_of::<UDF_ARGS>(),
+            size_of::<ArgList<Process>>(),
+            concat!("Size of: ", stringify!(UDF_ARGS))
+        );
+        assert_eq!(
+            align_of::<UDF_ARGS>(),
+            align_of::<ArgList<Process>>(),
+            concat!("Alignment of ", stringify!(UDF_ARGS))
+        );
     }
 }

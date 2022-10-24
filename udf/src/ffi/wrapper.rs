@@ -64,28 +64,30 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
-    dbg!();
     // SAFETY: caller guarantees validity of args ptr
-    let arglist = ArgList::new(*args);
+    let arglist = ArgList::from_arg_ptr(args);
 
     // ret holds our return type, we need to tell the compiler it is safe across
     // unwind boundaries
     let mut ret = false;
     let mut ret_wrap = AssertUnwindSafe(&mut ret);
-    dbg!();
+
     // Unwinding into C is UB so we need to catch potential panics at the FFI
     // boundary Note to possible code readers: `panic::catch_unwind` should NOT
-    // be used anywhere except the FFI boundary,
+    // be used anywhere except the FFI boundary
     panic::catch_unwind(move || {
-        dbg!();
         // Call the user's init function
         // If initialization succeeds, put our UDF info struct on the heap
         // If initialization fails, copy a message to the buffer
-        let mut init_cfg = InitCfg::from_ptr(initid);
-        let boxed_struct: Box<T> = match T::init(&mut init_cfg, &arglist) {
+
+        // SAFETY: caller must guarantee initid is non-null and valid. InitCfg
+        // has the same size as UDF_INIT
+        let init_cfg = &mut *initid.cast::<InitCfg>();
+
+        let boxed_struct: Box<T> = match T::init(init_cfg, arglist) {
             Ok(v) => Box::new(v),
             Err(e) => {
-                // Safety: buffer size is correct
+                // SAFETY: buffer size is correct
                 write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(e.as_bytes(), message);
                 **ret_wrap = true;
                 return;
@@ -93,11 +95,10 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         };
 
         // Set the `initid` struct to contain our struct
-        // Safety: Must be cleaned up in deinit function, or we will leak!
+        // SAFETY: Must be cleaned up in deinit function, or we will leak!
         (*initid).store_box(boxed_struct);
     })
     .unwrap_or_else(|e| ret = true);
-    dbg!();
 
     ret
 }
@@ -130,11 +131,11 @@ where
 {
     // SAFETY: caller guarantees validity
     dbg!();
-    let arglist = ArgList::new(*args);
+    let arglist = ArgList::from_arg_ptr(args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
 
-    let res = T::process(&mut b, &arglist, err);
+    let res = T::process(&mut b, arglist, err);
 
     (*initid).store_box(b);
     dbg!();
@@ -160,11 +161,11 @@ pub unsafe fn wrap_process_int_null<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
 {
-    let arglist = ArgList::new(*args);
+    let arglist = ArgList::from_arg_ptr(args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
 
-    let res = T::process(&mut b, &arglist, err);
+    let res = T::process(&mut b, arglist, err);
 
     (*initid).store_box(b);
 
@@ -195,11 +196,11 @@ where
     for<'a> T: BasicUdf<Returns<'a> = f64>,
 {
     // SAFETY: caller guarantees validity
-    let arglist = ArgList::new(*args);
+    let arglist = ArgList::from_arg_ptr(args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
 
-    let res = T::process(&mut b, &arglist, err);
+    let res = T::process(&mut b, arglist, err);
 
     (*initid).store_box(b);
 
@@ -222,11 +223,11 @@ pub unsafe extern "C" fn wrap_process_float_null<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,
 {
-    let arglist = ArgList::new(*args);
+    let arglist = ArgList::from_arg_ptr(args);
     let mut b = (*initid).retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
 
-    let res = T::process(&mut b, &arglist, err);
+    let res = T::process(&mut b, arglist, err);
 
     (*initid).store_box(b);
 
