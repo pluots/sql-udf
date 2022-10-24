@@ -38,7 +38,7 @@ impl<'a, S: UdfState> Debug for ArgList<'a, S> {
 
 impl<'a, S: UdfState> ArgList<'a, S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
-    /// 
+    ///
     /// Need to verify whether static lifetime is correct
     #[inline]
     #[allow(unsafe_op_in_unsafe_fn)]
@@ -171,7 +171,6 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
         (remaining, Some(remaining))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
