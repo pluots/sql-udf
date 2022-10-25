@@ -7,26 +7,38 @@ pub mod bindings;
 #[doc(hidden)]
 pub mod wrapper;
 pub(crate) mod wrapper_impl;
-
-/// Type of the `Item_result` enum indicator in the FFI
-pub type SqlTypeTag = bindings::Item_result;
+use bindings::Item_result;
 
 /// Enum representing possible SQL result types
 ///
 /// This simply represents the possible types, but does not contain any values.
 /// [`SqlResult`] is the corresponding enum that actually contains data.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 #[repr(i8)]
 pub enum SqlType {
     /// Integer result
-    Int = bindings::Item_result_INT_RESULT as i8,
+    Int = Item_result::INT_RESULT as i8,
     /// Real result
-    Real = bindings::Item_result_REAL_RESULT as i8,
+    Real = Item_result::REAL_RESULT as i8,
     /// String result
-    String = bindings::Item_result_STRING_RESULT as i8,
+    String = Item_result::STRING_RESULT as i8,
     /// Decimal result
-    Decimal = bindings::Item_result_DECIMAL_RESULT as i8,
+    Decimal = Item_result::DECIMAL_RESULT as i8,
+}
+
+impl SqlType {
+    /// Convert this enum to a SQL [`Item_result`]. This is only useful if you
+    /// use [`ffi::bindings`].
+    #[inline]
+    pub fn to_item_result(&self) -> Item_result {
+        match *self {
+            Self::Int => Item_result::INT_RESULT,
+            Self::Real => Item_result::REAL_RESULT,
+            Self::String => Item_result::STRING_RESULT,
+            Self::Decimal => Item_result::DECIMAL_RESULT,
+        }
+    }
 }
 
 impl TryFrom<i8> for SqlType {
@@ -47,17 +59,17 @@ impl TryFrom<i8> for SqlType {
     }
 }
 
-impl TryFrom<SqlTypeTag> for SqlType {
+impl TryFrom<Item_result> for SqlType {
     type Error = String;
 
     /// Create an [`SqlType`] from an [`SqlTypeTag`] (a `c_int`)
     #[inline]
-    fn try_from(tag: SqlTypeTag) -> Result<Self, Self::Error> {
+    fn try_from(tag: Item_result) -> Result<Self, Self::Error> {
         let val = match tag {
-            x if x == Self::String as SqlTypeTag => Self::String,
-            x if x == Self::Real as SqlTypeTag => Self::Real,
-            x if x == Self::Int as SqlTypeTag => Self::Int,
-            x if x == Self::Decimal as SqlTypeTag => Self::Decimal,
+            Item_result::STRING_RESULT => Self::String,
+            Item_result::REAL_RESULT => Self::Real,
+            Item_result::INT_RESULT => Self::Int,
+            Item_result::DECIMAL_RESULT => Self::Decimal,
             _ => return Err("invalid arg type {tag} received".to_owned()),
         };
 

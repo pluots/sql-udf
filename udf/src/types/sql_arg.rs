@@ -4,7 +4,8 @@ use core::fmt::Debug;
 use std::cell::Cell;
 use std::marker::PhantomData;
 
-use crate::ffi::{SqlType, SqlTypeTag};
+use crate::ffi::bindings::Item_result;
+use crate::ffi::SqlType;
 use crate::types::SqlResult;
 
 /// A single SQL argument, including its attributes
@@ -48,7 +49,7 @@ pub struct SqlArg<'a, S: UdfState> {
     /// "interior mutability". Essentially we have to do edits via methods
     /// like `.get()` and `.replace()`, but in exchange mutability doesn't need
     /// to propegate up.
-    pub(crate) arg_type: &'a Cell<SqlTypeTag>,
+    pub(crate) arg_type: &'a Cell<Item_result>,
 
     /// Internal marker for typestate pattern
     pub(crate) marker: PhantomData<S>,
@@ -90,7 +91,7 @@ impl<'a> SqlArg<'a, Init> {
     #[inline]
     pub fn set_type_coercion(&mut self, newtype: SqlType) {
         // .replace() on our cell will do exactly what it sounds like
-        self.arg_type.replace(newtype as SqlTypeTag);
+        self.arg_type.replace(newtype.to_item_result());
     }
 }
 

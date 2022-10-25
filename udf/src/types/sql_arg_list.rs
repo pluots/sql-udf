@@ -12,7 +12,6 @@ use std::{fmt, panic, ptr, slice, str};
 
 use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
 use crate::ffi::wrapper_impl::write_msg_to_buf;
-use crate::ffi::SqlTypeTag;
 use crate::{BasicUdf, Init, Process, SqlArg, SqlResult, UdfState};
 
 /// A collection of SQL arguments
@@ -42,7 +41,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     /// Need to verify whether static lifetime is correct
     #[inline]
     #[allow(unsafe_op_in_unsafe_fn)]
-    pub(crate) unsafe fn from_arg_ptr(ptr: *const UDF_ARGS) -> &'static Self {
+    pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *const UDF_ARGS) -> &'p Self {
         unsafe { &*ptr.cast::<ArgList<'_, S>>() }
     }
 
@@ -97,7 +96,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
                 value: arg,
                 maybe_null,
                 attribute,
-                arg_type: &*(type_ptr as *const Cell<SqlTypeTag>),
+                arg_type: &*(type_ptr as *const Cell<Item_result>),
                 marker: PhantomData,
             })
         }
