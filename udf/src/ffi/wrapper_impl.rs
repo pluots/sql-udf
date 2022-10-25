@@ -10,7 +10,6 @@ use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
 use std::{ptr, slice, str};
 
 use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
-use crate::ffi::SqlTypeTag;
 use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};
 
 /// Add methods to the raw C struct
@@ -76,6 +75,7 @@ mod tests {
     use std::ffi::{c_int, c_void, CStr};
 
     use super::*;
+    use crate::ffi::bindings::Item_result;
     use crate::types::ArgList;
     use crate::Init;
 
@@ -111,22 +111,22 @@ mod tests {
         // Just test null pointers here
         unsafe {
             assert_eq!(
-                SqlResult::from_ptr(ptr::null(), SqlType::Int as i32, 0),
+                SqlResult::from_ptr(ptr::null(), Item_result::INT_RESULT, 0),
                 Ok(SqlResult::Int(None))
             );
             assert_eq!(
-                SqlResult::from_ptr(ptr::null(), SqlType::Real as i32, 0),
+                SqlResult::from_ptr(ptr::null(), Item_result::REAL_RESULT, 0),
                 Ok(SqlResult::Real(None))
             );
             assert_eq!(
-                SqlResult::from_ptr(ptr::null(), SqlType::String as i32, 0),
+                SqlResult::from_ptr(ptr::null(), Item_result::STRING_RESULT, 0),
                 Ok(SqlResult::String(None))
             );
             assert_eq!(
-                SqlResult::from_ptr(ptr::null(), SqlType::Decimal as i32, 0),
+                SqlResult::from_ptr(ptr::null(), Item_result::DECIMAL_RESULT, 0),
                 Ok(SqlResult::Decimal(None))
             );
-            assert!(SqlResult::from_ptr(ptr::null(), -1, 0).is_err());
+            assert!(SqlResult::from_ptr(ptr::null(), Item_result::INVALID_RESULT, 0).is_err());
         }
     }
 
@@ -136,29 +136,36 @@ mod tests {
         unsafe {
             let ival = -1000i64;
             assert_eq!(
-                SqlResult::from_ptr(&ival as *const i64 as *const u8, SqlType::Int as i32, 0),
+                SqlResult::from_ptr(&ival as *const i64 as *const u8, Item_result::INT_RESULT, 0),
                 Ok(SqlResult::Int(Some(ival)))
             );
 
             let rval = -1000.0f64;
             assert_eq!(
-                SqlResult::from_ptr(&rval as *const f64 as *const u8, SqlType::Real as i32, 0),
+                SqlResult::from_ptr(
+                    &rval as *const f64 as *const u8,
+                    Item_result::REAL_RESULT,
+                    0
+                ),
                 Ok(SqlResult::Real(Some(rval)))
             );
 
             let sval = "this is a string";
             assert_eq!(
-                SqlResult::from_ptr(sval.as_ptr(), SqlType::String as i32, sval.len()),
+                SqlResult::from_ptr(sval.as_ptr(), Item_result::STRING_RESULT, sval.len()),
                 Ok(SqlResult::String(Some(sval.as_bytes())))
             );
 
             let dval = "123.456";
             assert_eq!(
-                SqlResult::from_ptr(dval.as_ptr(), SqlType::Decimal as i32, dval.len()),
+                SqlResult::from_ptr(dval.as_ptr(), Item_result::DECIMAL_RESULT, dval.len()),
                 Ok(SqlResult::Decimal(Some(dval.as_bytes())))
             );
 
-            assert!(SqlResult::from_ptr(dval.as_ptr(), -1, dval.len()).is_err());
+            assert!(
+                SqlResult::from_ptr(dval.as_ptr(), Item_result::INVALID_RESULT, dval.len())
+                    .is_err()
+            );
         }
     }
 
@@ -172,10 +179,10 @@ mod tests {
     #[test]
     fn process_args_ok() {
         let mut arg_types = [
-            SqlType::Int as c_int,
-            SqlType::Real as c_int,
-            SqlType::String as c_int,
-            SqlType::Decimal as c_int,
+            Item_result::INT_RESULT,
+            Item_result::REAL_RESULT,
+            Item_result::STRING_RESULT,
+            Item_result::DECIMAL_RESULT,
         ];
 
         let mut arg_ptrs: [*const u8; ARG_COUNT] = [

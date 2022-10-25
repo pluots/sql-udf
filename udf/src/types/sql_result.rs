@@ -3,7 +3,7 @@
 use std::{slice, str};
 
 use crate::ffi::bindings::Item_result;
-use crate::ffi::{SqlType, SqlTypeTag};
+use crate::ffi::SqlType;
 
 /// A possible SQL result consisting of a type and nullable value
 ///
@@ -37,13 +37,13 @@ impl<'a> SqlResult<'a> {
     /// exactly `len` long.
     pub(crate) unsafe fn from_ptr(
         ptr: *const u8,
-        tag: SqlTypeTag,
+        tag: Item_result,
         len: usize,
     ) -> Result<SqlResult<'a>, String> {
         // Handle nullptr right away here
 
         let marker =
-            SqlType::try_from(tag).map_err(|_| format!("invalid arg type {tag} received"))?;
+            SqlType::try_from(tag).map_err(|_| format!("invalid arg type {tag:?} received"))?;
 
         let arg = if ptr.is_null() {
             match marker {
