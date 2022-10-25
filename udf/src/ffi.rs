@@ -29,7 +29,7 @@ pub enum SqlType {
 
 impl SqlType {
     /// Convert this enum to a SQL [`Item_result`]. This is only useful if you
-    /// use [`ffi::bindings`].
+    /// use [`crate::ffi::bindings`].
     #[inline]
     pub fn to_item_result(&self) -> Item_result {
         match *self {
@@ -62,7 +62,8 @@ impl TryFrom<i8> for SqlType {
 impl TryFrom<Item_result> for SqlType {
     type Error = String;
 
-    /// Create an [`SqlType`] from an [`SqlTypeTag`] (a `c_int`)
+    /// Create an [`SqlType`] from an [`Item_result`], located in the `bindings`
+    /// module.
     #[inline]
     fn try_from(tag: Item_result) -> Result<Self, Self::Error> {
         let val = match tag {

@@ -35,7 +35,7 @@ pub const false_: u32 = 0;
 pub const __bool_true_false_are_defined: u32 = 1;
 
 /// Type of the user defined function return slot and arguments
-/// 
+///
 // This is `repr(C)` to ensure it is represented the same as C enums.
 #[repr(C)]
 #[non_exhaustive]
