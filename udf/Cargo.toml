@@ -1,6 +1,6 @@
 [package]
 name = "udf"
-version = "0.2.1"
+version = "0.2.2"
 rust-version = "1.65"
 edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
