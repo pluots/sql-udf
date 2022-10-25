@@ -139,13 +139,20 @@ become stable on 2022-11-03.
 
 ```sh
 # This will mount your current directory at /build, and use a new .docker-dargo
-# directory for cargo's cache. It will use your same target folder.
+# directory for cargo's cache. It will use your same target folder (different )
 # Change the `bash -c` command based on what you want to build.
 docker run --rm -it \
-  -v $(pwd):/build \
+  -v "$(pwd):/build" \
   -e CARGO_HOME=/build/.docker-cargo \
   rustlang/rust:nightly \
-  bash -c "cd /build; cargo build --release --examples"
+  bash -c "cd /build; cargo build -p udf-examples --release"
+```
+
+If you ever want to build 
+
+```sh
+nm -gC --defined-only target/release/libudf_examples.so
+
 ```
 
 ## Testing in docker
@@ -166,8 +173,11 @@ cp /target/release/examples/*.so /usr/lib/mysql/plugin/
 mysql -pbanana
 CREATE OR REPLACE FUNCTION  sql_sequence returns integer soname 'libsequence.so';
 CREATE OR REPLACE FUNCTION  sum_int returns integer soname 'libbasic_sum.so';
+CREATE OR REPLACE FUNCTION  is_const returns string soname 'libis_const.so';
+CREATE OR REPLACE AGGREGATE FUNCTION  udf_median returns integer soname 'libmedian.so';
 
 select sum_int(1, 2.2, '4');
 # sequences work best with a table
 select sql_sequence(1);
+select udf_median(4);
 ```

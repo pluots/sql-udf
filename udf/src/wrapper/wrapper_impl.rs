@@ -12,25 +12,6 @@ use std::{ptr, slice, str};
 use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
 use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};
 
-/// Add methods to the raw C struct
-impl UDF_INIT {
-    /// Consume a box and store its pointer in this `UDF_INIT`
-    ///
-    /// After calling this function, the caller is responsible for
-    /// cleaning up the
-    pub(crate) fn store_box<T>(&mut self, b: Box<T>) {
-        let box_ptr = Box::into_raw(b);
-        self.ptr = box_ptr.cast::<c_char>();
-    }
-
-    /// Given a generic type T, assume
-    ///
-    /// Safety: T _must_ be the type of this pointer
-    #[allow(unsafe_op_in_unsafe_fn)]
-    pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
-        Box::from_raw(self.ptr.cast::<T>())
-    }
-}
 
 /// Write a string message to a buffer. Accepts a const generic size `N` that
 /// length of the message will check against (N must be the size of the buffer)

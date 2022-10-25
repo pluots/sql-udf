@@ -2,7 +2,7 @@
 
 use std::num::NonZeroU8;
 
-use lipsum::{lipsum, lipsum_from_seed};
+use lipsum::{lipsum as lipsum_fn, lipsum_from_seed};
 use udf::prelude::*;
 
 // Cap potential resource usage, this gives us more than enough to
@@ -15,11 +15,12 @@ struct Lipsum {
     res: String,
 }
 
+// #[register]
 impl BasicUdf for Lipsum {
     type Returns<'a> = &'a str;
 
     /// We expect LIPSUM(n) or LIPSUM(n, m)
-    fn init(cfg: &mut InitCfg, args: &ArgList<Init>) -> Result<Self, String> {
+    fn init(cfg: &mut UdfCfg, args: &ArgList<Init>) -> Result<Self, String> {
         if args.is_empty() || args.len() > 2 {
             return Err(format!("Expected 1 or 2 args; got {}", args.len()));
         }
@@ -75,7 +76,7 @@ impl BasicUdf for Lipsum {
             }
             None => {
                 // If no seed argument, just generate word count
-                lipsum(n)
+                lipsum_fn(n)
             }
         };
 

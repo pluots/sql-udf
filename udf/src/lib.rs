@@ -72,13 +72,11 @@ pub mod prelude;
 pub mod traits;
 pub mod types;
 
+// We hide this because it's really only used by our proc macros
+#[doc(hidden)]
+pub mod wrapper;
+
 pub use traits::*;
-// Make this inline so we don't show the re-exports
-// #[doc(inline)]
 pub use types::*;
 
-/// Max error message size, 0x200 = 512 bytes
-///
-/// The crate `mysqlclient_sys` links this variable, but easier to just copy the
-/// single number here.
-const MYSQL_ERRMSG_SIZE: usize = 0x200;
+pub use ffi::MYSQL_ERRMSG_SIZE;

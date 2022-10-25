@@ -1,13 +1,14 @@
 //! Module containing Rust bindings and wrapper for MySQL/MariaDB C interface
+//! 
+//! The types in this module are usually 
 
 use crate::SqlResult;
 
 pub mod bindings;
-
-#[doc(hidden)]
-pub mod wrapper;
-pub(crate) mod wrapper_impl;
 use bindings::Item_result;
+
+/// Max error message size, 0x200 = 512 bytes
+const MYSQL_ERRMSG_SIZE: usize = 0x200;
 
 /// Enum representing possible SQL result types
 ///

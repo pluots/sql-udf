@@ -26,7 +26,7 @@ use crate::types::SqlResult;
 /// let sql_arg: MockSqlArg<Init> = MockSqlArg::new(&stype, true, "attribute");
 ///
 /// ```
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct SqlArg<'a, S: UdfState> {
     /// The actual argument type and value
     pub value: SqlResult<'a>,

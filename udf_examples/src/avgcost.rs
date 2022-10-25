@@ -1,5 +1,6 @@
 use udf::prelude::*;
 
+#[derive(Debug, Default, PartialEq)]
 struct AvgCost {
     count: usize,
     total_qty: i64,
@@ -12,7 +13,7 @@ impl BasicUdf for AvgCost {
     where
         Self: 'a;
 
-    fn init<'a>(_cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(cfg: &mut UdfCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         if args.len() != 2 {
             return Err("AVGCOST() requires two arguments".to_owned());
         }
@@ -28,11 +29,12 @@ impl BasicUdf for AvgCost {
             .as_real()
             .ok_or("Second argument must be a real")?;
 
-        Ok(Self {
-            count: 0,
-            total_qty: 0,
-            total_price: 0.0,
-        })
+        cfg.set_maybe_null(true);
+        cfg.set_decimals(10);
+        cfg.set_max_len(20);
+
+        // Derived default just has 0 at all fields
+        Ok(Self::default())
     }
 
     fn process<'a>(
@@ -47,13 +49,14 @@ impl BasicUdf for AvgCost {
     }
 }
 
+#[register]
 impl AggregateUdf for AvgCost {
     fn clear(&mut self, error: Option<NonZeroU8>) -> Result<(), NonZeroU8> {
+        // If there is an error, re-return the error
         error.map_or(Ok(()), |e| Err(e))?;
 
-        self.total_price = 0.0;
-        self.total_qty = 0;
-        self.count = 0;
+        // Reset our struct and return
+        *self = Self::default();
         Ok(())
     }
 
@@ -61,7 +64,7 @@ impl AggregateUdf for AvgCost {
         error.map_or(Ok(()), |e| Err(e))?;
 
         let qty = args.get(0).unwrap().value.as_int().unwrap();
-        let newqty = self.total_qty + qty;
+        let _newqty = self.total_qty + qty;
         self.count += 1;
 
         // More work comes here

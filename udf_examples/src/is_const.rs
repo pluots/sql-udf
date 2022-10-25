@@ -3,11 +3,11 @@ struct IsConst {
     is_const: bool,
 }
 
-// #[register]
+#[register]
 impl BasicUdf for IsConst {
     type Returns<'a> = &'static str;
 
-    fn init<'a>(_cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(_cfg: &mut UdfCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         if args.len() != 1 {
             return Err("IS_CONST only accepts one argument".to_owned());
         }
@@ -25,3 +25,6 @@ impl BasicUdf for IsConst {
         Ok(if self.is_const { "const" } else { "not const" })
     }
 }
+
+#[cfg(all(test, sql_integration))]
+mod int_tests {}

@@ -1,12 +1,15 @@
 use udf::prelude::*;
-struct Median {
+
+#[derive(Debug)]
+struct UdfMedian {
     v: Vec<i64>,
 }
 
-impl BasicUdf for Median {
+#[register]
+impl BasicUdf for UdfMedian {
     type Returns<'a> = Option<i64>;
 
-    fn init<'a>(_cfg: &mut InitCfg, _args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(_cfg: &mut UdfCfg, _args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         Ok(Self { v: Vec::new() })
     }
 
@@ -18,12 +21,14 @@ impl BasicUdf for Median {
         if self.v.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(self.v[self.v.len() / 2]))
+            // Safely get the middle element; dereference if it is `Some`
+            Ok(self.v.get(self.v.len() / 2).map(|x| *x))
         }
     }
 }
 
-impl AggregateUdf for Median {
+#[register]
+impl AggregateUdf for UdfMedian {
     fn clear(&mut self, _error: Option<NonZeroU8>) -> Result<(), NonZeroU8> {
         Ok(self.v.clear())
     }
@@ -32,6 +37,8 @@ impl AggregateUdf for Median {
         if let Some(a) = args.get(0) {
             if let Some(v) = a.value.as_int() {
                 self.v.push(v);
+            } else if let Some(v) = a.value.as_real() {
+                self.v.push(v as i64);
             }
         }
         Ok(())

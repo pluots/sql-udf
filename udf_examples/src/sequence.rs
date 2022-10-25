@@ -33,7 +33,7 @@ impl BasicUdf for SqlSequence {
         Self: 'a;
 
     /// Init just validates the argument count and initializes our empty struct
-    fn init<'a>(cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(cfg: &mut UdfCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         if args.len() > 1 {
             return Err(Errors::BadArguments(args.len()).to_string());
         }
@@ -44,7 +44,7 @@ impl BasicUdf for SqlSequence {
         }
 
         // Result will differ for each call
-        cfg.set_const_item(false);
+        cfg.set_is_const(false);
         Ok(Self { last_val: 0 })
     }
 

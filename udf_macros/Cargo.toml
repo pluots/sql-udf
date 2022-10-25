@@ -5,6 +5,7 @@ edition = "2021"
 description = "UDF procedural macros implementation"
 repository = "https://github.com/pluots/udf/tree/main/udf_macros"
 license = "Apache-2.0"
+publish = true
 # autotests = false
 
 [lib]
@@ -24,9 +25,12 @@ udf = { path = "../udf", version = "0.2.0" }
 [package.metadata.release]
 shared-version = true
 
+
 # [[test]]
 # name = "tests"
 # path = "tests/harness.rs"
 
-# [dev-dependencies]
-# syn = { version = "1.0.99", features = ["full", "extra-traits"] }
+[[package.metadata.release.pre-release-replacements]]
+file = "."
+search = "udf = { path = \"../udf_macros\", version = .* }"
+replace = "udf = { path = \"../udf_macros\", version = \"{{version}}\" }"

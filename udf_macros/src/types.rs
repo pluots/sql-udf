@@ -8,7 +8,7 @@ pub enum ImplType {
 
 /// Possible return types in SQL
 pub enum FnSigType {
-    String,
+    Bytes,
     Int,
     Float,
 }
@@ -34,11 +34,19 @@ pub fn make_type_list() -> Vec<RetType> {
     vec![
         RetType::new(parse_quote! { i64 }, false, FnSigType::Int),
         RetType::new(parse_quote! { f64 }, false, FnSigType::Float),
-        RetType::new(parse_quote! { &'a str }, false, FnSigType::String),
-        RetType::new(parse_quote! { String }, false, FnSigType::String),
+        RetType::new(parse_quote! { &str }, false, FnSigType::Bytes),
+        RetType::new(parse_quote! { &'a str }, false, FnSigType::Bytes),
+        RetType::new(parse_quote! { &'static str }, false, FnSigType::Bytes),
+        RetType::new(parse_quote! { String }, false, FnSigType::Bytes),
         RetType::new(parse_quote! { Option<i64> }, true, FnSigType::Int),
         RetType::new(parse_quote! { Option<f64> }, true, FnSigType::Float),
-        RetType::new(parse_quote! { Option<&'a str> }, true, FnSigType::String),
-        RetType::new(parse_quote! { Option<String> }, true, FnSigType::String),
+        RetType::new(parse_quote! { Option<&str> }, true, FnSigType::Bytes),
+        RetType::new(parse_quote! { Option<&'a str> }, true, FnSigType::Bytes),
+        RetType::new(
+            parse_quote! { Option<&'static str> },
+            true,
+            FnSigType::Bytes,
+        ),
+        RetType::new(parse_quote! { Option<String> }, true, FnSigType::Bytes),
     ]
 }
