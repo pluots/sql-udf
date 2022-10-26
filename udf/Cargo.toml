@@ -1,6 +1,6 @@
 [package]
 name = "udf"
-version = "0.2.3"
+version = "0.3.0"
 rust-version = "1.65"
 edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
@@ -11,8 +11,8 @@ keywords = ["sql", "udf"]
 publish = true
 
 [dependencies]
-udf-macros = { path = "../udf_macros", version = "0.2.3" }
-udf-sys = { path = "../udf_sys", version = "0.2.3" }
+udf-macros = { path = "../udf_macros", version = "0.3.0" }
+udf-sys = { path = "../udf_sys", version = "0.3.0" }
 
 [package.metadata.release]
 shared-version = true
@@ -20,12 +20,12 @@ shared-version = true
 [[package.metadata.release.pre-release-replacements]]
 file = "Cargo.toml"
 search = 'udf-macros = \{ path = "../udf_macros", version = .* \}'
-replace = 'udf-macros = { path = "../udf_macros", version = "{{version}}" }'
+replace = 'udf-macros = { path = "../udf_macros", version = "0.3.0" }'
 
 [[package.metadata.release.pre-release-replacements]]
 file = "Cargo.toml"
 search = 'udf-macros = \{ path = "../udf_sys", version = .* \}'
-replace = 'udf-macros = { path = "../udf_sys", version = "{{version}}" }'
+replace = 'udf-macros = { path = "../udf_sys", version = "0.3.0" }'
 
 # Can't run replacements at workspace root. Need to use this "hacky" sort of way.
 [[package.metadata.release.pre-release-replacements]]
