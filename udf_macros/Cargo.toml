@@ -32,11 +32,11 @@ shared-version = true
 # path = "tests/harness.rs"
 
 [[package.metadata.release.pre-release-replacements]]
-file = "."
-search = "udf = { path = \"../udf_macros\", version = .* }"
-replace = "udf = { path = \"../udf_macros\", version = \"{{version}}\" }"
+file = "Cargo.toml"
+search = 'udf = \{ path = "../udf_macros", version = .* \}'
+replace = 'udf = { path = "../udf_macros", version = "{{version}}" }'
 
 [[package.metadata.release.pre-release-replacements]]
-file = "."
-search = "udf = { path = \"../udf_sys\", version = .* }"
-replace = "udf = { path = \"../udf_sys\", version = \"{{version}}\" }"
+file = "Cargo.toml"
+search = 'udf = \{ path = "../udf_sys", version = .* \}'
+replace = 'udf = { path = "../udf_sys", version = "{{version}}" }'
