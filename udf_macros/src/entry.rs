@@ -161,7 +161,9 @@ fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::T
     let init_fn = make_init_fn(dstruct_ident, &init_fn_name);
     let deinit_fn = make_deinit_fn(dstruct_ident, &deinit_fn_name);
     let process_fn = match rt.fn_sig {
-        FnSigType::BytesRef => make_proc_buf_ref_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::BytesRef => {
+            make_proc_buf_ref_fn(dstruct_ident, &process_fn_name, rt.is_optional)
+        }
         FnSigType::Int => make_proc_int_fn(dstruct_ident, &process_fn_name, rt.is_optional),
         FnSigType::Float => make_proc_float_fn(dstruct_ident, &process_fn_name, rt.is_optional),
         FnSigType::Bytes => make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional),
@@ -311,7 +313,6 @@ fn make_proc_buf_ref_fn(
         }
     }
 }
-
 
 fn make_proc_buf_fn(
     dstruct_ident: &Ident,

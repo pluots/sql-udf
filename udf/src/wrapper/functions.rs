@@ -276,7 +276,6 @@ where
     // let ret = result;
 
     // Need to get the pointer after, since the reference is in `b`.
-    
 
     ret
 }
@@ -292,10 +291,9 @@ pub unsafe fn wrap_process_buf_ref_null<T, S>(
     error: *mut c_uchar,
 ) -> *const c_char
 where
-    for <'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>
-    // for<'a> T::Returns<'a>: AsRef<[u8]>,
-    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
+    for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
+    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
+                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
     let arglist = ArgList::from_arg_ptr(args);
@@ -334,7 +332,6 @@ where
         result
     }
 }
-
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
@@ -384,7 +381,6 @@ where
     // let ret = result;
 
     // Need to get the pointer after, since the reference is in `b`.
-    
 
     ret
 }
@@ -400,10 +396,9 @@ pub unsafe fn wrap_process_buf_null<T, S>(
     error: *mut c_uchar,
 ) -> *const c_char
 where
-    for <'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>
-    // for<'a> T::Returns<'a>: AsRef<[u8]>,
-    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
+    for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
+    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
+                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
     let arglist = ArgList::from_arg_ptr(args);
@@ -443,7 +438,6 @@ where
     }
 }
 
-
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_add<T>(
@@ -469,11 +463,8 @@ pub unsafe fn wrap_add<T>(
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe fn wrap_clear<T>(
-    initid: *mut UDF_INIT,
-    _is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) where
+pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error: *mut c_uchar)
+where
     T: AggregateUdf,
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
