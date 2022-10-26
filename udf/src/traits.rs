@@ -3,9 +3,10 @@
 //! A basic UDF just needs to implement [`BasicUdf`]. An aggregate UDF needs to
 //! implement both [`BasicUdf`] and [`AggregateUdf`].
 
+use core::fmt::Debug;
 use std::num::NonZeroU8;
 
-use crate::types::{ArgList, Init, Process, SqlArg, UdfCfg};
+use crate::types::{ArgList, UdfCfg};
 use crate::ProcessError;
 
 /// This trait specifies the functions needed for a standard (non-aggregate) UDF
@@ -169,7 +170,7 @@ pub trait AggregateUdf: BasicUdf {
     /// function:
     ///
     /// ```
-    /// error.map_or(Ok(()), |e| Err(e))?;
+    /// error.map_or(Ok(()), Err)?;
     /// ```
     ///
     /// If you do this,
@@ -196,14 +197,34 @@ pub trait AggregateUdf: BasicUdf {
     #[inline]
     fn remove(
         &mut self,
-        cfg: &UdfCfg<Process>,
-        args: &ArgList<Process>,
-        error: Option<NonZeroU8>,
+        _cfg: &UdfCfg<Process>,
+        _args: &ArgList<Process>,
+        _error: Option<NonZeroU8>,
     ) -> Result<(), NonZeroU8> {
         Ok(())
     }
 }
 
-/// A trait that is assigned by the `#[register]` proc macro for some internal
-/// checks.
-pub trait BasicUdfRegistered {}
+/// A state of the UDF, representing either `Init` or `Process`
+///
+/// This is a zero-sized type used to control what operations are allowed at
+/// different times.
+pub trait UdfState: Debug + PartialEq {}
+
+/// Typestate marker for the initialization phase
+///
+/// This is a zero-sized type that is just used to hint to the compiler that a
+/// type was created in the `init` function, which allows for some extra
+/// methods.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Init();
+
+/// Typestate marker for the processing phase
+///
+/// This is a zero-sized type that indicates that a type was created in
+/// the `process` function.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Process();
+
+impl UdfState for Init {}
+impl UdfState for Process {}

@@ -3,6 +3,6 @@
 
 pub use std::num::NonZeroU8;
 
-pub use crate::register;
-pub use crate::traits::{AggregateUdf, BasicUdf};
-pub use crate::types::{ArgList, Init, Process, ProcessError, SqlArg, SqlType, UdfCfg};
+pub use crate::{
+    register, AggregateUdf, ArgList, BasicUdf, Init, Process, ProcessError, SqlArg, SqlType, UdfCfg,
+};

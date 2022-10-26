@@ -1,3 +1,17 @@
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::str_to_string,
+    clippy::missing_inline_in_public_items
+)]
+// Pedantic config
+#![allow(
+    clippy::missing_const_for_fn,
+    clippy::missing_panics_doc,
+    clippy::must_use_candidate,
+    clippy::cast_possible_truncation
+)]
+
 mod entry;
 mod types;
 
@@ -48,5 +62,5 @@ pub(crate) use match_variant;
 // #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn register(args: TokenStream, item: TokenStream) -> TokenStream {
     // Keep this file clean by keeping the dirty work in entry
-    entry::register(args, item)
+    entry::register(&args, item)
 }

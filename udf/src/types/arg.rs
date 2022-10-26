@@ -4,29 +4,18 @@ use core::fmt::Debug;
 use std::cell::Cell;
 use std::marker::PhantomData;
 
-use crate::ffi::bindings::Item_result;
-use crate::ffi::SqlType;
-use crate::types::SqlResult;
+use udf_sys::Item_result;
+
+use crate::types::{SqlResult, SqlType};
+use crate::{Init, UdfState};
 
 /// A single SQL argument, including its attributes
 ///
 /// This struct contains the argument itself. It uses a typestate pattern (`S`)
 /// to have slightly different functionality when used during initialization and
 /// during processing.
-///
-/// ```
-/// # use udf::ffi::{SqlResult, SqlResultTag};
-/// # use udf::prelude::*;
-/// # let type_ptr = SqlResult::String as SqlResultTag;
-/// # let content = "this is the argument";
-///
-/// use udf::mock::MockSqlArg;
-///
-/// let stype = SqlType::Real(Some(100.0f64));
-/// let sql_arg: MockSqlArg<Init> = MockSqlArg::new(&stype, true, "attribute");
-///
-/// ```
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct SqlArg<'a, S: UdfState> {
     /// The actual argument type and value
     pub value: SqlResult<'a>,
@@ -63,7 +52,7 @@ impl<'a> SqlArg<'a, Init> {
     /// provides a simple test to see if this is true.
     ///
     /// There is no way to differentiate between "not const" and "const but
-    /// NULL"
+    /// NULL" when we are in the `Process` step.
     #[inline]
     pub fn is_const(&self) -> bool {
         match self.value {
@@ -94,28 +83,3 @@ impl<'a> SqlArg<'a, Init> {
         self.arg_type.replace(newtype.to_item_result());
     }
 }
-
-/// Typestate marker for the initialization phase
-///
-/// This is a zero-sized type that is just used to hint to the compiler that an
-/// [`SqlArg`] was created in the `init` function, which allows for some extra
-/// methods.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Init {}
-
-/// Typestate marker for the processing phase
-///
-/// This is a zero-sized type that indicates that an [`SqlArg`] was created in
-/// the `process` function. Currently there are no special methods when in this
-/// state.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Process {}
-
-/// A state of the UDF, representing either `Init` or `Process`
-///
-/// This is a zero-sized type used to control what operations are allowed at
-/// different times.
-pub trait UdfState: Debug + PartialEq {}
-
-impl UdfState for Init {}
-impl UdfState for Process {}

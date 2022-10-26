@@ -21,7 +21,7 @@ enum Errors {
 impl Display for Errors {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Errors::BadArguments(n) => write!(f, "This function takes 0 or 1 arguments; got {n}"),
+            Self::BadArguments(n) => write!(f, "This function takes 0 or 1 arguments; got {n}"),
         }
     }
 }
@@ -33,7 +33,7 @@ impl BasicUdf for SqlSequence {
         Self: 'a;
 
     /// Init just validates the argument count and initializes our empty struct
-    fn init<'a>(cfg: &mut UdfCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         if args.len() > 1 {
             return Err(Errors::BadArguments(args.len()).to_string());
         }
@@ -50,6 +50,7 @@ impl BasicUdf for SqlSequence {
 
     fn process<'a>(
         &'a mut self,
+        _cfg: &UdfCfg<Process>,
         args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {

@@ -21,6 +21,7 @@ syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 [dev-dependencies]
 trybuild = { version = "1.0.65", features = ["diff"] }
 udf = { path = "../udf", version = "0.2.0" }
+udf-sys = { path = "../udf_sys", version = "0.2.0" }
 
 [package.metadata.release]
 shared-version = true
@@ -34,3 +35,8 @@ shared-version = true
 file = "."
 search = "udf = { path = \"../udf_macros\", version = .* }"
 replace = "udf = { path = \"../udf_macros\", version = \"{{version}}\" }"
+
+[[package.metadata.release.pre-release-replacements]]
+file = "."
+search = "udf = { path = \"../udf_sys\", version = .* }"
+replace = "udf = { path = \"../udf_sys\", version = \"{{version}}\" }"

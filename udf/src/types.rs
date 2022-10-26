@@ -2,22 +2,26 @@
 
 use std::fmt;
 
+mod arg;
+mod arg_list;
 mod config;
-mod sql_arg;
-mod sql_arg_list;
-mod sql_result;
+mod sql_types;
 
+// Document everything inline
+#[doc(inline)]
+pub use arg::*;
+#[doc(inline)]
+pub use arg_list::*;
 #[doc(inline)]
 pub use config::*;
 #[doc(inline)]
-pub use sql_arg::*;
-#[doc(inline)]
-pub use sql_arg_list::*;
-#[doc(inline)]
-pub use sql_result::*;
+pub use sql_types::*;
 
-#[doc(inline)]
-pub use crate::ffi::SqlType;
+/// Max error message size, 0x200 = 512 bytes
+pub const MYSQL_ERRMSG_SIZE: usize = 0x200;
+
+/// Minimum size of a buffer for string results
+pub const MYSQL_RESULT_BUFFER_SIZE: usize = 255;
 
 #[derive(Debug)]
 pub struct ProcessError;

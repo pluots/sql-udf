@@ -1,4 +1,4 @@
-/// Create a function called sum_int that coerces all arguments to integers and
+/// Create a function called `sum_int` that coerces all arguments to integers and
 /// adds them.
 use udf::prelude::*;
 
@@ -11,7 +11,7 @@ impl BasicUdf for SumInt {
 
     /// All we do here is set our type coercion. SQL will cancel our function if
     /// the coercion is not possible.
-    fn init<'a>(cfg: &mut UdfCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
         // Coerce each arg to an integer
         args.iter()
             .for_each(|mut arg| arg.set_type_coercion(udf::SqlType::Int));
@@ -24,6 +24,7 @@ impl BasicUdf for SumInt {
     /// This is the process
     fn process<'a>(
         &'a mut self,
+        _cfg: &UdfCfg<Process>,
         args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
