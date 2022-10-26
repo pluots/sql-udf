@@ -9,6 +9,7 @@ use udf::prelude::*;
 struct Lookup6;
 struct ReverseLookup;
 
+#[register]
 impl BasicUdf for Lookup6 {
     type Returns<'a> = Option<String>
     where
