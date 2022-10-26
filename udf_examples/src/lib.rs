@@ -1,3 +1,5 @@
+//! Crate for example UDFs
+
 #![warn(
     clippy::pedantic,
     clippy::nursery,

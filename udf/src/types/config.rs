@@ -12,7 +12,7 @@ use crate::{Init, UdfState};
 
 /// Helpful constants related to the `max_length` parameter
 ///
-/// These can be helpful when calling [`set_max_len()`]
+/// These can be helpful when calling [`UdfCfg::set_max_len()`]
 #[non_exhaustive]
 #[repr(u32)]
 pub enum MaxLenOptions {
@@ -20,7 +20,7 @@ pub enum MaxLenOptions {
     IntDefault = 21,
 
     /// The default max length of a real value is 13 plus the result of
-    /// [`get_decimals()`]
+    /// [`UdfCfg::get_decimals()`]
     RealBase = 13,
 
     /// A `blob` can be up to 65 KiB.

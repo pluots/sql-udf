@@ -24,7 +24,7 @@ pub enum SqlType {
 
 impl SqlType {
     /// Convert this enum to a SQL [`Item_result`]. This is only useful if you
-    /// use [`crate::ffi::bindings`].
+    /// work with [`udf_sys`] bindings directly.
     #[inline]
     pub fn to_item_result(&self) -> Item_result {
         match *self {
@@ -108,7 +108,7 @@ impl TryFrom<&SqlResult<'_>> for SqlType {
 /// It is of note that both [`SqlResult::String`] and [`SqlResult::Decimal`]
 /// contain slices of `u8` rather than a representation like `&str`. This is
 /// because there is no guarantee that the data is `utf8`. Use
-/// [`SqlResult::as_str()`] if you need an easy way to get a `&str`.
+/// [`SqlResult::as_string()`] if you need an easy way to get a `&str`.
 ///
 /// This enum is labeled `non_exhaustive` to leave room for future types and
 /// coercion options.
@@ -210,7 +210,7 @@ impl<'a> SqlResult<'a> {
     /// Return this type as a float if possible
     ///
     /// This will exist if the variant is [`SqlResult::Real`], and it contains a
-    /// value. See [`as_int()`] for further details.
+    /// value. See [`SqlResult::as_int()`] for further details on `as_*` methods
     #[inline]
     pub fn as_real(&'a self) -> Option<f64> {
         match *self {
@@ -227,7 +227,7 @@ impl<'a> SqlResult<'a> {
     /// not distinguish among errors (wrong type, `None` value, or invalid utf8)
     /// - use pattern matching if you need that.
     ///
-    /// See [`as_int()`] for further details.
+    /// See [`SqlResult::as_int()`] for further details on `as_*` methods
     #[inline]
     pub fn as_string(&'a self) -> Option<&'a str> {
         match *self {
@@ -239,7 +239,8 @@ impl<'a> SqlResult<'a> {
     /// Return this type as a byte slice if possible
     ///
     /// This will exist if the variant is [`SqlResult::String`], or
-    /// [`SqlResult::Decimal`]. See [`as_int()`] for further details.
+    /// [`SqlResult::Decimal`]. See [`SqlResult::as_int()`] for further details
+    /// on `as_*` methods
     #[inline]
     pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
         match *self {
