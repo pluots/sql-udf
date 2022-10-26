@@ -26,9 +26,9 @@ macro_rules! format_ident_str {
     };
 }
 
-/// Verify that an ItemImpl matches the end of any given path
+/// Verify that an `ItemImpl` matches the end of any given path
 ///
-/// implements BasicUdf (in any of its pathing options)
+/// implements `BasicUdf` (in any of its pathing options)
 fn impls_path(itemimpl: &ItemImpl, expected: ImplType) -> bool {
     let implemented = &itemimpl.trait_.as_ref().unwrap().1.segments;
 
@@ -54,7 +54,7 @@ fn impls_path(itemimpl: &ItemImpl, expected: ImplType) -> bool {
 /// - args: a stream of everything inside `(...)` (e.g.
 /// `#[register(bin=false, a=2)]` will give the stream for `bin=false, a=2`
 /// - item: the item contained within the stream
-pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn register(_args: &TokenStream, input: TokenStream) -> TokenStream {
     let parsed = parse_macro_input!(input as ItemImpl);
 
     let impls_basic = impls_path(&parsed, ImplType::Basic);
@@ -77,25 +77,10 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
-    // Get the return type from the macro
-    // There is only one type for this trait, which is "Returns"
-    let impl_item_type = &parsed
-        .items
-        .iter()
-        .find_map(match_variant!(ImplItem::Type))
-        .expect("type expected")
-        .ty;
-
-    // Find the matching type in a list
-    let content = match make_type_list().iter().find(|x| x.type_ == *impl_item_type) {
-        Some(t) => make_basic_fns(t, impl_for_name),
-        None => {
-            let emsg = format!(
-                "expected `Result` to be one of `i64`, `f64`, `&str`, `String`, \
-                or their `Option<...>` types, but got {impl_item_type:?}",
-            );
-            Error::new_spanned(impl_item_type, emsg).into_compile_error()
-        }
+    let content = if impls_basic {
+        make_basic_fns(&parsed, &impl_for_name)
+    } else {
+        make_agg_fns(&parsed, &impl_for_name)
     };
 
     quote! {
@@ -106,17 +91,80 @@ pub(crate) fn register(_args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-fn make_basic_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStream {
+fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::TokenStream {
+    // Get the return type from the macro
+    // There is only one type for this trait, which is "Returns"
+    let impl_item_type = &parsed
+        .items
+        .iter()
+        .find_map(match_variant!(ImplItem::Type))
+        .expect("type expected")
+        .ty;
+
+    // Find the matching type in a list
+    let content = make_type_list()
+        .iter()
+        .find(|x| x.type_ == *impl_item_type)
+        .map_or_else(
+            || {
+                let emsg = format!(
+                    "expected `Result` to be one of `i64`, `f64`, `&str`, `String`, \
+            or their `Option<...>` types, but got {impl_item_type:?}",
+                );
+                Error::new_spanned(impl_item_type, emsg).into_compile_error()
+            },
+            |t| make_basic_fns_content(t, impl_for_name),
+        );
+
+    content
+}
+
+fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenStream {
+    let clear_fn_name = format_ident_str!("{}_clear", dstruct_ident);
+    let add_fn_name = format_ident_str!("{}_add", dstruct_ident);
+    let remove_fn_name = format_ident_str!("{}_remove", dstruct_ident);
+
+    // Determine whether this re-implements `remove`
+    let impls_remove = &parsed
+        .items
+        .iter()
+        .filter_map(match_variant!(ImplItem::Method))
+        .map(|m| &m.sig.ident)
+        .any(|id| *id == "remove");
+
+    let clear_fn = make_clear_fn(dstruct_ident, &clear_fn_name);
+    let add_fn = make_add_fn(dstruct_ident, &add_fn_name);
+    let remove_fn = make_remove_fn(dstruct_ident, &remove_fn_name);
+
+    let mut base = quote! {
+        #clear_fn
+
+        #add_fn
+    };
+
+    if *impls_remove {
+        quote! {
+            #base
+
+            #remove_fn
+        }
+    } else {
+        base
+    }
+}
+
+fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::TokenStream {
     let init_fn_name = format_ident_str!("{}_init", dstruct_ident);
     let deinit_fn_name = format_ident_str!("{}_deinit", dstruct_ident);
     let process_fn_name = format_ident_str!("{}", dstruct_ident);
 
-    let init_fn = make_init_fn(&dstruct_ident, init_fn_name);
-    let deinit_fn = make_deinit_fn(&dstruct_ident, deinit_fn_name);
+    let init_fn = make_init_fn(dstruct_ident, &init_fn_name);
+    let deinit_fn = make_deinit_fn(dstruct_ident, &deinit_fn_name);
     let process_fn = match rt.fn_sig {
-        FnSigType::String => todo!(),
-        FnSigType::Int => make_proc_int_fn(&dstruct_ident, process_fn_name, rt.is_optional),
-        FnSigType::Float => make_proc_float_fn(&dstruct_ident, process_fn_name, rt.is_optional),
+        FnSigType::BytesRef => make_proc_str_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::Int => make_proc_int_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::Float => make_proc_float_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::Bytes => todo!(),
     };
     // let process_fn = make_str_proc_fn(&dstruct_ident, deinit_fn_name, rt.is_optional);
 
@@ -130,55 +178,55 @@ fn make_basic_fns(rt: &RetType, dstruct_ident: Ident) -> proc_macro2::TokenStrea
 }
 
 /// Given the name of a type or struct, create a function that will be evaluated
-fn make_init_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStream {
+fn make_init_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::ffi::bindings::UDF_INIT,
-            args: *mut udf::ffi::bindings::UDF_ARGS,
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *mut udf::udf_sys::UDF_ARGS,
             message: *mut std::ffi::c_char,
         ) -> bool
         {
             unsafe {
-                udf::ffi::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
+                udf::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
             }
         }
     }
 }
 
-fn make_deinit_fn(dstruct_ident: &Ident, fn_name: Ident) -> proc_macro2::TokenStream {
+fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::ffi::bindings::UDF_INIT,
+            initid: *mut udf::udf_sys::UDF_INIT,
         ) {
-            unsafe { udf::ffi::wrapper::wrap_deinit::<#dstruct_ident>(initid) }
+            unsafe { udf::wrapper::wrap_deinit::<#dstruct_ident>(initid) }
         }
     }
 }
 
 fn make_proc_int_fn(
     dstruct_ident: &Ident,
-    fn_name: Ident,
+    fn_name: &Ident,
     nullable: bool,
 ) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     let fn_title = if nullable {
-        quote! { udf::ffi::wrapper::wrap_process_int_null::<#dstruct_ident> }
+        quote! { udf::wrapper::wrap_process_int_null::<#dstruct_ident> }
     } else {
-        quote! { udf::ffi::wrapper::wrap_process_int::<#dstruct_ident> }
+        quote! { udf::wrapper::wrap_process_int::<#dstruct_ident> }
     };
 
     quote! {
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::ffi::bindings::UDF_INIT,
-            args: *mut udf::ffi::bindings::UDF_ARGS,
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *mut udf::udf_sys::UDF_ARGS,
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> ::std::ffi::c_longlong {
@@ -196,25 +244,25 @@ fn make_proc_int_fn(
 
 fn make_proc_float_fn(
     dstruct_ident: &Ident,
-    fn_name: Ident,
+    fn_name: &Ident,
     nullable: bool,
 ) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     let fn_title = if nullable {
-        quote! { udf::ffi::wrapper::wrap_process_float_null::<#dstruct_ident> }
+        quote! { udf::wrapper::wrap_process_float_null::<#dstruct_ident> }
     } else {
-        quote! { udf::ffi::wrapper::wrap_process_float::<#dstruct_ident> }
+        quote! { udf::wrapper::wrap_process_float::<#dstruct_ident> }
     };
 
     quote! {
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::ffi::bindings::UDF_INIT,
-            args: *mut udf::ffi::bindings::UDF_ARGS,
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *mut udf::udf_sys::UDF_ARGS,
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
-        ) -> f64 {
+        ) -> ::std::ffi::c_double {
             unsafe {
                 #fn_title(
                     initid,
@@ -222,6 +270,96 @@ fn make_proc_float_fn(
                     is_null,
                     error
                 )
+            }
+        }
+    }
+}
+
+fn make_proc_str_fn(
+    dstruct_ident: &Ident,
+    fn_name: &Ident,
+    nullable: bool,
+) -> proc_macro2::TokenStream {
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    let fn_title = if nullable {
+        quote! { udf::wrapper::wrap_process_str_null::<#dstruct_ident, _> }
+    } else {
+        quote! { udf::wrapper::wrap_process_str::<#dstruct_ident, _> }
+    };
+
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *mut udf::udf_sys::UDF_ARGS,
+            result: *mut ::std::ffi::c_char,
+            length: *mut ::std::ffi::c_ulong,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) -> *const ::std::ffi::c_char {
+            unsafe {
+                #fn_title(
+                    initid,
+                    args,
+                    result,
+                    length,
+                    is_null,
+                    error
+                )
+            }
+        }
+    }
+}
+
+fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *const udf::udf_sys::UDF_ARGS,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) {
+            unsafe {
+                udf::wrapper::wrap_add::<#dstruct_ident>(initid, args, is_null, error)
+            }
+        }
+    }
+}
+
+fn make_clear_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::udf_sys::UDF_INIT,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) {
+            unsafe {
+                udf::wrapper::wrap_clear::<#dstruct_ident>(initid, is_null, error)
+            }
+        }
+    }
+}
+
+fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *const udf::udf_sys::UDF_ARGS,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) {
+            unsafe {
+                udf::wrapper::wrap_remove::<#dstruct_ident>(initid, args, is_null, error)
             }
         }
     }

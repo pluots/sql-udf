@@ -3,34 +3,8 @@
 #![allow(dead_code)]
 
 use std::cmp::min;
-use std::ffi::CString;
-use std::marker::PhantomData;
-use std::num::NonZeroU8;
-use std::os::raw::{c_char, c_longlong, c_uchar, c_ulong};
-use std::{ptr, slice, str};
-
-use crate::ffi::bindings::{UDF_ARGS, UDF_INIT};
-use crate::{ArgList, BasicUdf, ProcessError, SqlArg, SqlResult, SqlType, UdfState};
-
-/// Add methods to the raw C struct
-impl UDF_INIT {
-    /// Consume a box and store its pointer in this `UDF_INIT`
-    ///
-    /// After calling this function, the caller is responsible for
-    /// cleaning up the
-    pub(crate) fn store_box<T>(&mut self, b: Box<T>) {
-        let box_ptr = Box::into_raw(b);
-        self.ptr = box_ptr.cast::<c_char>();
-    }
-
-    /// Given a generic type T, assume
-    ///
-    /// Safety: T _must_ be the type of this pointer
-    #[allow(unsafe_op_in_unsafe_fn)]
-    pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
-        Box::from_raw(self.ptr.cast::<T>())
-    }
-}
+use std::os::raw::c_char;
+use std::ptr;
 
 /// Write a string message to a buffer. Accepts a const generic size `N` that
 /// length of the message will check against (N must be the size of the buffer)
@@ -39,7 +13,9 @@ impl UDF_INIT {
 ///
 /// `N` must be the buffer size. If it is inaccurate, memory safety cannot be
 /// guaranteed.
-pub(crate) unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
+///
+/// This is public within the crate, since the parent model is not public
+pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
     // message plus null terminator must fit in buffer
     let bytes_to_write = min(msg.len(), N - 1);
 
@@ -72,12 +48,12 @@ pub(crate) unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_ch
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::{c_int, c_void, CStr};
+    use std::ffi::{c_ulong, c_void, CStr};
+
+    use udf_sys::{Item_result, UDF_ARGS};
 
     use super::*;
-    use crate::ffi::bindings::Item_result;
-    use crate::types::ArgList;
-    use crate::Init;
+    use crate::prelude::*;
 
     const MSG: &str = "message";
     const BUF_SIZE: usize = MSG.len() + 1;

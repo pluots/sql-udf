@@ -3,9 +3,10 @@
 //! A basic UDF just needs to implement [`BasicUdf`]. An aggregate UDF needs to
 //! implement both [`BasicUdf`] and [`AggregateUdf`].
 
+use core::fmt::Debug;
 use std::num::NonZeroU8;
 
-use crate::types::{ArgList, Init, InitCfg, Process, SqlArg};
+use crate::types::{ArgList, UdfCfg};
 use crate::ProcessError;
 
 /// This trait specifies the functions needed for a standard (non-aggregate) UDF
@@ -64,7 +65,7 @@ pub trait BasicUdf: Sized {
     /// - Incorrect argument quantity or position
     /// - Incorrect argument types
     /// - Values that are `maybe_null()` when you cannot accept them
-    fn init<'a>(cfg: &mut InitCfg, args: &'a ArgList<'a, Init>) -> Result<Self, String>;
+    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String>;
 
     /// Process the actual values and return a result
     ///
@@ -98,6 +99,7 @@ pub trait BasicUdf: Sized {
     /// [`ProcessError`] is just an empty type.
     fn process<'a>(
         &'a mut self,
+        cfg: &UdfCfg<Process>,
         args: &ArgList<Process>,
         error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError>;
@@ -148,7 +150,7 @@ pub trait AggregateUdf: BasicUdf {
     ///
     /// Return an error if something goes wrong within this function, or if you
     /// would like to propegate the previous error.
-    fn clear(&mut self, error: Option<NonZeroU8>) -> Result<(), NonZeroU8>;
+    fn clear(&mut self, cfg: &UdfCfg<Process>, error: Option<NonZeroU8>) -> Result<(), NonZeroU8>;
 
     /// Add an item to the aggregate
     ///
@@ -168,11 +170,20 @@ pub trait AggregateUdf: BasicUdf {
     /// function:
     ///
     /// ```
-    /// error.map_or(Ok(()), |e| Err(e))?;
+    /// # use std::num::NonZeroU8;
+    /// # fn tmp(error: Option<NonZeroU8>) -> Result<(), NonZeroU8> {
+    /// error.map_or(Ok(()), Err)?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// If you do this,
-    fn add(&mut self, args: &ArgList<Process>, error: Option<NonZeroU8>) -> Result<(), NonZeroU8>;
+    fn add(
+        &mut self,
+        cfg: &UdfCfg<Process>,
+        args: &ArgList<Process>,
+        error: Option<NonZeroU8>,
+    ) -> Result<(), NonZeroU8>;
 
     /// Remove only applies to `MariaDB`, for use with window functions; i.e.,
     /// `remove` will be called on a row that should be removed from the current
@@ -190,13 +201,34 @@ pub trait AggregateUdf: BasicUdf {
     #[inline]
     fn remove(
         &mut self,
+        _cfg: &UdfCfg<Process>,
         _args: &ArgList<Process>,
-        error: Option<NonZeroU8>,
+        _error: Option<NonZeroU8>,
     ) -> Result<(), NonZeroU8> {
         Ok(())
     }
 }
 
-/// A trait that is assigned by the `#[register]` proc macro for some internal
-/// checks.
-pub trait BasicUdfRegistered {}
+/// A state of the UDF, representing either `Init` or `Process`
+///
+/// This is a zero-sized type used to control what operations are allowed at
+/// different times.
+pub trait UdfState: Debug + PartialEq {}
+
+/// Typestate marker for the initialization phase
+///
+/// This is a zero-sized type that is just used to hint to the compiler that a
+/// type was created in the `init` function, which allows for some extra
+/// methods.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Init();
+
+/// Typestate marker for the processing phase
+///
+/// This is a zero-sized type that indicates that a type was created in
+/// the `process` function.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Process();
+
+impl UdfState for Init {}
+impl UdfState for Process {}

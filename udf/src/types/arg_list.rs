@@ -3,16 +3,14 @@
 #![allow(dead_code)]
 
 use std::cell::Cell;
-use std::ffi::{c_char, c_longlong, c_uchar, c_uint, c_ulong, CString};
+use std::ffi::c_uint;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::ops::Index;
-use std::slice::SliceIndex;
-use std::{fmt, panic, ptr, slice, str};
+use std::{fmt, slice, str};
 
-use crate::ffi::bindings::{Item_result, UDF_ARGS, UDF_INIT};
-use crate::ffi::wrapper_impl::write_msg_to_buf;
-use crate::{BasicUdf, Init, Process, SqlArg, SqlResult, UdfState};
+use udf_sys::{Item_result, UDF_ARGS};
+
+use crate::{SqlArg, SqlResult, UdfState};
 
 /// A collection of SQL arguments
 ///
@@ -37,8 +35,6 @@ impl<'a, S: UdfState> Debug for ArgList<'a, S> {
 
 impl<'a, S: UdfState> ArgList<'a, S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
-    ///
-    /// Need to verify whether static lifetime is correct
     #[inline]
     #[allow(unsafe_op_in_unsafe_fn)]
     pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *const UDF_ARGS) -> &'p Self {
@@ -69,8 +65,9 @@ impl<'a, S: UdfState> ArgList<'a, S> {
         self.base.arg_count as usize
     }
 
-    /// Attempt to get an argument at a given index
-    #[allow(clippy::missing_inline_in_public_items)]
+    /// Safely get an argument at a given index. It it is not available, `None`
+    /// will be returned.
+    #[inline]
     pub fn get(&self, index: usize) -> Option<SqlArg<'a, S>> {
         // convenience
         let base = &self.base;
@@ -109,18 +106,7 @@ impl<'a, S: UdfState> IntoIterator for &'a ArgList<'a, S> {
 
     type IntoIter = Iter<'a, S>;
 
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        Iter::new(self)
-    }
-}
-
-/// Trait for being able to iterate arguments
-impl<'a, S: UdfState> IntoIterator for &'a mut ArgList<'a, S> {
-    type Item = SqlArg<'a, S>;
-
-    type IntoIter = Iter<'a, S>;
-
+    /// Construct a new
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
         Iter::new(self)
@@ -130,7 +116,7 @@ impl<'a, S: UdfState> IntoIterator for &'a mut ArgList<'a, S> {
 /// Iterator over arguments in a [`ArgList`]
 ///
 /// This struct is produced by invoking `into_iter()` on a [`ArgList`]
-// #[derive(Debug, PartialEq, Clone)]
+#[derive(Debug)]
 pub struct Iter<'a, S: UdfState> {
     base: &'a ArgList<'a, S>,
     // Keep consistent with underlying UDF_ARGS
@@ -176,6 +162,7 @@ mod tests {
     use std::mem::{align_of, size_of};
 
     use super::*;
+    use crate::prelude::*;
 
     // Verify no size issues
     #[test]

@@ -1,0 +1,15 @@
+[package]
+name = "udf-sys"
+version = "0.2.3"
+edition = "2021"
+description = "UDF system bindings"
+repository = "https://github.com/pluots/udf/tree/main/udf_sys"
+license = "Apache-2.0"
+publish = true
+
+
+[dependencies]
+
+
+[package.metadata.release]
+shared-version = true

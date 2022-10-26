@@ -26,23 +26,13 @@
 //! }
 //!
 //! ```
-//!
-//! # Behind the Scenes
-//!
-//! Store the struct to the *ptr before exit
-//!
-//! Define the basic traits here
-//!
 
 #![deny(unsafe_op_in_unsafe_fn)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
 // Strict clippy
 #![warn(
     clippy::pedantic,
     // clippy::cargo,
-    // clippy::nursery,
+    clippy::nursery,
     clippy::str_to_string,
     clippy::missing_inline_in_public_items,
     clippy::exhaustive_enums,
@@ -53,32 +43,23 @@
     clippy::missing_const_for_fn,
     clippy::missing_panics_doc,
     clippy::must_use_candidate,
-    clippy::cast_possible_truncation,
-    // Below items are from "restriction"
-    clippy::missing_docs_in_private_items,
-    clippy::expect_used,
-    clippy::unwrap_used,
-    clippy::implicit_return,
-    clippy::integer_arithmetic,
-    clippy::exhaustive_structs,
-    clippy::shadow_unrelated,
+    clippy::cast_possible_truncation
 )]
+
+pub extern crate udf_sys;
+// #[doc(hidden)]
+// pub use udf_sys;
 
 extern crate udf_macros;
 pub use udf_macros::register;
 
-pub mod ffi;
 pub mod prelude;
 pub mod traits;
 pub mod types;
 
-pub use traits::*;
-// Make this inline so we don't show the re-exports
-// #[doc(inline)]
-pub use types::*;
+// We hide this because it's really only used by our proc macros
+#[doc(hidden)]
+pub mod wrapper;
 
-/// Max error message size, 0x200 = 512 bytes
-///
-/// The crate `mysqlclient_sys` links this variable, but easier to just copy the
-/// single number here.
-const MYSQL_ERRMSG_SIZE: usize = 0x200;
+pub use traits::*;
+pub use types::{MYSQL_ERRMSG_SIZE, *};

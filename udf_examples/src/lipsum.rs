@@ -2,7 +2,7 @@
 
 use std::num::NonZeroU8;
 
-use lipsum::{lipsum, lipsum_from_seed};
+use lipsum::{lipsum as lipsum_fn, lipsum_from_seed};
 use udf::prelude::*;
 
 // Cap potential resource usage, this gives us more than enough to
@@ -15,11 +15,12 @@ struct Lipsum {
     res: String,
 }
 
+// #[register]
 impl BasicUdf for Lipsum {
     type Returns<'a> = &'a str;
 
     /// We expect LIPSUM(n) or LIPSUM(n, m)
-    fn init(cfg: &mut InitCfg, args: &ArgList<Init>) -> Result<Self, String> {
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.is_empty() || args.len() > 2 {
             return Err(format!("Expected 1 or 2 args; got {}", args.len()));
         }
@@ -29,7 +30,7 @@ impl BasicUdf for Lipsum {
             .unwrap()
             .value
             .as_int()
-            .ok_or("First argument must be an integer".to_owned())?;
+            .ok_or_else(|| "First argument must be an integer".to_owned())?;
 
         // Perform error checks
         if n > MAX_WORDS {
@@ -40,17 +41,14 @@ impl BasicUdf for Lipsum {
         }
 
         // If there is an extra arg, verify it is also an integer
-        match args.get(1) {
-            Some(v) => {
-                let seed = v
-                    .value
-                    .as_int()
-                    .ok_or("Second argument must be an integer".to_owned())?;
-                if seed < 0 {
-                    return Err(format!("Seed must be a positive integer, got {seed}"));
-                }
+        if let Some(v) = args.get(1) {
+            let seed = v
+                .value
+                .as_int()
+                .ok_or_else(|| "Second argument must be an integer".to_owned())?;
+            if seed < 0 {
+                return Err(format!("Seed must be a positive integer, got {seed}"));
             }
-            None => (),
         };
 
         Ok(Self {
@@ -60,22 +58,29 @@ impl BasicUdf for Lipsum {
 
     fn process<'a>(
         &'a mut self,
+        cfg: &UdfCfg<Process>,
         args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
         // We have already checked that these values fit into usize in init
         // Do need to ensure our argument isn't null
-        let n = args.get(0).unwrap().value.as_int().ok_or(ProcessError)? as usize;
+        let n = args
+            .get(0)
+            .unwrap()
+            .value
+            .as_int()
+            .ok_or(ProcessError)?
+            .unsigned_abs() as usize;
 
         let res = match args.get(1) {
             Some(v) => {
                 // If we have a seed argument, use it.
                 let seed = v.value.as_int().ok_or(ProcessError)?;
-                lipsum_from_seed(n, seed as u64)
+                lipsum_from_seed(n, seed.unsigned_abs())
             }
             None => {
                 // If no seed argument, just generate word count
-                lipsum(n)
+                lipsum_fn(n)
             }
         };
 
