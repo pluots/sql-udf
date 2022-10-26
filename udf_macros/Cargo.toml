@@ -20,23 +20,8 @@ syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
 trybuild = { version = "1.0.65", features = ["diff"] }
-udf = { path = "../udf", version = "0.3.0" }
-udf-sys = { path = "../udf_sys", version = "0.3.0" }
+udf = { path = "../udf" }
+udf-sys = { path = "../udf_sys" }
 
 [package.metadata.release]
 shared-version = true
-
-
-# [[test]]
-# name = "tests"
-# path = "tests/harness.rs"
-
-[[package.metadata.release.pre-release-replacements]]
-file = "Cargo.toml"
-search = 'udf = \{ path = "../udf_macros", version = .* \}'
-replace = 'udf = { path = "../udf_macros", version = "0.3.0" }'
-
-[[package.metadata.release.pre-release-replacements]]
-file = "Cargo.toml"
-search = 'udf = \{ path = "../udf_sys", version = .* \}'
-replace = 'udf = { path = "../udf_sys", version = "0.3.0" }'
