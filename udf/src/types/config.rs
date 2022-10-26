@@ -159,18 +159,33 @@ mod tests {
     use std::mem::{align_of, size_of};
 
     use super::*;
+    use crate::{Init, Process};
 
     // Verify no size issues
     #[test]
-    fn initcfg_size() {
+    fn cfg_init_size() {
         assert_eq!(
             size_of::<UDF_INIT>(),
-            size_of::<UdfCfg>(),
+            size_of::<UdfCfg<Init>>(),
             concat!("Size of: ", stringify!(UDF_INIT))
         );
         assert_eq!(
             align_of::<UDF_INIT>(),
-            align_of::<UdfCfg>(),
+            align_of::<UdfCfg<Init>>(),
+            concat!("Alignment of ", stringify!(UDF_ARGS))
+        );
+    }
+
+    #[test]
+    fn cfg_proc_size() {
+        assert_eq!(
+            size_of::<UDF_INIT>(),
+            size_of::<UdfCfg<Process>>(),
+            concat!("Size of: ", stringify!(UDF_INIT))
+        );
+        assert_eq!(
+            align_of::<UDF_INIT>(),
+            align_of::<UdfCfg<Process>>(),
             concat!("Alignment of ", stringify!(UDF_ARGS))
         );
     }

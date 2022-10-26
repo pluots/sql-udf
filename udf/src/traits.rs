@@ -170,7 +170,11 @@ pub trait AggregateUdf: BasicUdf {
     /// function:
     ///
     /// ```
+    /// # use std::num::NonZeroU8;
+    /// # fn tmp(error: Option<NonZeroU8>) -> Result<(), NonZeroU8> {
     /// error.map_or(Ok(()), Err)?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// If you do this,

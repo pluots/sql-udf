@@ -33,7 +33,7 @@ pub(crate) use match_variant;
 
 /// # Examples
 ///
-/// ```
+/// ```text
 /// #[udf::register]
 /// struct X{}
 ///

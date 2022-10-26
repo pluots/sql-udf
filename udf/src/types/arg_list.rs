@@ -162,6 +162,7 @@ mod tests {
     use std::mem::{align_of, size_of};
 
     use super::*;
+    use crate::prelude::*;
 
     // Verify no size issues
     #[test]

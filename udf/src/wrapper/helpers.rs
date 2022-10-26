@@ -48,12 +48,12 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::{c_int, c_void, CStr};
+    use std::ffi::{c_ulong, c_void, CStr};
+
+    use udf_sys::{Item_result, UDF_ARGS};
 
     use super::*;
-    use crate::ffi::bindings::Item_result;
-    use crate::types::ArgList;
-    use crate::Init;
+    use crate::prelude::*;
 
     const MSG: &str = "message";
     const BUF_SIZE: usize = MSG.len() + 1;
