@@ -58,7 +58,7 @@ will take place.
 
 ```rust
 /// Function `sum_int` just adds all arguments as integers
-struct SumInt {}
+struct SumInt;
 
 /// Function `avg_float` may want to save data to perform aggregation
 struct AvgFloat {
@@ -87,7 +87,7 @@ The next step is to implement the `BasicUdf` trait
 ```rust
 use udf::prelude::*;
 
-struct SumInt {}
+struct SumInt;
 
 #[register]
 impl BasicUdf for SumInt {
@@ -166,10 +166,10 @@ Load all available functions in SQL:
 
 ```sql
 CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
-CREATE FUNCTION sql_sequence returns integer soname 'libudf_examples.so';
-CREATE FUNCTION is_const returns string soname 'libudf_examples.so';
-CREATE AGGREGATE FUNCTION avg_cost returns integer soname 'libudf_examples.so';
-CREATE AGGREGATE FUNCTION udf_median returns integer soname 'libudf_examples.so';
+CREATE FUNCTION sql_sequence RETURNS integer soname 'libudf_examples.so';
+CREATE FUNCTION is_const RETURNS string soname 'libudf_examples.so';
+CREATE AGGREGATE FUNCTION avg_cost RETURNS integer soname 'libudf_examples.so';
+CREATE AGGREGATE FUNCTION udf_median RETURNS integer soname 'libudf_examples.so';
 ```
 
 And try them out!

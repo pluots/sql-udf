@@ -13,7 +13,7 @@ use crate::ProcessError;
 ///
 /// Implement this on a struct that is desired to carry data between calls to,
 /// `init`, `process`, `clear`, `add`, and `remove`. If there is no data to be
-/// shared, it may be zero-sized (e.g. `struct MyFunc{}`).
+/// shared, it may be zero-sized (e.g. `struct MyFunc {}`).
 ///
 /// If the UDF is only basic, the process is:
 ///
@@ -221,14 +221,14 @@ pub trait UdfState: Debug + PartialEq {}
 /// type was created in the `init` function, which allows for some extra
 /// methods.
 #[derive(Debug, PartialEq, Eq)]
-pub struct Init();
+pub struct Init;
 
 /// Typestate marker for the processing phase
 ///
 /// This is a zero-sized type that indicates that a type was created in
 /// the `process` function.
 #[derive(Debug, PartialEq, Eq)]
-pub struct Process();
+pub struct Process;
 
 impl UdfState for Init {}
 impl UdfState for Process {}

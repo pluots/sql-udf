@@ -1,0 +1,23 @@
+i >> CREATE FUNCTION lookup6 RETURNS string SONAME 'libudf_examples.so';
+i >> select lookup6('0.0.0.0');
+o >>
+    +--------------------+
+    | lookup6('0.0.0.0') |
+    +--------------------+
+    | ::ffff:0.0.0.0     |
+    +--------------------+
+    {{}}
+i >> select lookup6('localhost');
+o >>
+    +----------------------+
+    | lookup6('localhost') |
+    +----------------------+
+    | ::1                  |
+    +----------------------+
+i >> select lookup6('fake');
+o >>
+    +-----------------+
+    | lookup6('fake') |
+    +-----------------+
+    | NULL            |
+    +-----------------+

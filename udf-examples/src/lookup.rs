@@ -1,4 +1,11 @@
-//! Lookup and reverse lookup hostname/IP conversions
+//! Lookup hostname to IPv6 conversion
+//!
+//! # Usage
+//!
+//! ```sql
+//! CREATE FUNCTION lookup6 RETURNS string SONAME 'libudf_examples.so';
+//! SELECT lookup6('0.0.0.0');
+//! ```
 
 #![allow(unused)]
 
@@ -6,8 +13,8 @@ use std::net::{SocketAddr, ToSocketAddrs};
 
 use udf::prelude::*;
 
+/// No data to persist
 struct Lookup6;
-struct ReverseLookup;
 
 #[register]
 impl BasicUdf for Lookup6 {
@@ -58,11 +65,9 @@ impl BasicUdf for Lookup6 {
         };
 
         // Prioritize an ipv6 address if it is available, take first address if
-        // not. Return
-        let ret_sock_addr = match sock_addrs
-            .find(SocketAddr::is_ipv6)
-            .or_else(|| sock_addrs.next())
-        {
+        // not.
+        let first = sock_addrs.next();
+        let ret_sock_addr = match sock_addrs.find(SocketAddr::is_ipv6).or(first) {
             Some(v) => v,
             None => return Ok(None),
         };

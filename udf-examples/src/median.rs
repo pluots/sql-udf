@@ -1,3 +1,14 @@
+//! Basic aggregate UDF to get the median of each group
+//!
+//! If arguments are reals, they are rounded to integers
+//!
+//! # Usage
+//!
+//! ```sql
+//! CREATE AGGREGATE FUNCTION udf_median RETURNS integer SONAME 'libudf_examples.so';
+//! SELECT median(int_column);
+//! ```
+
 use udf::prelude::*;
 
 #[derive(Debug)]
@@ -22,7 +33,11 @@ impl BasicUdf for UdfMedian {
         if self.v.is_empty() {
             Ok(None)
         } else {
-            // Safely get the middle element; dereference if it is `Some`
+            // To get the median we need to sort first. Not sure why the SQL reference
+            // implementation doesn't do this.
+            self.v.sort_unstable();
+
+            // Safely get the middle element
             Ok(self.v.get(self.v.len() / 2).copied())
         }
     }
