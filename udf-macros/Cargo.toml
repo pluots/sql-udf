@@ -21,7 +21,7 @@ syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 [dev-dependencies]
 trybuild = { version = "1.0.65", features = ["diff"] }
 udf = { path = "../udf" }
-udf-sys = { path = "../udf_sys" }
+udf-sys = { path = "../udf-sys" }
 
 [package.metadata.release]
 shared-version = true

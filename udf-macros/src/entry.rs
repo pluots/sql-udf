@@ -161,10 +161,12 @@ fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::T
     let init_fn = make_init_fn(dstruct_ident, &init_fn_name);
     let deinit_fn = make_deinit_fn(dstruct_ident, &deinit_fn_name);
     let process_fn = match rt.fn_sig {
-        FnSigType::BytesRef => make_proc_str_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::BytesRef => {
+            make_proc_buf_ref_fn(dstruct_ident, &process_fn_name, rt.is_optional)
+        }
         FnSigType::Int => make_proc_int_fn(dstruct_ident, &process_fn_name, rt.is_optional),
         FnSigType::Float => make_proc_float_fn(dstruct_ident, &process_fn_name, rt.is_optional),
-        FnSigType::Bytes => todo!(),
+        FnSigType::Bytes => make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional),
     };
     // let process_fn = make_str_proc_fn(&dstruct_ident, deinit_fn_name, rt.is_optional);
 
@@ -275,7 +277,7 @@ fn make_proc_float_fn(
     }
 }
 
-fn make_proc_str_fn(
+fn make_proc_buf_ref_fn(
     dstruct_ident: &Ident,
     fn_name: &Ident,
     nullable: bool,
@@ -283,9 +285,46 @@ fn make_proc_str_fn(
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     let fn_title = if nullable {
-        quote! { udf::wrapper::wrap_process_str_null::<#dstruct_ident, _> }
+        quote! { udf::wrapper::wrap_process_buf_ref_null::<#dstruct_ident, _> }
     } else {
-        quote! { udf::wrapper::wrap_process_str::<#dstruct_ident, _> }
+        quote! { udf::wrapper::wrap_process_buf_ref::<#dstruct_ident> }
+    };
+
+    quote! {
+        #[no_mangle]
+        pub unsafe extern "C" fn #fn_name (
+            initid: *mut udf::udf_sys::UDF_INIT,
+            args: *mut udf::udf_sys::UDF_ARGS,
+            result: *mut ::std::ffi::c_char,
+            length: *mut ::std::ffi::c_ulong,
+            is_null: *mut ::std::ffi::c_uchar,
+            error: *mut ::std::ffi::c_uchar,
+        ) -> *const ::std::ffi::c_char {
+            unsafe {
+                #fn_title(
+                    initid,
+                    args,
+                    result,
+                    length,
+                    is_null,
+                    error
+                )
+            }
+        }
+    }
+}
+
+fn make_proc_buf_fn(
+    dstruct_ident: &Ident,
+    fn_name: &Ident,
+    nullable: bool,
+) -> proc_macro2::TokenStream {
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
+    let fn_title = if nullable {
+        quote! { udf::wrapper::wrap_process_buf_null::<#dstruct_ident, _> }
+    } else {
+        quote! { udf::wrapper::wrap_process_buf::<#dstruct_ident> }
     };
 
     quote! {

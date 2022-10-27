@@ -1,7 +1,7 @@
 # UDF: MariaDB/MySQL User Defined Functions in Rust
 
-This crate aims to make it extremely simple to implement UDFs for SQL, in a way
-that is as safe as possible. 
+This crate aims to make it extremely simple to implement UDFs for SQL, in a
+minimally error-prone fashion.
 
 
 ## UDF Theory
@@ -15,7 +15,8 @@ Basic SQL UDFs consist of three exposed functions:
 This wrapper greatly simplifies the process so that you only need to worry about
 checking arguments and performing the task.
 
-Additionally, there are aggregate UDF
+There are also aggregate UDFs, which simply need to register two to three
+additional functions.
 
 ## Quickstart
 
@@ -23,10 +24,10 @@ A quick overview of the workflow process is:
 
 - Make a struct or enum that will share data between initializing and processing
   steps (it may be empty). The name of this struct will be the name of your
-  function (converted to snake case).
+  function in SQL (converted to snake case).
 - Implement the `BasicUdf` trait on this struct
 - Implement the `AggregateUdf` trait if you want it to be an aggregate function
-- Add `#[udf::register]` above each of these `impl` blocks
+- Add `#[udf::register]` to each of these `impl` blocks
 - Compile the project as a cdylib (output should be a `.so` file)
 - Load the struct into MariaDB/MySql using `CREATE FUNCTION ...`
 - Use the function in SQL
@@ -34,7 +35,7 @@ A quick overview of the workflow process is:
 ## Detailed overview
 
 This section goes into the details of implementing a UDF with this library, but
-it is non-exhaustive. For that, see the documentation, or the `udf_examples`
+it is non-exhaustive. For that, see the documentation, or the `udf-examples`
 directory for well-annotated examples.
 
 ### Struct creation
@@ -50,6 +51,7 @@ between all relevant SQL functions. These include:
   struct as needed.
 - `add` Aggregate only, called once per row within a group. Perform needed
   calculations and save the data in the struct.
+- `remove` Window functions only, called to remove a value from a group
 
 It is quite possible, especially for simple functions, that there is no data
 that needs sharing. In this case, just make an empty struct and no allocation
@@ -57,21 +59,20 @@ will take place.
 
 
 ```rust
-/// Function `sum_int` just adds all arguments as integers
-struct SumInt {}
+/// Function `sum_int` just adds all arguments as integers and needs no shared data
+struct SumInt;
 
-/// Function `avg_float` may want to save data to perform aggregation
-struct AvgFloat {
+/// Function `avg` on the other hand may want to save data to perform aggregation
+struct Avg {
     running_total: f64
 }
 ```
 
-
 There is a bit of a caveat for functions returning buffers (string & decimal
 functions): if there is a possibility that string length exceeds
-`MYSQL_RESULT_BUFFER_SIZE` (255), then the string must be contained within the
-struct. The `Returns` type would then be specified as `&'a [u8]`, `&'a str`, or
-their `Option<...>` versions as applicable.
+`MYSQL_RESULT_BUFFER_SIZE` (255), then the string to be returned must be
+contained within the struct (the `process` function will then return a
+reference).
 
 ```rust
 /// Generate random lipsum that may be longer than 255 bytes
@@ -80,14 +81,15 @@ struct Lipsum {
 }
 ```
 
-### BasicUdf Implementation
+### Trait Implementation
 
-The next step is to implement the `BasicUdf` trait
+The next step is to implement the `BasicUdf` and optionally `AggregateUdf`
+traits. See the docs for more information.
 
 ```rust
 use udf::prelude::*;
 
-struct SumInt {}
+struct SumInt;
 
 #[register]
 impl BasicUdf for SumInt {
@@ -111,14 +113,12 @@ impl BasicUdf for SumInt {
 }
 ```
 
-### AggregateUdf Implementation
-
 ### Compiling
 
 Assuming the above has been followed, all that is needed is to produce a C
 dynamic library for the project. This can be done by specifying
 `crate-type = ["cdylib"]` in your `Cargo.toml`. After this, compiling with
-`cargo build --release` will produce a loadable `.so` file (in
+`cargo build --release` will produce a loadable `.so` file (located in
 `target/release`).
 
 Important version note: this crate relies on a feature called generic associated
@@ -127,25 +127,10 @@ is not yet stable (scheduled stable date is 2022-11-03), so make sure you are
 using either the beta or nightly compiler to build anything that uses this
 crate.
 
-### Usage
+### Symbol Inspection
 
-Once compiled, the produced object file needs to be copied to the location of
-the `plugin_dir` SQL variable - usually, this is `/usr/lib/mysql/plugin/`.
-
-Once that has been done, `CREATE FUNCTION` can be used in MariaDB/MySql to load
-it.
-
-### Building & Running Examples
-
-This repository contains a crate called `udf-example`, with a handful of example
-functions. These can be built as follows:
-
-```bash
-cargo build -p udf-examples --release
-cp target/release/libudf_examples.so /usr/lib/mysql/plugin/
-```
-
-Available symbols can always be inspected with `nm`:
+If you would like to verify that the correct C-callable functions are present,
+you can inspect the dynamic library with `nm`. 
 
 ```sh
 # Output of example .so
@@ -162,37 +147,23 @@ $ nm -gC --defined-only target/release/libudf_examples.so
 ...
 ```
 
-Load all available functions in SQL:
+### Usage
 
-```sql
-CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
-CREATE FUNCTION sql_sequence returns integer soname 'libudf_examples.so';
-CREATE FUNCTION is_const returns string soname 'libudf_examples.so';
-CREATE AGGREGATE FUNCTION avg_cost returns integer soname 'libudf_examples.so';
-CREATE AGGREGATE FUNCTION udf_median returns integer soname 'libudf_examples.so';
-```
+Once compiled, the produced object file needs to be copied to the location of
+the `plugin_dir` SQL variable - usually, this is `/usr/lib/mysql/plugin/`.
 
-And try them out!
-
-```
-MariaDB [(none)]> select sum_int(1, 2, 3, 4, 5, 6, '1');
-+--------------------------------+
-| sum_int(1, 2, 3, 4, 5, 6, '1') |
-+--------------------------------+
-|                             22 |
-+--------------------------------+
-1 row in set (0.001 sec)
-```
+Once that has been done, `CREATE FUNCTION` can be used in MariaDB/MySql to load
+it.
 
 
-## Docker & Testing
+## Docker Use
 
 If you require a linux object file but are compiling on a different platform,
 building in docker is a convenient option:
 
 ```sh
 # This will mount your current directory at /build, and use a new .docker-dargo
-# directory for cargo's cache. It will use your same target folder (different )
+# directory for cargo's cache. This will share the `target/` directory
 # Change the `bash -c` command based on what you want to build.
 docker run --rm -it \
   -v "$(pwd):/build" \
@@ -201,12 +172,19 @@ docker run --rm -it \
   bash -c "cd /build; cargo build -p udf-examples --release"
 ```
 
-### Testing in docker
 
-It can be convenient to test UDFs in a docker container. Here 
+### Testing in Docker
+
+Testing in Docker is highly recommended, so as to avoid disturbing a host SQL
+installation. See [the udf-examples readme](sql-udf/README.md) for instructions
+on how to do this.
+
+
+It can be convenient to test UDFs in a docker container:
 
 ```sh
 # Start a mariadb server headless
+# Mount our local target directory at /target
 docker run --rm -it  \
   -v $(pwd)/target:/target \
   -e MARIADB_ROOT_PASSWORD=banana \
@@ -223,21 +201,24 @@ cp /target/release/libudf_examples.so /usr/lib/mysql/plugin/
 mysql -pbanana
 ```
 
-Run the `CREATE FUNCTION` commands specified above, then you will be able to
-test the functions.
+## Examples
 
-```sql
-select sum_int(1, 2.2, '4');
-# sequences work best with a table
-select sql_sequence(1);
-select udf_median(4);
-```
+The `udf-examples` crate contains examples of various UDFs, as well as
+instructions on how to compile them. See [the readme](sql-udf/README.md)
 
-### Debugging
 
-The quickest way to debug is by using `dbg!()` or `eprintln!()`, which will show
-up in server logs. `dbg!(...)` is usually preferred because it shows line
-information, and lets you assign its contents:
+## Logging & Debugging Note
+
+If you need to log things like warnings during normal use of the function,
+`eprintln!()` can be used to print to `stderr`. This will show up in the SQL
+server logs; these can be viewed with e.g. `docker logs mariadb_udf_test` if
+testing in `docker`.
+
+
+The quickest way to do simple debugging is by using the `dbg!(...)` macro (rust
+builtin). This also writes to `stderr` but prints file & line information and
+the value of its argument (prettyprinted), and returns the argument for further
+assignment or use.
 
 ```rust
 dbg!(&self);

@@ -2,6 +2,13 @@
 //!
 //! Functionality is simple: check for constness in `init` (the only time this
 //! is possible), save the result in the struct, and return it in `process`
+//!
+//! # Usage
+//!
+//! ```sql
+//! CREATE FUNCTION is_const RETURNS string SONAME 'libudf_examples.so';
+//! SELECT is_const(4);
+//! ```
 
 use udf::prelude::*;
 
@@ -36,6 +43,3 @@ impl BasicUdf for IsConst {
         Ok(if self.is_const { "const" } else { "not const" })
     }
 }
-
-#[cfg(all(test, sql_integration))]
-mod int_tests {}

@@ -11,8 +11,8 @@ keywords = ["sql", "udf"]
 publish = true
 
 [dependencies]
-udf-macros = { path = "../udf_macros", version = "0.3.0" }
-udf-sys = { path = "../udf_sys", version = "0.3.0" }
+udf-macros = { path = "../udf-macros", version = "0.3.0" }
+udf-sys = { path = "../udf-sys", version = "0.3.0" }
 
 [package.metadata.release]
 shared-version = true

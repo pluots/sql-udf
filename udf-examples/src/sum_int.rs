@@ -1,5 +1,13 @@
-/// Create a function called `sum_int` that coerces all arguments to integers and
-/// adds them.
+//! Create a function called `sum_int` that coerces all arguments to integers and
+//! adds them. Accepts any number of arguments.
+//!
+//! # Usage
+//!
+//! ```sql
+//! CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
+//! SELECT sum_int(1, 2, 3, 4, '5', 6.2)
+//! ```
+
 use udf::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Default)]

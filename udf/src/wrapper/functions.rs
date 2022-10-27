@@ -187,7 +187,7 @@ where
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_process_float<T>(
+pub unsafe fn wrap_process_float<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     _is_null: *mut c_uchar,
@@ -209,7 +209,7 @@ where
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_process_float_null<T>(
+pub unsafe fn wrap_process_float_null<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     is_null: *mut c_uchar,
@@ -230,7 +230,7 @@ where
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_process_str<T, S>(
+pub unsafe fn wrap_process_buf_ref<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     result: *mut c_char,
@@ -239,8 +239,8 @@ pub unsafe extern "C" fn wrap_process_str<T, S>(
     error: *mut c_uchar,
 ) -> *const c_char
 where
-    for<'a> T: BasicUdf<Returns<'a> = S>,
-    S: AsRef<[u8]>,
+    T: BasicUdf,
+    for<'a> T::Returns<'a>: AsRef<[u8]>,
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
     let arglist = ArgList::from_arg_ptr(args);
@@ -248,7 +248,7 @@ where
     let err = *(error as *const Option<NonZeroU8>);
     let proc_res = T::process(&mut b, cfg, arglist, err);
 
-    let ret = if let Ok(s) = proc_res {
+    let ret = if let Ok(ref s) = proc_res {
         // Cast u8 to c_char (u8/i8)
         let s_ref: &[u8] = s.as_ref();
         let s_ptr = s_ref.as_ptr().cast::<c_char>();
@@ -270,15 +270,19 @@ where
         result
     };
 
-    // Need to get the pointer after, since the reference is in `b`.
+    std::mem::forget(proc_res);
     cfg.store_box(b);
+
+    // let ret = result;
+
+    // Need to get the pointer after, since the reference is in `b`.
 
     ret
 }
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_process_str_null<'b, T, S>(
+pub unsafe fn wrap_process_buf_ref_null<T, S>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     result: *mut c_char,
@@ -288,7 +292,8 @@ pub unsafe extern "C" fn wrap_process_str_null<'b, T, S>(
 ) -> *const c_char
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]> + Default + 'b,
+    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
+                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
     let arglist = ArgList::from_arg_ptr(args);
@@ -330,7 +335,112 @@ where
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_add<T>(
+pub unsafe fn wrap_process_buf<T>(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    result: *mut c_char,
+    length: *mut c_ulong,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) -> *const c_char
+where
+    T: BasicUdf,
+    for<'a> T::Returns<'a>: AsRef<[u8]>,
+{
+    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let arglist = ArgList::from_arg_ptr(args);
+    let mut b = cfg.retrieve_box();
+    let err = *(error as *const Option<NonZeroU8>);
+    let proc_res = T::process(&mut b, cfg, arglist, err);
+
+    let ret = if let Ok(ref s) = proc_res {
+        // Cast u8 to c_char (u8/i8)
+        let s_ref: &[u8] = s.as_ref();
+        let s_ptr = s_ref.as_ptr().cast::<c_char>();
+        *is_null = c_uchar::from(false);
+
+        // If we fit within the buffer, just copy our output. Otherwise,
+        // return the pointer to s.
+        let res_ptr = if s_ref.len() as u64 <= *length {
+            ptr::copy(s_ptr, result, s_ref.len());
+            result
+        } else {
+            s_ptr
+        };
+        *length = s_ref.len() as u64;
+        res_ptr
+    } else {
+        *error = 1;
+        *length = 0;
+        result
+    };
+
+    std::mem::forget(proc_res);
+    cfg.store_box(b);
+
+    // let ret = result;
+
+    // Need to get the pointer after, since the reference is in `b`.
+
+    ret
+}
+
+#[inline]
+#[allow(unsafe_op_in_unsafe_fn)]
+pub unsafe fn wrap_process_buf_null<T, S>(
+    initid: *mut UDF_INIT,
+    args: *const UDF_ARGS,
+    result: *mut c_char,
+    length: *mut c_ulong,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) -> *const c_char
+where
+    for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
+    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
+                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
+{
+    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let arglist = ArgList::from_arg_ptr(args);
+    let mut b = cfg.retrieve_box();
+    let err = *(error as *const Option<NonZeroU8>);
+    let res = T::process(&mut b, cfg, arglist, err);
+    cfg.store_box(b);
+
+    if let Ok(res_ok) = res {
+        // Result is an Ok(); set null as needed
+        if let Some(s) = res_ok {
+            // Cast u8 to c_char (u8/i8)
+            let s_ref = s.as_ref();
+            let s_ptr = s_ref.as_ptr().cast::<c_char>();
+            *is_null = c_uchar::from(false);
+
+            // If we fit within the buffer, just copy our output. Otherwise,
+            // return the pointer to s.
+            let res_ptr = if s_ref.len() as u64 <= *length {
+                ptr::copy(s_ptr, result, s_ref.len());
+                result
+            } else {
+                s_ptr
+            };
+            *length = s_ref.len() as u64;
+
+            res_ptr
+        } else {
+            *is_null = 1;
+            *length = 0;
+            result
+        }
+    } else {
+        *error = 1;
+        *length = 0;
+        result
+    }
+}
+
+#[inline]
+#[allow(unsafe_op_in_unsafe_fn)]
+pub unsafe fn wrap_add<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     _is_null: *mut c_uchar,
@@ -353,11 +463,8 @@ pub unsafe extern "C" fn wrap_add<T>(
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_clear<T>(
-    initid: *mut UDF_INIT,
-    _is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) where
+pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error: *mut c_uchar)
+where
     T: AggregateUdf,
 {
     let cfg = UdfCfg::from_init_ptr_mut(initid);
@@ -374,7 +481,7 @@ pub unsafe extern "C" fn wrap_clear<T>(
 
 #[inline]
 #[allow(unsafe_op_in_unsafe_fn)]
-pub unsafe extern "C" fn wrap_remove<T>(
+pub unsafe fn wrap_remove<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
     _is_null: *mut c_uchar,

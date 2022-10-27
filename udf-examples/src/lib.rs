@@ -1,4 +1,6 @@
 //! Crate for example UDFs
+//!
+//! See this crate's README for details
 
 #![warn(
     clippy::pedantic,
@@ -15,11 +17,11 @@
     clippy::cast_possible_truncation
 )]
 
+mod avg2;
 mod avgcost;
 mod is_const;
 mod lipsum;
 mod lookup;
 mod median;
-mod metaphon;
 mod sequence;
 mod sum_int;
