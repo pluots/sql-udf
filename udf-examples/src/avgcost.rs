@@ -36,13 +36,15 @@ pub enum Errors<'a> {
 impl<'a> Display for Errors<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::WrongArgCount(n) => write!(f,"This function takes two arguments; got {n}"),
-            Self::FirstArgType(a) => write!(f,
+            Self::WrongArgCount(n) => write!(f, "This function takes two arguments; got {n}"),
+            Self::FirstArgType(a) => write!(
+                f,
                 "First argument must be an integer; received {} {}",
                 a.value.display_name(),
                 a.attribute
             ),
-            Self::SecondArgType(a) => write!(f,
+            Self::SecondArgType(a) => write!(
+                f,
                 "Second argument must be an integer; received {} {}",
                 a.value.display_name(),
                 a.attribute
@@ -50,7 +52,6 @@ impl<'a> Display for Errors<'a> {
         }
     }
 }
-
 
 #[register]
 impl BasicUdf for AvgCost {
