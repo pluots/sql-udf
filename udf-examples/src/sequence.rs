@@ -3,7 +3,7 @@
 //! This will return an incrementing value for each row, starting with 1 by
 //! default, or any given
 //!
-//! ```
+//! ```sql
 //! CREATE FUNCTION udf_sequence RETURNS integer SONAME 'libudf_examples.so';
 //! SELECT some_col, sequence() from some_table;
 //! SELECT some_col, sequence(8) from some_table;

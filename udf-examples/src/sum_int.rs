@@ -7,6 +7,7 @@
 //! CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
 //! SELECT sum_int(1, 2, 3, 4, '5', 6.2)
 //! ```
+
 use udf::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Default)]

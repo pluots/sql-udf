@@ -2,10 +2,13 @@
 //!
 //! Takes a quantity and a real to return the average value within the window.
 //!
-//! ```
+//! ```sql
 //! CREATE FUNCTION avg2 RETURNS integer SONAME 'libudf_examples.so';
 //! SELECT avg2(int_column, real_column);
 //! ```
+// Ignore loss of precision when we cast i64 to f64
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
 
 use udf::prelude::*;
 
@@ -18,7 +21,7 @@ struct Avg2 {
     sum: f64,
 }
 
-// #[register]
+#[register]
 impl BasicUdf for Avg2 {
     type Returns<'a> = Option<f64>;
 

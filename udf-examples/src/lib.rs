@@ -1,14 +1,6 @@
 //! Crate for example UDFs
 //!
-//! To register all functions, execute the following:
-//!
-//! ```sql
-//! CREATE AGGREGATE FUNCTION avg_cost RETURNS real SONAME 'libudf_examples.so';
-//! CREATE FUNCTION is_const RETURNS string SONAME 'libudf_examples.so';
-//! CREATE FUNCTION lookup6 RETURNS string SONAME 'libudf_examples.so';
-//! CREATE AGGREGATE FUNCTION udf_median RETURNS integer SONAME 'libudf_examples.so';
-//! CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
-//! ```
+//! See this crate's README for details
 
 #![warn(
     clippy::pedantic,

@@ -11,6 +11,8 @@
 
 #![allow(clippy::cast_precision_loss)]
 
+use std::fmt::Display;
+
 use udf::prelude::*;
 
 #[derive(Debug, Default, PartialEq)]
@@ -20,7 +22,9 @@ struct AvgCost {
     total_price: f64,
 }
 
-/// We just use this to show one way of handling errors a bit cleaner
+/// We just use this to show one way of handling errors a bit cleaner. Having an
+/// error type and implementing `Display` for it is quite common (crates like
+/// `anyhow` and `thiserror` make it more straightforward.)
 ///
 /// This is `pub` because we reuse it for `avg2`
 pub enum Errors<'a> {
@@ -29,16 +33,16 @@ pub enum Errors<'a> {
     SecondArgType(&'a SqlArg<'a, Init>),
 }
 
-impl Errors<'_> {
-    pub fn to_string(&self) -> String {
+impl<'a> Display for Errors<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::WrongArgCount(n) => format!("This function takes two arguments; got {n}"),
-            Self::FirstArgType(a) => format!(
+            Self::WrongArgCount(n) => write!(f,"This function takes two arguments; got {n}"),
+            Self::FirstArgType(a) => write!(f,
                 "First argument must be an integer; received {} {}",
                 a.value.display_name(),
                 a.attribute
             ),
-            Self::SecondArgType(a) => format!(
+            Self::SecondArgType(a) => write!(f,
                 "Second argument must be an integer; received {} {}",
                 a.value.display_name(),
                 a.attribute
@@ -46,6 +50,7 @@ impl Errors<'_> {
         }
     }
 }
+
 
 #[register]
 impl BasicUdf for AvgCost {

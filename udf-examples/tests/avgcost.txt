@@ -12,11 +12,11 @@ i >>
 i >>
     insert into t1 (qty, cost, class) values
         (10, 50, "a"),
-        (5, 20.7, "a"),
-        (2, 10.3, "b"),
-        (10, 12.78, "b"),
         (8, 5.6, "c"),
+        (5, 20.7, "a"),
+        (10, 12.78, "b"),
         (6, 7.2, "c"),
+        (2, 10.3, "b"),
         (3, 9.1, "c");
 i >> select avg_cost(qty, cost) from t1 group by class;
 o >>

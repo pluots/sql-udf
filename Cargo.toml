@@ -2,7 +2,7 @@
 
 members = [
     "udf",
-    "udf_macros",
-    "udf_sys",
-    "udf_examples"
+    "udf-macros",
+    "udf-sys",
+    "udf-examples"
 ]
