@@ -1,9 +1,54 @@
-//! A wrapper crate to make writing SQL UDFs easy
+//! A wrapper crate to make writing SQL user-defined functions (UDFs) easy
 //!
-//! Version note: Because of reliance on a feature called GATs, this library
-//! requires Rust version >= 1.65 which is currently in beta. If `rustup show`
-//! does not show 1.65 or greater under active toolchain, you will need to
-//! update:
+//! This crate provides bindings for easy creation of SQL user-defined functions
+//! in Rust. See [the
+//! readme](https://github.com/pluots/sql-udf/blob/main/readme.md) for more
+//! background information.
+//!
+//! # Usage
+//!
+//! Using this crate is fairly simple: create a struct that will be used to
+//! share data among UDF functions (which can be zero-sized), then implement
+//! needed traits for it. [`BasicUdf`] provides function signatures for standard
+//! UDFs, and [`AggregateUdf`] provides signatures for aggregate (and window)
+//! UDFs. See the documentation there for a step-by-step guide.
+//!
+//! ```
+//! use udf::prelude::*;
+//!
+//! // Our struct that will produce a UDF of name `my_udf`
+//! struct MyUdf {}
+//!
+//! #[register]
+//! impl BasicUdf for MyUdf {
+//!     // Specify return type of this UDF to be a nullable integer
+//!     type Returns<'a> = Option<i64>;
+//!
+//!     // Perform initialization steps here
+//!     fn init<'a>(
+//!         cfg: &UdfCfg<Init>,
+//!         args: &'a ArgList<'a, Init>
+//!     ) -> Result<Self, String> {
+//!         todo!();
+//!     }
+//!
+//!     // Create a result here
+//!     fn process<'a>(
+//!         &'a mut self,
+//!         cfg: &UdfCfg<Process>,
+//!         args: &ArgList<Process>,
+//!         error: Option<NonZeroU8>,
+//!     ) -> Result<Self::Returns<'a>, ProcessError> {
+//!         todo!();
+//!     }
+//! }
+//! ```
+//!
+//! # Version Note
+//!
+//! Because of reliance on a feature called GATs, this library requires Rust
+//! version >= 1.65 which is currently in beta. If `rustup show` does not show
+//! 1.65 or greater under active toolchain, you will need to update:
 //!
 //! ```sh
 //! # nightly can also be used instead of beta
@@ -11,23 +56,9 @@
 //! rustup update beta
 //! ```
 //!
-//! 1.65 is scheduled to become stable on 2022-11-03, so this message
-//! may become irrelevant not long after time of writing.
-//!
-//! # Example
-//!
-//! Your struct type should hold anything that you want to carry between the
-//! functions.
-//!
-//!
-//! ```
-//! struct MyFunction {
-//!     intermediate: i64
-//! }
-//!
-//! ```
+//! 1.65 is scheduled to become stable on 2022-11-03, so this message may become
+//! irrelevant not long after time of writing.
 
-#![deny(unsafe_op_in_unsafe_fn)]
 // Strict clippy
 #![warn(
     clippy::pedantic,
@@ -46,11 +77,11 @@
     clippy::cast_possible_truncation
 )]
 
-pub extern crate udf_sys;
-// #[doc(hidden)]
-// pub use udf_sys;
-
+#[doc(hidden)]
+pub extern crate chrono;
 extern crate udf_macros;
+pub extern crate udf_sys;
+
 pub use udf_macros::register;
 
 pub mod prelude;
@@ -61,5 +92,47 @@ pub mod types;
 #[doc(hidden)]
 pub mod wrapper;
 
+#[doc(inline)]
 pub use traits::*;
+#[doc(inline)]
 pub use types::{MYSQL_ERRMSG_SIZE, *};
+
+/// Print a formatted log message to `stderr` to display in server logs
+///
+/// Performs formatting to match other common SQL error logs, roughly:
+///
+/// ```text
+/// 2022-10-15 13:12:54+00:00 [Warning] Udf: this is the message
+/// ```
+///
+/// ```
+/// use udf::udf_log;
+///
+/// udf_log!(Error: "this is an error");
+/// udf_log!(Warning: "this is a warning");
+/// udf_log!(Info: "this is info");
+/// udf_log!(Debug: "this is a debug message");
+/// ```
+#[macro_export]
+macro_rules! udf_log {
+    (Error: $msg:expr) => {
+        udf_log!(Other "Error": $msg);
+    };
+    (Warning: $msg:tt) => {
+        udf_log!(Other "Warning": $msg);
+    };
+    (Info: $msg:tt) => {
+        udf_log!(Other "Info": $msg);
+    };
+    (Debug: $msg:tt) => {
+        udf_log!(Other "Debug": $msg);
+    };
+    (Other $level:tt: $msg:tt) => {
+        eprintln!(
+            "{} [{}] Udf: {}",
+            udf::chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%:z"),
+            $level,
+            $msg
+        );
+    };
+}

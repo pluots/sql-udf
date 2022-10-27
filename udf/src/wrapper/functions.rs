@@ -51,7 +51,6 @@ use crate::{AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE}
 /// - To specify whether the result can be NULL. (handled by proc macro based on
 ///   `Returns`)
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_init<T: BasicUdf>(
     initid: *mut UDF_INIT,
     args: *mut UDF_ARGS,
@@ -98,7 +97,6 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 ///
 /// There is no specific wrapped function here
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
@@ -107,7 +105,6 @@ pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     panic::catch_unwind(|| *cfg_wrap.retrieve_box::<T>()).ok();
 }
 
-#[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn process_return<T: Default, E>(res: Result<T, E>, error: *mut c_uchar) -> T {
     res.map_or_else(
         |_| {
@@ -118,7 +115,6 @@ unsafe fn process_return<T: Default, E>(res: Result<T, E>, error: *mut c_uchar) 
     )
 }
 
-#[allow(unsafe_op_in_unsafe_fn)]
 unsafe fn process_return_null<T: Default, E>(
     res: Result<Option<T>, E>,
     error: *mut c_uchar,
@@ -143,7 +139,6 @@ unsafe fn process_return_null<T: Default, E>(
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_int<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -165,7 +160,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_int_null<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -186,7 +180,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_float<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -208,7 +201,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_float_null<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -229,7 +221,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_buf_ref<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -281,7 +272,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_buf_ref_null<T, S>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -334,7 +324,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_buf<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -386,7 +375,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_process_buf_null<T, S>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -439,7 +427,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_add<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,
@@ -462,7 +449,6 @@ pub unsafe fn wrap_add<T>(
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error: *mut c_uchar)
 where
     T: AggregateUdf,
@@ -480,7 +466,6 @@ where
 }
 
 #[inline]
-#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe fn wrap_remove<T>(
     initid: *mut UDF_INIT,
     args: *const UDF_ARGS,

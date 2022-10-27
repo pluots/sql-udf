@@ -31,33 +31,30 @@ macro_rules! match_variant {
 
 pub(crate) use match_variant;
 
-/// # Examples
+/// # Register exposed function names required for a UDF
 ///
-/// ```text
-/// #[udf::register]
-/// struct X{}
+/// This macro is applied to an `impl BasicUdf` block (and an `AggregateUdf`
+/// block, if applicable) and exposed the C-callable functions that
+/// `MariaDB`/`MySQL` expect.
 ///
-/// ```
+/// Its process is as follows:
 ///
-/// # Arguments
+/// - Convert the implemented struct's name to snake case to create the function
+///   name
+/// - Obtain the return type from the `Returns` type in `BasicUdf`
+/// - Create functions `fn_name`, `fn_name_init`, and `fn_name_deinit` with
+///   correct signatures and interfaces
+/// - If applied on an `impl AggregateUdf` block, create `fn_name_clear` and
+///   `fn_name_add`. `fn_name_remove` is also included if it is redefined
 ///
-/// This macro accepts the following optional arguments:
-///
-/// - `#[udf::register(decimals = N)]` set the number of decimals (behind the
-///   scenes this sets `initd.decimals`)
-/// - `#[udf::register(max_length = N)]` set the max length for strings or
-///   decimals (this sets `initid.max_length`)
-/// - `#[udf::register(const = true)]` set true if it always returns the same
-///   value (this sets `initd.const_item`)
-/// - `#[udf::register(name = "new_name")]` will specify a name for your SQL
-///   function. If this is not specified, your struct name will be converted to
-///   snake case and used (e.g. `AddAllNumbers` would become `add_all_numbers`
-///   by default).
-///
-/// # Behind the scenes
-///
-/// `initd.maybe_null` is set based on the `Return` type (whether optional or
-/// not)
+// Arguments don't yet work
+//
+// # Arguments
+//
+// - `#[udf::register(name = "new_name")]` will specify a name for your SQL
+//   function. If this is not specified, your struct name will be converted to
+//   snake case and used (e.g. `AddAllNumbers` would become `add_all_numbers`
+//   by default).
 #[proc_macro_attribute]
 // #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn register(args: TokenStream, item: TokenStream) -> TokenStream {
