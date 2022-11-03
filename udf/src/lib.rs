@@ -107,17 +107,17 @@ pub use types::{MYSQL_ERRMSG_SIZE, *};
 ///
 /// ```
 /// use udf::udf_log;
-/// 
+///
 /// // Prints "2022-10-08 05:27:30+00:00 [Error] UDF: this is an error"
 /// // This matches the default entrypoint log format
 /// udf_log!(Error: "this is an error");
-/// 
+///
 /// udf_log!(Warning: "this is a warning");
-/// 
+///
 /// udf_log!(Note: "this is info");
-/// 
+///
 /// udf_log!(Debug: "this is a debug message");
-/// 
+///
 /// udf_log!("i print without the '[Level] UDF:' formatting");
 /// ```
 #[macro_export]
