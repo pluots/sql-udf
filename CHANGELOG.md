@@ -8,6 +8,9 @@
 
 ### Changed
 
+- Changed `SqlResult::Decimal(&'a [u8])` to be `SqlResult::Decimal(&'a str)`,
+  since a decimal will always fall under ASCII.
+
 ### Removed
 
 

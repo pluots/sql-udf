@@ -56,7 +56,8 @@ impl<'a> SqlArg<'a, Init> {
     #[inline]
     pub fn is_const(&self) -> bool {
         match self.value {
-            SqlResult::String(v) | SqlResult::Decimal(v) => v.is_some(),
+            SqlResult::String(v) => v.is_some(),
+            SqlResult::Decimal(v) => v.is_some(),
             SqlResult::Real(v) => v.is_some(),
             SqlResult::Int(v) => v.is_some(),
         }

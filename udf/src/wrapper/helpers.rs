@@ -114,7 +114,7 @@ mod tests {
             let dval = "123.456";
             assert_eq!(
                 SqlResult::from_ptr(dval.as_ptr(), Item_result::DECIMAL_RESULT, dval.len()),
-                Ok(SqlResult::Decimal(Some(dval.as_bytes())))
+                Ok(SqlResult::Decimal(Some(dval)))
             );
 
             assert!(
@@ -181,7 +181,7 @@ mod tests {
             SqlResult::Int(Some(IVAL)),
             SqlResult::Real(Some(RVAL)),
             SqlResult::String(Some(SVAL.as_bytes())),
-            SqlResult::Decimal(Some(DVAL.as_bytes())),
+            SqlResult::Decimal(Some(DVAL)),
         ];
 
         for i in 0..ARG_COUNT {
