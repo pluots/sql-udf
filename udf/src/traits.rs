@@ -20,7 +20,7 @@ use crate::ProcessError;
 /// - Caller (SQL server) calls `init()` with basic argument information
 /// - `init()` function (defined here) validates the arguments, does
 ///   configuration (if needed), and configures and returns the `Self` struct
-/// - For each row, the caller calls `process(...) with the relevant arguments
+/// - For each row, the caller calls `process(...)` with the relevant arguments
 /// - `process()` function (defined here) accepts an instance of `self` (created
 ///   during init) and updates it as needed, and produces a result for that row
 ///
@@ -59,18 +59,15 @@ pub trait BasicUdf: Sized {
     /// The flow chart below helps clarify some of the decisions making:
     ///
     /// ```text
-    /// 
-    ///                    
-    /// 
-    ///    Desired 
-    ///  Return Type               Use Option<_> if the result may be null
-    /// ~~~~~~~~~~~~~~            
-    /// +-------------+    
+    ///     Desired                Use Option<_> if the result may be null
+    ///   Return Type
+    ///  ~~~~~~~~~~~~~
+    /// +-------------+
     /// |   integer   |--> i64 / Option<i64>
-    /// +-------------+    
-    /// +-------------+    
+    /// +-------------+
+    /// +-------------+
     /// |    float    |--> f64 / Option<f64>
-    /// +-------------+    
+    /// +-------------+
     ///                    +------------+
     /// +-------------+    |  static    |--> &'static str / Option<&'static str>
     /// | utf8 string |--> |            |
