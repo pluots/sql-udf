@@ -105,10 +105,10 @@ impl TryFrom<&SqlResult<'_>> for SqlType {
 ///
 /// This enum is similar to [`SqlType`], but actually contains the object.
 ///
-/// It is of note that both [`SqlResult::String`] and [`SqlResult::Decimal`]
-/// contain slices of `u8` rather than a representation like `&str`. This is
-/// because there is no guarantee that the data is `utf8`. Use
-/// [`SqlResult::as_string()`] if you need an easy way to get a `&str`.
+/// It is of note that both [`SqlResult::String`] contains a `u8` slice rather
+/// than a representation like `&str`. This is because there is no guarantee
+/// that the data is `utf8`. Use [`SqlResult::as_string()`] if you need an easy
+/// way to get a `&str`.
 ///
 /// This enum is labeled `non_exhaustive` to leave room for future types and
 /// coercion options.
@@ -123,7 +123,7 @@ pub enum SqlResult<'a> {
     /// A nullable integer
     Int(Option<i64>),
     /// This is a string that is to be represented as a decimal
-    Decimal(Option<&'a [u8]>),
+    Decimal(Option<&'a str>),
 }
 
 impl<'a> SqlResult<'a> {
@@ -157,7 +157,10 @@ impl<'a> SqlResult<'a> {
                     SqlType::Int => SqlResult::Int(Some(*(ptr.cast::<i64>()))),
                     SqlType::Real => SqlResult::Real(Some(*(ptr.cast::<f64>()))),
                     SqlType::String => SqlResult::String(Some(slice::from_raw_parts(ptr, len))),
-                    SqlType::Decimal => SqlResult::Decimal(Some(slice::from_raw_parts(ptr, len))),
+                    // SAFETY: decimals should always be UTF8
+                    SqlType::Decimal => SqlResult::Decimal(Some(str::from_utf8_unchecked(
+                        slice::from_raw_parts(ptr, len),
+                    ))),
                 }
             }
         };
@@ -231,7 +234,8 @@ impl<'a> SqlResult<'a> {
     #[inline]
     pub fn as_string(&'a self) -> Option<&'a str> {
         match *self {
-            Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(str::from_utf8(v).ok()?),
+            Self::String(Some(v)) => Some(str::from_utf8(v).ok()?),
+            Self::Decimal(Some(v)) => Some(v),
             _ => None,
         }
     }
@@ -244,7 +248,8 @@ impl<'a> SqlResult<'a> {
     #[inline]
     pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
         match *self {
-            Self::String(Some(v)) | Self::Decimal(Some(v)) => Some(v),
+            Self::String(Some(v)) => Some(v),
+            Self::Decimal(Some(v)) => Some(v.as_bytes()),
             _ => None,
         }
     }
