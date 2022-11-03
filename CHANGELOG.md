@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.3.5] - 2022-11-03
+
+### Added
+
 - Added `Copy`, `Clone`, `Debug`, and `PartialEq` implementations to
   `MaxLenOptions`
 
@@ -60,7 +70,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/pluots/stringmetrics/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/pluots/stringmetrics/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/pluots/stringmetrics/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/pluots/stringmetrics/compare/v0.3.1...v0.3.2
