@@ -105,6 +105,9 @@ pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     panic::catch_unwind(|| *cfg_wrap.retrieve_box::<T>()).ok();
 }
 
+// NOTE: the below sections are super redundant and ugly, we will aim to clean
+// them up with a macro or some other architecture
+
 unsafe fn process_return<T: Default, E>(res: Result<T, E>, error: *mut c_uchar) -> T {
     res.map_or_else(
         |_| {
