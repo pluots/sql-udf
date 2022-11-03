@@ -17,6 +17,7 @@ use syn::{
 use crate::match_variant;
 use crate::types::{make_type_list, FnSigType, ImplType, RetType};
 
+/// Create an identifier from another identifier, changing the name to snake case
 macro_rules! format_ident_str {
     ($formatter: tt, $ident: ident) => {
         Ident::new(
@@ -49,6 +50,10 @@ fn impls_path(itemimpl: &ItemImpl, expected: ImplType) -> bool {
     }
 }
 
+/// Top-level entrypoint
+///
+/// Creates function signatures for use within the `#[register]` macro
+///
 /// # Arguments
 ///
 /// - args: a stream of everything inside `(...)` (e.g.
@@ -91,6 +96,7 @@ pub fn register(_args: &TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
+/// Create the basic function signatures (`xxx_init`, `xxx_deinit`, `xxx`)
 fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::TokenStream {
     // Get the return type from the macro
     // There is only one type for this trait, which is "Returns"
@@ -119,6 +125,7 @@ fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::Toke
     content
 }
 
+/// Create the aggregate function signatures (`xxx_add`, `xxx_clear`, `xxx_remove`)
 fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenStream {
     let clear_fn_name = format_ident_str!("{}_clear", dstruct_ident);
     let add_fn_name = format_ident_str!("{}_add", dstruct_ident);
@@ -134,22 +141,22 @@ fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenS
 
     let clear_fn = make_clear_fn(dstruct_ident, &clear_fn_name);
     let add_fn = make_add_fn(dstruct_ident, &add_fn_name);
-    let remove_fn = make_remove_fn(dstruct_ident, &remove_fn_name);
+    let remove_fn_impl = make_remove_fn(dstruct_ident, &remove_fn_name);
 
-    let mut base = quote! {
+    // If we implement remove, add a remove function. Otherwise, we don't need
+    // anything.
+    let remove_fn = if *impls_remove {
+        remove_fn_impl
+    } else {
+        quote! {}
+    };
+
+    quote! {
         #clear_fn
 
         #add_fn
-    };
 
-    if *impls_remove {
-        quote! {
-            #base
-
-            #remove_fn
-        }
-    } else {
-        base
+        #remove_fn
     }
 }
 
@@ -179,7 +186,7 @@ fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::T
     }
 }
 
-/// Given the name of a type or struct, create a function that will be evaluated
+/// Given the name of a type or struct, create a function that will be evaluated (`xxx`)
 fn make_init_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
@@ -191,13 +198,12 @@ fn make_init_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStr
             message: *mut std::ffi::c_char,
         ) -> bool
         {
-            unsafe {
-                udf::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
-            }
+            udf::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
         }
     }
 }
 
+/// Make the `xxx_deinit` function signature
 fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
@@ -206,7 +212,7 @@ fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::udf_sys::UDF_INIT,
         ) {
-            unsafe { udf::wrapper::wrap_deinit::<#dstruct_ident>(initid) }
+            udf::wrapper::wrap_deinit::<#dstruct_ident>(initid)
         }
     }
 }
@@ -232,14 +238,12 @@ fn make_proc_int_fn(
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> ::std::ffi::c_longlong {
-            unsafe {
-                #fn_title(
-                    initid,
-                    args,
-                    is_null,
-                    error
-                )
-            }
+            #fn_title(
+                initid,
+                args,
+                is_null,
+                error
+            )
         }
     }
 }
@@ -265,14 +269,12 @@ fn make_proc_float_fn(
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> ::std::ffi::c_double {
-            unsafe {
-                #fn_title(
-                    initid,
-                    args,
-                    is_null,
-                    error
-                )
-            }
+            #fn_title(
+                initid,
+                args,
+                is_null,
+                error
+            )
         }
     }
 }
@@ -300,16 +302,14 @@ fn make_proc_buf_ref_fn(
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> *const ::std::ffi::c_char {
-            unsafe {
-                #fn_title(
-                    initid,
-                    args,
-                    result,
-                    length,
-                    is_null,
-                    error
-                )
-            }
+            #fn_title(
+                initid,
+                args,
+                result,
+                length,
+                is_null,
+                error
+            )
         }
     }
 }
@@ -337,20 +337,19 @@ fn make_proc_buf_fn(
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> *const ::std::ffi::c_char {
-            unsafe {
-                #fn_title(
-                    initid,
-                    args,
-                    result,
-                    length,
-                    is_null,
-                    error
-                )
-            }
+            #fn_title(
+                initid,
+                args,
+                result,
+                length,
+                is_null,
+                error
+            )
         }
     }
 }
 
+/// Create the function signature for aggregate `xxx_add`
 fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
@@ -362,13 +361,12 @@ fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStre
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            unsafe {
-                udf::wrapper::wrap_add::<#dstruct_ident>(initid, args, is_null, error)
-            }
+            udf::wrapper::wrap_add::<#dstruct_ident>(initid, args, is_null, error)
         }
     }
 }
 
+/// Create the function signature for aggregate `xxx_clear`
 fn make_clear_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
@@ -379,13 +377,12 @@ fn make_clear_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenSt
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            unsafe {
-                udf::wrapper::wrap_clear::<#dstruct_ident>(initid, is_null, error)
-            }
+            udf::wrapper::wrap_clear::<#dstruct_ident>(initid, is_null, error)
         }
     }
 }
 
+/// Create the function signature for aggregate `xxx_remove`
 fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
@@ -397,9 +394,7 @@ fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            unsafe {
-                udf::wrapper::wrap_remove::<#dstruct_ident>(initid, args, is_null, error)
-            }
+            udf::wrapper::wrap_remove::<#dstruct_ident>(initid, args, is_null, error)
         }
     }
 }
