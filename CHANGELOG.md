@@ -8,6 +8,16 @@
 
 ### Changed
 
+### Removed
+
+
+
+## [0.3.7] - 2022-11-03
+
+### Added
+
+### Changed
+
 - Fixed broken link to `README.md` in `udf/src/lib.rs`
 
 ### Removed
@@ -81,7 +91,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.7...HEAD
+[0.3.7]: https://github.com/pluots/stringmetrics/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/pluots/stringmetrics/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/pluots/stringmetrics/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/pluots/stringmetrics/compare/v0.3.3...v0.3.4
