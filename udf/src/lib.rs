@@ -72,8 +72,11 @@
     clippy::cast_possible_truncation
 )]
 
+// We re-export this so we can use it in our macro, but don't need it
+// to show up in our docs
 #[doc(hidden)]
 pub extern crate chrono;
+
 extern crate udf_macros;
 pub extern crate udf_sys;
 
