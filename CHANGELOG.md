@@ -6,6 +6,9 @@
 
 ### Added
 
+- Added `Copy`, `Clone`, `Debug`, and `PartialEq` implementations to
+  `MaxLenOptions`
+
 ### Changed
 
 ### Removed
@@ -14,19 +17,14 @@
 
 ## [0.3.4] - 2022-11-03
 
-### Added
-
 ### Changed
 
-### Removed
-
+- Adjusted semantics of `udf_log` output
 
 
 ## [0.3.3] - 2022-11-03
 
-### Changed
-
-- Adjusted semantics of `udf_log` output
+\[nonpublished\]
 
 
 

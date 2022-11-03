@@ -13,8 +13,9 @@ use crate::{Init, UdfState};
 /// Helpful constants related to the `max_length` parameter
 ///
 /// These can be helpful when calling [`UdfCfg::set_max_len()`]
-#[non_exhaustive]
 #[repr(u32)]
+#[non_exhaustive]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum MaxLenOptions {
     /// The default max length for integers is 21
     IntDefault = 21,
