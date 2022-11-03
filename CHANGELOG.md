@@ -12,15 +12,19 @@
 
 
 
-## [0.3.2] - 2022-11-03
+## [0.3.3] - 2022-11-03
 
-### Added
+### Changed
+
+- Adjusted semantics of `udf_log` output
+
+
+
+## [0.3.2] - 2022-11-03
 
 ### Changed
 
 - Updated documentation around `AggregateUdf::Remove`
-
-### Removed
 
 
 
@@ -48,7 +52,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/pluots/stringmetrics/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/pluots/stringmetrics/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/pluots/stringmetrics/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/pluots/udf/compare/v0.0.1...v0.3.0
