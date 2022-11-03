@@ -54,14 +54,12 @@ pub struct UdfCfg<S: UdfState> {
 impl<S: UdfState> UdfCfg<S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
     #[inline]
-    #[allow(unsafe_op_in_unsafe_fn)]
     pub(crate) unsafe fn from_init_ptr_mut<'p>(ptr: *mut UDF_INIT) -> &'p mut Self {
         unsafe { &mut *ptr.cast::<Self>() }
     }
 
     /// Create an `ArgList` type on a `UDF_ARGS` struct
     #[inline]
-    #[allow(unsafe_op_in_unsafe_fn)]
     pub(crate) unsafe fn from_init_ptr<'p>(ptr: *const UDF_INIT) -> &'p Self {
         unsafe { &*ptr.cast::<Self>() }
     }
@@ -83,7 +81,6 @@ impl<S: UdfState> UdfCfg<S> {
     ///
     /// T _must_ be the type of this struct's pointer, likely created with
     /// [`store_box`]
-    #[allow(unsafe_op_in_unsafe_fn)]
     pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
         Box::from_raw(self.ptr.cast::<T>())
     }

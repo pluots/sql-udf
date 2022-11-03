@@ -10,12 +10,11 @@ use udf::prelude::*;
 const MAX_WORDS: i64 = (u32::MAX >> 4) as i64;
 
 /// We expect to return a long string here so we need to contain it in
-// #[register]
 struct Lipsum {
     res: String,
 }
 
-// #[register]
+#[register]
 impl BasicUdf for Lipsum {
     type Returns<'a> = &'a str;
 

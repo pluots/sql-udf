@@ -11,29 +11,80 @@ use crate::ProcessError;
 
 /// This trait specifies the functions needed for a standard (non-aggregate) UDF
 ///
-/// Implement this on a struct that is desired to carry data between calls to,
-/// `init`, `process`, `clear`, `add`, and `remove`. If there is no data to be
-/// shared, it may be zero-sized (e.g. `struct MyFunc {}`).
+/// Implement this on any struct in order to create a UDF. That struct can
+/// either be empty (usually the case for simple functions), or contain data
+/// that will be shared among all the UDF functions.
 ///
-/// If the UDF is only basic, the process is:
+/// If the UDF is basic (non-aggregate), the process is:
 ///
-/// - Call the `init(...)` function to perform setup and validate arguments
-/// - Call the `process(...)` function to create a result from those arguments
+/// - Caller (SQL server) calls `init()` with basic argument information
+/// - `init()` function (defined here) validates the arguments, does
+///   configuration (if needed), and configures and returns the `Self` struct
+/// - For each row, the caller calls `process(...)` with the relevant arguments
+/// - `process()` function (defined here) accepts an instance of `self` (created
+///   during init) and updates it as needed, and produces a result for that row
 ///
 /// The UDF specification also calls out a `deinit()` function to deallocate any
-/// memory, but this is not needed here (this wrapper and Rust handles this for
-/// you).
+/// memory, but this is not needed here (handled by this wrapper).
 pub trait BasicUdf: Sized {
-    /// This type represents the return type of the UDF function
+    /// This type represents the return type of the UDF function.
     ///
-    /// Allowed number types are `i64` (integer types), `f64` (real types), and
-    /// their nullable versions `Option<i64>`, `Option<f64>`.
+    /// There are a lot of options, with some rules to follow. Warning! tedious
+    /// explanation below, just skip to the next section if you don't need the
+    /// details.
     ///
-    /// Anything else is assumed to be a string type (SQL string or decimals)
-    /// and must fulfill `AsRef[u8]`. _Usually_ this is a string type (`&'static
-    /// str` or `String`).
+    /// - `f64` (real), `i64` (integer), and `[u8]` (string/blob) are the three
+    ///   fundamental types
+    /// - Any `Return` can be an `Option<something>` if the result is
+    ///   potentially nullable
+    /// - There is no meaningful difference between `String`, `Vec<u8>`, `str`,
+    ///   and `[u8]` - return whichever is most convenient (following the below
+    ///   rules), since they always just get copied to a buffer. Any of these
+    ///   types are acceptable for returning `string` or `decimal` types.
+    /// - Out of these buffer options, prefer returning `&'static str` or
+    ///   `&'static [u8]` where possible. These are usable when only returning
+    ///   const/static values.
+    /// - "Owned allocated" types (`String`, `Vec<u8>`) may _only_ be returned
+    ///   if their length is known to be <= 255. If this is exceeded, the result
+    ///   will be truncated.
+    /// - The last resort (but most powerful) options are `&'a str` and `&'a
+    ///   [u8]`, for any-length return types. To use these, your function's
+    ///   struct must have a `String` or `Vec<u8>` field. Just return a
+    ///   reference to your struct's field (GATs allow this to work)
     ///
-    /// String values can also be within an `Option` if they are nullable.
+    /// This all sounds somewhat complex, which is just due to the limitations
+    /// of the underlying C SQL API. Choosing a type may seem tricky at first
+    /// but rest assured, whatever successfully compiles will work.
+    ///
+    /// The flow chart below helps clarify some of the decisions making:
+    ///
+    /// ```text
+    ///     Desired                Use Option<_> if the result may be null
+    ///   Return Type
+    ///  ~~~~~~~~~~~~~
+    /// +-------------+
+    /// |   integer   |--> i64 / Option<i64>
+    /// +-------------+
+    /// +-------------+
+    /// |    float    |--> f64 / Option<f64>
+    /// +-------------+
+    ///                    +------------+
+    /// +-------------+    |  static    |--> &'static str / Option<&'static str>
+    /// | utf8 string |--> |            |
+    /// +-------------+    |            |    +------------+
+    ///                    |  dynamic   |--> | len ≤ 255  |--> String / Option<String>
+    ///                    +------------+    |            |
+    ///                                      | len ?      |--> &'a str / Option<&'a str>
+    ///                                      +------------+
+    /// +-------------+    +------------+
+    /// |  non utf8   |    |  static    |--> &'static str / Option<&'static str>
+    /// | string/blob |--> |            |
+    /// |             |    |            |    +------------+
+    /// +-------------+    |  dynamic   |--> | len ≤ 255  |--> Vec<u8> / Option<Vec<u8>>
+    ///                    +------------+    |            |
+    ///                                      | len ?      |--> &'a [u8] / Option<&'a [u8]>
+    ///                                      +------------+
+    /// ```
     ///
     /// Important note:
     type Returns<'a>
@@ -205,11 +256,11 @@ pub trait AggregateUdf: BasicUdf {
         _args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<(), NonZeroU8> {
-        Ok(())
+        unimplemented!()
     }
 }
 
-/// A state of the UDF, representing either `Init` or `Process`
+/// A state of the UDF, representing either [`Init`] or [`Process`]
 ///
 /// This is a zero-sized type used to control what operations are allowed at
 /// different times.
@@ -217,16 +268,15 @@ pub trait UdfState: Debug + PartialEq {}
 
 /// Typestate marker for the initialization phase
 ///
-/// This is a zero-sized type that is just used to hint to the compiler that a
-/// type was created in the `init` function, which allows for some extra
-/// methods.
+/// This is a zero-sized type. It just allows for specific methods to be
+/// implemented only on types that were created during the `init` function.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Init;
 
 /// Typestate marker for the processing phase
 ///
-/// This is a zero-sized type that indicates that a type was created in
-/// the `process` function.
+/// This is a zero-sized type, indicating that a type was created in the
+/// `process` function.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Process;
 

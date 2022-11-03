@@ -64,6 +64,7 @@ CREATE FUNCTION is_const RETURNS string SONAME 'libudf_examples.so';
 CREATE FUNCTION lookup6 RETURNS string SONAME 'libudf_examples.so';
 CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
 CREATE FUNCTION udf_sequence RETURNS integer SONAME 'libudf_examples.so';
+CREATE FUNCTION lipsum RETURNS string SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION avg2 RETURNS real SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION avg_cost RETURNS real SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION udf_median RETURNS integer SONAME 'libudf_examples.so';

@@ -25,27 +25,6 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
     }
 }
 
-// WIP
-// pub unsafe fn handle_panic_res<const N: usize>(e: Box<dyn Any + Send>,buf: *mut c_char) {
-//     // message plus null terminator must fit in buffer
-//     let bytes_to_write = min(msg.len(), N - 1);
-
-//     unsafe {
-//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
-//         *buf.add(bytes_to_write) = 0;
-//     }
-// }
-
-// pub unsafe fn write_panic_res_to_buf<const N: usize>(msg: &str, buf: *mut c_char) {
-//     // message plus null terminator must fit in buffer
-//     let bytes_to_write = min(msg.len(), N - 1);
-
-//     unsafe {
-//         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
-//         *buf.add(bytes_to_write) = 0;
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use std::ffi::{c_ulong, c_void, CStr};

@@ -4,6 +4,6 @@
 pub use std::num::NonZeroU8;
 
 pub use crate::{
-    register, AggregateUdf, ArgList, BasicUdf, Init, Process, ProcessError, SqlArg, SqlResult,
-    SqlType, UdfCfg,
+    register, udf_log, AggregateUdf, ArgList, BasicUdf, Init, Process, ProcessError, SqlArg,
+    SqlResult, SqlType, UdfCfg,
 };

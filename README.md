@@ -176,35 +176,15 @@ docker run --rm -it \
 ### Testing in Docker
 
 Testing in Docker is highly recommended, so as to avoid disturbing a host SQL
-installation. See [the udf-examples readme](sql-udf/README.md) for instructions
-on how to do this.
+installation. See [the udf-examples readme](udf-examples/README.md) for
+instructions on how to do this.
 
-
-It can be convenient to test UDFs in a docker container:
-
-```sh
-# Start a mariadb server headless
-# Mount our local target directory at /target
-docker run --rm -it  \
-  -v $(pwd)/target:/target \
-  -e MARIADB_ROOT_PASSWORD=banana \
-  --name mariadb_udf_test \
-  mariadb
-
-# Open a terminal in another window
-docker exec -it mariadb_udf_test bash
-
-# Copy output .so files
-cp /target/release/libudf_examples.so /usr/lib/mysql/plugin/
-
-# Log in with our password
-mysql -pbanana
-```
 
 ## Examples
 
 The `udf-examples` crate contains examples of various UDFs, as well as
-instructions on how to compile them. See [the readme](sql-udf/README.md)
+instructions on how to compile them. See [the readme](udf-examples/README.md)
+there.
 
 
 ## Logging & Debugging Note
