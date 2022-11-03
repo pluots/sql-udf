@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.3.1] - 2022-11-03
+
+### Added
+
 - Example for `lipsum` is now working properly
 - Improved documentation
 
@@ -31,5 +41,6 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/pluots/stringmetrics/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/pluots/udf/compare/v0.0.1...v0.3.0
