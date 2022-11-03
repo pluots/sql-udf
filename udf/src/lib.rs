@@ -2,7 +2,7 @@
 //!
 //! This crate provides bindings for easy creation of SQL user-defined functions
 //! in Rust. See [the
-//! readme](https://github.com/pluots/sql-udf/blob/main/readme.md) for more
+//! readme](https://github.com/pluots/sql-udf/blob/main/README.md) for more
 //! background information.
 //!
 //! # Usage

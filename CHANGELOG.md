@@ -8,20 +8,18 @@
 
 ### Changed
 
+- Fixed broken link to `README.md` in `udf/src/lib.rs`
+
 ### Removed
 
 
 
 ## [0.3.6] - 2022-11-03
 
-### Added
-
 ### Changed
 
 - Changed `SqlResult::Decimal(&'a [u8])` to be `SqlResult::Decimal(&'a str)`,
   since a decimal will always fall under ASCII.
-
-### Removed
 
 
 
