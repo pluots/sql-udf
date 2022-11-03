@@ -8,6 +8,16 @@
 
 ### Changed
 
+### Removed
+
+
+
+## [0.3.6] - 2022-11-03
+
+### Added
+
+### Changed
+
 - Changed `SqlResult::Decimal(&'a [u8])` to be `SqlResult::Decimal(&'a str)`,
   since a decimal will always fall under ASCII.
 
@@ -73,7 +83,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/pluots/stringmetrics/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/pluots/stringmetrics/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/pluots/stringmetrics/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/pluots/stringmetrics/compare/v0.3.2...v0.3.3
