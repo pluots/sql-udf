@@ -22,13 +22,24 @@ additional functions.
 
 A quick overview of the workflow process is:
 
+- Create a new rust project (`cargo new --lib my-udf`), add `udf` as a
+  dependency (`cd my-udf; cargo add udf`) and change the crate type to a
+  `cdylib` by adding the following to `Cargo.toml`:
+
+  ```toml
+  [lib]
+  crate-type = ["cdylib"]
+  ```
+
 - Make a struct or enum that will share data between initializing and processing
   steps (it may be empty). The name of this struct will be the name of your
-  function in SQL (converted to snake case).
+  function in SQL, as converted to snake case (adjustable names are planned but
+  not yet available).
 - Implement the `BasicUdf` trait on this struct
 - Implement the `AggregateUdf` trait if you want it to be an aggregate function
 - Add `#[udf::register]` to each of these `impl` blocks
-- Compile the project as a cdylib (output should be a `.so` file)
+- Compile the project with `cargo build --release` (output will be
+  `target/release/libmy_udf.so`)
 - Load the struct into MariaDB/MySql using `CREATE FUNCTION ...`
 - Use the function in SQL
 
@@ -86,6 +97,10 @@ struct Lipsum {
 The next step is to implement the `BasicUdf` and optionally `AggregateUdf`
 traits. See the docs for more information.
 
+If you use rust-analyzer with your IDE, it can help you out. Just type
+`impl BasicUdf for MyStruct {}` and place your cursor between the brackets
+- it will offer to autofill the function skeletons.
+
 ```rust
 use udf::prelude::*;
 
@@ -122,10 +137,9 @@ dynamic library for the project. This can be done by specifying
 `target/release`).
 
 Important version note: this crate relies on a feature called generic associated
-types (GATs) which are only available on rust >= 1.65. At time of writing, this
-is not yet stable (scheduled stable date is 2022-11-03), so make sure you are
-using either the beta or nightly compiler to build anything that uses this
-crate.
+types (GATs) which are only available on rust >= 1.65. This version only just
+became stable (2022-11-03), so be sure to run `rustup update`, or use the
+nightly toolchain.
 
 ### Symbol Inspection
 
