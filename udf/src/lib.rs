@@ -49,7 +49,7 @@
 //! Because of reliance on a feature called GATs, this library requires Rust
 //! version >= 1.65. This only became stable on 2022-11-03; if you encounter
 //! issues compiling, be sure to update your toolchain.
-//! 
+//!
 //! ```sh
 //! rustup update
 //! ```
