@@ -8,6 +8,8 @@
 
 ### Changed
 
+- Updated documentation around `AggregateUdf::Remove`
+
 ### Removed
 
 
@@ -18,11 +20,6 @@
 
 - Example for `lipsum` is now working properly
 - Improved documentation
-
-### Changed
-
-### Removed
-
 
 
 ## [0.3.0] - 2022-10-26

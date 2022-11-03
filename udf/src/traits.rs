@@ -250,11 +250,12 @@ pub trait AggregateUdf: BasicUdf {
     /// Errors are handled the same as with [`AggregateUdf::add()`], see the
     /// description there
     #[inline]
+    #[allow(unused_variables)] // Allow without an underscore for cleaner docs
     fn remove(
         &mut self,
-        _cfg: &UdfCfg<Process>,
-        _args: &ArgList<Process>,
-        _error: Option<NonZeroU8>,
+        cfg: &UdfCfg<Process>,
+        args: &ArgList<Process>,
+        error: Option<NonZeroU8>,
     ) -> Result<(), NonZeroU8> {
         unimplemented!()
     }
