@@ -12,6 +12,16 @@
 
 
 
+## [0.3.4] - 2022-11-03
+
+### Added
+
+### Changed
+
+### Removed
+
+
+
 ## [0.3.3] - 2022-11-03
 
 ### Changed
@@ -52,7 +62,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/pluots/stringmetrics/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/pluots/stringmetrics/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/pluots/stringmetrics/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/pluots/stringmetrics/compare/v0.3.0...v0.3.1
