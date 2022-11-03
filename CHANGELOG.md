@@ -6,6 +6,9 @@
 
 ### Added
 
+- Example for `lipsum` is now working properly
+- Improved documentation
+
 ### Changed
 
 ### Removed
