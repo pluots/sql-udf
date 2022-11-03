@@ -108,30 +108,40 @@ pub use types::{MYSQL_ERRMSG_SIZE, *};
 /// ```
 /// use udf::udf_log;
 ///
+/// // Prints "2022-10-08 05:27:30+00:00 [Error] UDF: this is an error"
+/// // This matches the default entrypoint log format
 /// udf_log!(Error: "this is an error");
+///
 /// udf_log!(Warning: "this is a warning");
-/// udf_log!(Info: "this is info");
+///
+/// udf_log!(Note: "this is info");
+///
 /// udf_log!(Debug: "this is a debug message");
+///
+/// udf_log!("i print without the '[Level] UDF:' formatting");
 /// ```
 #[macro_export]
 macro_rules! udf_log {
     (Error: $msg:expr) => {
-        udf_log!(Other "Error": $msg);
+        let formatted = format!("[Error] UDF: {}", $msg);
+        udf_log!(formatted);
     };
-    (Warning: $msg:tt) => {
-        udf_log!(Other "Warning": $msg);
+    (Warning: $msg:expr) => {
+        let formatted = format!("[Warning] UDF: {}", $msg);
+        udf_log!(formatted);
     };
-    (Info: $msg:tt) => {
-        udf_log!(Other "Info": $msg);
+    (Note: $msg:expr) => {
+        let formatted = format!("[Note] UDF: {}", $msg);
+        udf_log!(formatted);
     };
-    (Debug: $msg:tt) => {
-        udf_log!(Other "Debug": $msg);
+    (Debug: $msg:expr) => {
+        let formatted = format!("[Debug] UDF: {}", $msg);
+        udf_log!(formatted);
     };
-    (Other $level:tt: $msg:tt) => {
+    ($msg:tt) => {
         eprintln!(
-            "{} [{}] Udf: {}",
+            "{} {}",
             udf::chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%:z"),
-            $level,
             $msg
         );
     };

@@ -53,7 +53,6 @@ Then copy the built & mounted `.so` file, and log in to your server:
 
 ```bash
 cp /target/release/libudf_examples.so /usr/lib/mysql/plugin/
-
 mysql -pbanana
 ```
 
@@ -65,6 +64,7 @@ CREATE FUNCTION lookup6 RETURNS string SONAME 'libudf_examples.so';
 CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
 CREATE FUNCTION udf_sequence RETURNS integer SONAME 'libudf_examples.so';
 CREATE FUNCTION lipsum RETURNS string SONAME 'libudf_examples.so';
+CREATE FUNCTION log_calls RETURNS integer SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION avg2 RETURNS real SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION avg_cost RETURNS real SONAME 'libudf_examples.so';
 CREATE AGGREGATE FUNCTION udf_median RETURNS integer SONAME 'libudf_examples.so';
@@ -99,24 +99,24 @@ MariaDB [(none)]> select lookup6('localhost'), lookup6('google.com');
 
 
 -- Create table to test aggregate functions
-
+MariaDB [(none)]> create database db; use db;
 MariaDB [db]> create table t1 (
-    ->     id int not null auto_increment,
-    ->     qty int,
-    ->     cost real,
-    ->     class varchar(30),
-    ->     primary key (id)
-    -> );
+    id int not null auto_increment,
+      qty int,
+      cost real,
+      class varchar(30),
+      primary key (id)
+    );
 Query OK, 0 rows affected (0.016 sec)
 
 MariaDB [db]> insert into t1 (qty, cost, class) values
-    ->     (10, 50, "a"),
-    ->     (8, 5.6, "c"),
-    ->     (5, 20.7, "a"),
-    ->     (10, 12.78, "b"),
-    ->     (6, 7.2, "c"),
-    ->     (2, 10.3, "b"),
-    ->     (3, 9.1, "c");
+    (10, 50, "a"),
+    (8, 5.6, "c"),
+    (5, 20.7, "a"),
+    (10, 12.78, "b"),
+    (6, 7.2, "c"),
+    (2, 10.3, "b"),
+    (3, 9.1, "c");
 Query OK, 7 rows affected (0.007 sec)
 Records: 7  Duplicates: 0  Warnings: 0
 
@@ -140,5 +140,8 @@ MariaDB [db]> select avg_cost(qty, cost) from t1 group by class order by class;
 |  6.78235294117647050000 |
 +-------------------------+
 3 rows in set (0.001 sec)
+
+-- Check server logs after running this!
+MariaDB [(db)]> select log_calls();
 
 ```

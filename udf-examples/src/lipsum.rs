@@ -1,4 +1,11 @@
-#![allow(unused)]
+//! A function to generate lipsum of a given word count
+//!
+//! # Usage
+//!
+//! ```sql
+//! CREATE FUNCTION lipsum RETURNS string SONAME 'libudf_examples.so';
+//! SELECT lipsum(8);
+//! ```
 
 use std::num::NonZeroU8;
 
@@ -19,7 +26,7 @@ impl BasicUdf for Lipsum {
     type Returns<'a> = &'a str;
 
     /// We expect LIPSUM(n) or LIPSUM(n, m)
-    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
+    fn init(_cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.is_empty() || args.len() > 2 {
             return Err(format!("Expected 1 or 2 args; got {}", args.len()));
         }
@@ -57,7 +64,7 @@ impl BasicUdf for Lipsum {
 
     fn process<'a>(
         &'a mut self,
-        cfg: &UdfCfg<Process>,
+        _cfg: &UdfCfg<Process>,
         args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {

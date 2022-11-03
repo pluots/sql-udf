@@ -21,6 +21,7 @@ mod avg2;
 mod avgcost;
 mod is_const;
 mod lipsum;
+mod log_calls;
 mod lookup;
 mod median;
 mod sequence;
