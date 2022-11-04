@@ -47,9 +47,9 @@
 //! # Building & Usage
 //!
 //! The above example will create three C-callable functions: `my_udf`,
-//! `my_udf_init`, and `my_udf_deinit`, which is what MariaDB and MySql expect
-//! to be able to load a UDF. To create a C dynamic library (as is required for
-//! usage), add the following to your `Cargo.toml`
+//! `my_udf_init`, and `my_udf_deinit`, which is what `MariaDB` and `MySql`
+//! expect for UDFs. To create a C dynamic library (as is required for usage),
+//! add the following to your `Cargo.toml`
 //!
 //! ```toml
 //! [lib]
