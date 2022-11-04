@@ -44,6 +44,33 @@
 //! }
 //! ```
 //!
+//! # Building & Usage
+//!
+//! The above example will create three C-callable functions: `my_udf`,
+//! `my_udf_init`, and `my_udf_deinit`, which is what MariaDB and MySql expect
+//! to be able to load a UDF. To create a C dynamic library (as is required for
+//! usage), add the following to your `Cargo.toml`
+//!
+//! ```toml
+//! [lib]
+//! crate-type = ["cdylib"]
+//! ```
+//!
+//! The next time you run `cargo build --release`, in `target/release` there
+//! will be a shared library `.so` file. Copy this to your `plugin_dir` location
+//! (usually `/usr/lib/mysql/plugin/`), and load the function with the
+//! following:
+//!
+//! ```sql
+//! CREATE FUNCTION my_udf RETURNS integer SONAME 'libudf_test.so';
+//! ```
+//!
+//! Replace `my_udf` with the function name, `integer` with the return type, and
+//! `libudf_test.so` with the correct file name.
+//!
+//! More details on building are discussed in [the project
+//! readme](https://github.com/pluots/sql-udf/blob/main/README.md).
+//!
 //! # Version Note
 //!
 //! Because of reliance on a feature called GATs, this library requires Rust

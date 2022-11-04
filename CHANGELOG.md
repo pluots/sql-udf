@@ -8,19 +8,17 @@
 
 ### Changed
 
+- Updated documentation
+
 ### Removed
 
 
 
 ## [0.3.7] - 2022-11-03
 
-### Added
-
 ### Changed
 
 - Fixed broken link to `README.md` in `udf/src/lib.rs`
-
-### Removed
 
 
 
