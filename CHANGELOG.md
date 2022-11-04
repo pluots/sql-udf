@@ -8,6 +8,16 @@
 
 ### Changed
 
+### Removed
+
+
+
+## [0.3.8] - 2022-11-04
+
+### Added
+
+### Changed
+
 - Updated documentation
 
 ### Removed
@@ -89,7 +99,8 @@
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.7...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.8...HEAD
+[0.3.8]: https://github.com/pluots/stringmetrics/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/pluots/stringmetrics/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/pluots/stringmetrics/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/pluots/stringmetrics/compare/v0.3.4...v0.3.5
