@@ -68,22 +68,22 @@ pub trait BasicUdf: Sized {
     /// ╭─────────────╮
     /// │    float    ├─> f64 / Option<f64>
     /// ╰─────────────╯
-    ///                   ╭────────────╮
-    /// ╭─────────────╮   │  static    ├─> &'static str / Option<&'static str>
-    /// │ utf8 string ├─> │            │
-    /// ╰─────────────╯   │            │   ╭────────────╮
-    ///                   │  dynamic   ├─> │ len ≤ 255  ├─> String / Option<String>
-    ///                   ╰────────────╯   │            │
-    ///                                    │ len ?      ├─> &'a str / Option<&'a str>
-    ///                                    ╰────────────╯
-    /// ╭─────────────╮   ╭────────────╮
-    /// │  non utf8   │   │  static    ├─> &'static str / Option<&'static str>
-    /// │ string/blob ├─> │            │
-    /// ╰─────────────╯   │            │   ╭────────────╮
-    ///                   │  dynamic   ├─> │ len ≤ 255  ├─> Vec<u8> / Option<Vec<u8>>
-    ///                   ╰────────────╯   │            │
-    ///                                    │ len ?      ├─> &'a [u8] / Option<&'a [u8]>
-    ///                                    ╰────────────╯
+    ///                   ╭───────────╮
+    /// ╭─────────────╮   │  static   ├─> &'static str / Option<&'static str>
+    /// │ utf8 string ├─> │           │
+    /// ╰─────────────╯   │           │   ╭───────────╮
+    ///                   │  dynamic  ├─> │ len ≤ 255 ├─> String / Option<String>
+    ///                   ╰───────────╯   │           │
+    ///                                   │ len ?     ├─> &'a str / Option<&'a str>
+    ///                                   ╰───────────╯
+    /// ╭─────────────╮   ╭───────────╮
+    /// │  non utf8   │   │  static   ├─> &'static str / Option<&'static str>
+    /// │ string/blob ├─> │           │
+    /// ╰─────────────╯   │           │   ╭───────────╮
+    ///                   │  dynamic  ├─> │ len ≤ 255 ├─> Vec<u8> / Option<Vec<u8>>
+    ///                   ╰───────────╯   │           │
+    ///                                   │ len ?     ├─> &'a [u8] / Option<&'a [u8]>
+    ///                                   ╰───────────╯
     /// ```
     ///
     /// Important note:
