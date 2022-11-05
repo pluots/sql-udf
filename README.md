@@ -138,8 +138,8 @@ dynamic library for the project. This can be done by specifying
 
 Important version note: this crate relies on a feature called generic associated
 types (GATs) which are only available on rust >= 1.65. This version only just
-became stable (2022-11-03), so be sure to run `rustup update`, or use the
-nightly toolchain.
+became stable (2022-11-03), so be sure to run `rustup update` if you run into
+compiler issues.
 
 ### Symbol Inspection
 

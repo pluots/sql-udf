@@ -22,7 +22,7 @@ Docker), the project can be built in a docker image:
 docker run --rm -it \
   -v "$(pwd):/build" \
   -e CARGO_HOME=/build/.docker-cargo \
-  rustlang/rust:nightly \
+  rust:latest \
   bash -c "cd /build; cargo build -p udf-examples --release"
 ```
 
