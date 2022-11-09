@@ -1,6 +1,6 @@
 [package]
 name = "udf-sys"
-version = "0.3.8"
+version = "0.3.9"
 edition = "2021"
 description = "UDF system bindings"
 repository = "https://github.com/pluots/udf/tree/main/udf_sys"
