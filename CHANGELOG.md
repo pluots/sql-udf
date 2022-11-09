@@ -4,23 +4,17 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
-
 ### Changed
 
-### Removed
+- Gave a transparant repr to `ArgList`
 
 
 
 ## [0.3.8] - 2022-11-04
 
-### Added
-
 ### Changed
 
 - Updated documentation
-
-### Removed
 
 
 

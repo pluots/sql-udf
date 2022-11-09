@@ -1,4 +1,4 @@
-//! Types and traits that represent SQL interfaces
+//! Types that represent SQL interfaces
 
 use std::fmt;
 

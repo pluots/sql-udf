@@ -16,6 +16,7 @@ use crate::{SqlArg, SqlResult, UdfState};
 ///
 /// This is rusty wrapper around SQL's `UDF_ARGS` struct, providing methods to
 /// easily work with arguments.
+#[repr(transparent)]
 pub struct ArgList<'a, S: UdfState> {
     base: UDF_ARGS,
     // We use this zero-sized marker to hold our state
@@ -37,7 +38,7 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
     #[inline]
     pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *const UDF_ARGS) -> &'p Self {
-        unsafe { &*ptr.cast::<ArgList<'_, S>>() }
+        &*ptr.cast()
     }
 
     /// Create a vector of arguments for easy use
