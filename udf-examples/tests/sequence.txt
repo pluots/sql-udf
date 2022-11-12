@@ -16,24 +16,24 @@ insert into t1 () values ();
 insert into t1 () values ();
 
 test
-MariaDB [db0]> select sql_sequence();
+MariaDB [db0]> select udf_sequence();
 +----------------+
-| sql_sequence() |
+| udf_sequence() |
 +----------------+
 |              1 |
 +----------------+
 
-MariaDB [db0]> select sql_sequence(1);
+MariaDB [db0]> select udf_sequence(1);
 +-----------------+
-| sql_sequence(1) |
+| udf_sequence(1) |
 +-----------------+
 |               2 |
 +-----------------+
 1 row in set (0.000 sec)
 
-MariaDB [db0]> select id, sql_sequence() from t1;
+MariaDB [db0]> select id, udf_sequence() from t1;
 +----+----------------+
-| id | sql_sequence() |
+| id | udf_sequence() |
 +----+----------------+
 |  1 |              1 |
 |  2 |              2 |
@@ -43,9 +43,9 @@ MariaDB [db0]> select id, sql_sequence() from t1;
 |  6 |              6 |
 +----+----------------+
 
-MariaDB [db0]> select id, sql_sequence(10) from t1;
+MariaDB [db0]> select id, udf_sequence(10) from t1;
 +----+------------------+
-| id | sql_sequence(10) |
+| id | udf_sequence(10) |
 +----+------------------+
 |  1 |               11 |
 |  2 |               12 |
@@ -55,9 +55,9 @@ MariaDB [db0]> select id, sql_sequence(10) from t1;
 |  6 |               16 |
 +----+------------------+
 
-MariaDB [db0]> select id, sql_sequence(-1) from t1;
+MariaDB [db0]> select id, udf_sequence(-1) from t1;
 +----+------------------+
-| id | sql_sequence(-1) |
+| id | udf_sequence(-1) |
 +----+------------------+
 |  1 |                0 |
 |  2 |                1 |

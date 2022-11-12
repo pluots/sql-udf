@@ -1,9 +1,9 @@
 # Simple file format: inputs start with `I >>`. If you care about the output,
 # `O >>` can be specified. These symbols must be at the beginning of a line
 # `E >>` for stderr
-# {{info}} matches either 
+# {{info}} matches either
 ! >> lang=sql
-! >> 
+! >>
 
 i >> CREATE FUNCTION sum_int RETURNS integer SONAME 'libudf_examples.so';
 i >> select sum_int(1, 2, 3);

@@ -1,0 +1,24 @@
+# Dockerfile to build the udf-examples crate and load it. Build with `docker
+# build -f Dockerfile.examples .`
+#
+# If using this for production, be sure to remove the `ENV
+# MARIADB_ROOT_PASSWORD` command
+
+FROM rust:latest AS build
+
+WORKDIR /build
+
+COPY . .
+# RUN cargo fetch
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/build/target \
+    cargo build --release -p udf-examples \
+    && mkdir /output \
+    && cp target/release/libudf_examples.so /output
+
+FROM mariadb:10.9
+
+COPY --from=build /output/* /usr/lib/mysql/plugin/
+
+# # Do NOT use this for production
+ENV MARIADB_ROOT_PASSWORD=example

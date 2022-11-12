@@ -4,9 +4,8 @@ use std::ops::Add;
 
 use udf_derive::register;
 
-
 // Registration is not allowed on non-impls
-struct X{}
+struct X {}
 
 #[register]
 impl Add for X {
