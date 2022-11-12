@@ -109,13 +109,11 @@ pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
 // them up with a macro or some other architecture
 
 unsafe fn process_return<T: Default, E>(res: Result<T, E>, error: *mut c_uchar) -> T {
-    res.map_or_else(
-        |_| {
-            *error = 1;
-            T::default()
-        },
-        |v| v,
-    )
+    let Ok(val) = res else {
+        *error = 1;
+        return T::default();
+    };
+    val
 }
 
 unsafe fn process_return_null<T: Default, E>(
@@ -123,22 +121,17 @@ unsafe fn process_return_null<T: Default, E>(
     error: *mut c_uchar,
     is_null: *mut c_uchar,
 ) -> T {
-    res.map_or_else(
-        |_| {
-            // Result is an Err()
+    match res {
+        Ok(Some(v)) => v,
+        Ok(None) => {
+            *is_null = 1;
+            T::default()
+        }
+        Err(_) => {
             *error = 1;
             T::default()
-        },
-        |res_ok| {
-            res_ok.map_or_else(
-                || {
-                    *is_null = 1;
-                    T::default()
-                },
-                |v| v,
-            )
-        },
-    )
+        }
+    }
 }
 
 #[inline]
@@ -242,7 +235,8 @@ where
     let err = *(error as *const Option<NonZeroU8>);
     let proc_res = T::process(&mut b, cfg, arglist, err);
 
-    let ret = if let Ok(ref s) = proc_res {
+    let ret: *const c_char;
+    if let Ok(ref s) = proc_res {
         // Cast u8 to c_char (u8/i8)
         let s_ref: &[u8] = s.as_ref();
         let s_ptr = s_ref.as_ptr().cast::<c_char>();
@@ -250,18 +244,21 @@ where
 
         // If we fit within the buffer, just copy our output. Otherwise,
         // return the pointer to s.
-        let res_ptr = if s_ref.len() as u64 <= *length {
+        let res_ptr: *const c_char;
+
+        if s_ref.len() as u64 <= *length {
             ptr::copy(s_ptr, result, s_ref.len());
-            result
+            res_ptr = result;
         } else {
-            s_ptr
+            res_ptr = s_ptr;
         };
+        
         *length = s_ref.len() as u64;
-        res_ptr
+        ret = res_ptr;
     } else {
         *error = 1;
         *length = 0;
-        result
+        ret = result;
     };
 
     std::mem::forget(proc_res);
@@ -295,35 +292,35 @@ where
     let res = T::process(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    if let Ok(res_ok) = res {
-        // Result is an Ok(); set null as needed
-        if let Some(s) = res_ok {
-            // Cast u8 to c_char (u8/i8)
-            let s_ref = s.as_ref();
-            let s_ptr = s_ref.as_ptr().cast::<c_char>();
-            *is_null = c_uchar::from(false);
-
-            // If we fit within the buffer, just copy our output. Otherwise,
-            // return the pointer to s.
-            let res_ptr = if s_ref.len() as u64 <= *length {
-                ptr::copy(s_ptr, result, s_ref.len());
-                result
-            } else {
-                s_ptr
-            };
-            *length = s_ref.len() as u64;
-
-            res_ptr
-        } else {
-            *is_null = 1;
-            *length = 0;
-            result
-        }
-    } else {
+    let Ok(res_ok) = res else {
         *error = 1;
         *length = 0;
+        return result;
+    };
+
+    // Result is an Ok(); set null as needed
+    let Some(s) = res_ok else {
+        *is_null = 1;
+        *length = 0;
+        return result;
+    };
+
+    // Cast u8 to c_char (u8/i8)
+    let s_ref = s.as_ref();
+    let s_ptr = s_ref.as_ptr().cast::<c_char>();
+    *is_null = c_uchar::from(false);
+
+    // If we fit within the buffer, just copy our output. Otherwise,
+    // return the pointer to s.
+    let res_ptr = if s_ref.len() as u64 <= *length {
+        ptr::copy(s_ptr, result, s_ref.len());
         result
-    }
+    } else {
+        s_ptr
+    };
+    *length = s_ref.len() as u64;
+
+    res_ptr
 }
 
 #[inline]
@@ -345,7 +342,8 @@ where
     let err = *(error as *const Option<NonZeroU8>);
     let proc_res = T::process(&mut b, cfg, arglist, err);
 
-    let ret = if let Ok(ref s) = proc_res {
+    let ret: *const c_char;
+    if let Ok(ref s) = proc_res {
         // Cast u8 to c_char (u8/i8)
         let s_ref: &[u8] = s.as_ref();
         let s_ptr = s_ref.as_ptr().cast::<c_char>();
@@ -353,18 +351,21 @@ where
 
         // If we fit within the buffer, just copy our output. Otherwise,
         // return the pointer to s.
-        let res_ptr = if s_ref.len() as u64 <= *length {
+        let res_ptr: *const c_char;
+
+        if s_ref.len() as u64 <= *length {
             ptr::copy(s_ptr, result, s_ref.len());
-            result
+            res_ptr = result;
         } else {
-            s_ptr
+            res_ptr = s_ptr;
         };
+
         *length = s_ref.len() as u64;
-        res_ptr
+        ret = res_ptr;
     } else {
         *error = 1;
         *length = 0;
-        result
+        ret = result;
     };
 
     std::mem::forget(proc_res);
@@ -398,35 +399,35 @@ where
     let res = T::process(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    if let Ok(res_ok) = res {
-        // Result is an Ok(); set null as needed
-        if let Some(s) = res_ok {
-            // Cast u8 to c_char (u8/i8)
-            let s_ref = s.as_ref();
-            let s_ptr = s_ref.as_ptr().cast::<c_char>();
-            *is_null = c_uchar::from(false);
-
-            // If we fit within the buffer, just copy our output. Otherwise,
-            // return the pointer to s.
-            let res_ptr = if s_ref.len() as u64 <= *length {
-                ptr::copy(s_ptr, result, s_ref.len());
-                result
-            } else {
-                s_ptr
-            };
-            *length = s_ref.len() as u64;
-
-            res_ptr
-        } else {
-            *is_null = 1;
-            *length = 0;
-            result
-        }
-    } else {
+    let Ok(res_ok) = res else {
         *error = 1;
         *length = 0;
+        return result;
+    };
+
+    // Result is an Ok(); set null as needed
+    let Some(s) = res_ok else {
+        *is_null = 1;
+        *length = 0;
+        return result;
+    };
+
+    // Cast u8 to c_char (u8/i8)
+    let s_ref = s.as_ref();
+    let s_ptr = s_ref.as_ptr().cast::<c_char>();
+    *is_null = c_uchar::from(false);
+
+    // If we fit within the buffer, just copy our output. Otherwise,
+    // return the pointer to s.
+    let res_ptr = if s_ref.len() as u64 <= *length {
+        ptr::copy(s_ptr, result, s_ref.len());
         result
-    }
+    } else {
+        s_ptr
+    };
+    *length = s_ref.len() as u64;
+
+    res_ptr
 }
 
 #[inline]
@@ -445,10 +446,9 @@ pub unsafe fn wrap_add<T>(
     let res = T::add(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    match res {
-        Ok(_) => (),
-        Err(e) => *error = e.into(),
-    };
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
 
 #[inline]
@@ -462,10 +462,9 @@ where
     let res = T::clear(&mut b, cfg, err);
     cfg.store_box(b);
 
-    match res {
-        Ok(_) => (),
-        Err(e) => *error = e.into(),
-    };
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
 
 #[inline]
@@ -484,8 +483,7 @@ pub unsafe fn wrap_remove<T>(
     let res = T::remove(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    match res {
-        Ok(_) => (),
-        Err(e) => *error = e.into(),
-    };
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
