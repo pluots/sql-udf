@@ -69,17 +69,15 @@
 //! `libudf_test.so` with the correct file name.
 //!
 //! More details on building are discussed in [the project
-//! readme](https://github.com/pluots/sql-udf/blob/main/README.md).
+//! readme](https://github.com/pluots/sql-udf/blob/main/README.md). See [the
+//! `MariaDB` documentation](https://mariadb.com/kb/en/create-function-udf/) on
+//! how to load the created libraries.
 //!
 //! # Version Note
 //!
 //! Because of reliance on a feature called GATs, this library requires Rust
 //! version >= 1.65. This only became stable on 2022-11-03; if you encounter
 //! issues compiling, be sure to update your toolchain.
-//!
-//! ```sh
-//! rustup update
-//! ```
 
 // Strict clippy
 #![warn(
@@ -94,7 +92,7 @@
 // Pedantic config
 #![allow(
     clippy::missing_const_for_fn,
-    clippy::missing_panics_doc,
+    // clippy::missing_panics_doc,
     clippy::must_use_candidate,
     clippy::cast_possible_truncation
 )]
