@@ -2,8 +2,7 @@
 
 #![allow(clippy::useless_conversion, clippy::unnecessary_cast)]
 
-use std::cell::Cell;
-use std::ffi::{c_char, c_uint, c_ulong, c_void};
+use std::cell::UnsafeCell;
 use std::marker::PhantomData;
 
 use udf_sys::UDF_INIT;
@@ -34,35 +33,21 @@ pub enum MaxLenOptions {
 /// A collection of SQL arguments
 ///
 /// This is rusty wrapper around SQL's `UDF_INIT` struct, providing methods to
-/// easily work with arguments.
-///
-/// We really only use setters/getters here because the original struct uses
-/// `ulong` which is a different size on Windows and Linux. There is
-#[repr(C)]
+/// easily and safely work with arguments.
 #[derive(Debug)]
-pub struct UdfCfg<S: UdfState> {
-    // This is identical to UDF_INIT, see documentation there for fields
-    // We just turn fields into cells for interior mutability
-    pub(crate) maybe_null: Cell<bool>,
-    pub(crate) decimals: Cell<c_uint>,
-    pub(crate) max_length: Cell<c_ulong>,
-    pub(crate) ptr: *mut c_char,
-    pub(crate) const_item: Cell<bool>,
-    pub(crate) extension: *const c_void,
-    pub(crate) marker: PhantomData<S>,
-}
+#[repr(transparent)]
+pub struct UdfCfg<S: UdfState>(UnsafeCell<UDF_INIT>, PhantomData<S>);
 
 impl<S: UdfState> UdfCfg<S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that `ptr` is valid and remains valid for the
+    /// lifetime of the returned value
     #[inline]
-    pub(crate) unsafe fn from_init_ptr_mut<'p>(ptr: *mut UDF_INIT) -> &'p mut Self {
-        unsafe { &mut *ptr.cast::<Self>() }
-    }
-
-    /// Create an `ArgList` type on a `UDF_ARGS` struct
-    #[inline]
-    pub(crate) unsafe fn from_init_ptr<'p>(ptr: *const UDF_INIT) -> &'p Self {
-        unsafe { &*ptr.cast::<Self>() }
+    pub(crate) unsafe fn from_raw_ptr<'p>(ptr: *const UDF_INIT) -> &'p Self {
+        &*ptr.cast()
     }
 
     /// Consume a box and store its pointer in this `UDF_INIT`
@@ -70,9 +55,11 @@ impl<S: UdfState> UdfCfg<S> {
     /// This takes a boxed object, turns it into a pointer, and stores that
     /// pointer in this struct. After calling this function, [`retrieve_box`]
     /// _must_ be called to free the memory!
-    pub(crate) fn store_box<T>(&mut self, b: Box<T>) {
+    pub(crate) fn store_box<T>(&self, b: Box<T>) {
         let box_ptr = Box::into_raw(b);
-        self.ptr = box_ptr.cast::<c_char>();
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        // here
+        unsafe { (*self.0.get()).ptr = box_ptr.cast() };
     }
 
     /// Given this struct's `ptr` field is a boxed object, turn that pointer
@@ -83,7 +70,7 @@ impl<S: UdfState> UdfCfg<S> {
     /// T _must_ be the type of this struct's pointer, likely created with
     /// [`store_box`]
     pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
-        Box::from_raw(self.ptr.cast::<T>())
+        Box::from_raw((*self.0.get()).ptr.cast::<T>())
     }
 
     /// Retrieve the setting for whether this UDF may return `null`
@@ -91,7 +78,8 @@ impl<S: UdfState> UdfCfg<S> {
     /// This defaults to true if any argument is nullable, false otherwise
     #[inline]
     pub fn get_maybe_null(&self) -> bool {
-        self.maybe_null.get()
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).maybe_null }
     }
 
     /// Retrieve the setting for number of decimal places
@@ -100,7 +88,8 @@ impl<S: UdfState> UdfCfg<S> {
     /// there is no fixed number
     #[inline]
     pub fn get_decimals(&self) -> u32 {
-        self.decimals.get() as u32
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).decimals as u32 }
     }
 
     /// Set the number of decimals this function returns
@@ -108,19 +97,22 @@ impl<S: UdfState> UdfCfg<S> {
     /// This can be changed at any point in the UDF (init or process)
     #[inline]
     pub fn set_decimals(&self, v: u32) {
-        self.decimals.replace(c_uint::from(v));
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).decimals = v.into() };
     }
 
     /// Retrieve the current maximum length setting for this in-progress UDF
     #[inline]
     pub fn get_max_len(&self) -> u64 {
-        self.max_length.get() as u64
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).max_length as u64 }
     }
 
     /// Get the current `const_item` value
     #[inline]
     pub fn get_is_const(&self) -> bool {
-        self.const_item.get()
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).const_item }
     }
 }
 
@@ -130,7 +122,8 @@ impl UdfCfg<Init> {
     /// Set whether or not this function may return null
     #[inline]
     pub fn set_maybe_null(&self, v: bool) {
-        self.maybe_null.replace(v);
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).maybe_null = v };
     }
 
     /// Set the maximum possible length of this UDF's result
@@ -139,7 +132,8 @@ impl UdfCfg<Init> {
     /// [`MaxLenOptions`] for possible defaults, including `BLOB` sizes.
     #[inline]
     pub fn set_max_len(&self, v: u32) {
-        self.decimals.replace(c_uint::from(v));
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).decimals = v.into() };
     }
 
     /// Set a new `const_item` value
@@ -148,7 +142,8 @@ impl UdfCfg<Init> {
     /// the same arguments
     #[inline]
     pub fn set_is_const(&self, v: bool) {
-        self.const_item.replace(v);
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).decimals = v.into() };
     }
 }
 
@@ -170,7 +165,7 @@ mod tests {
         assert_eq!(
             align_of::<UDF_INIT>(),
             align_of::<UdfCfg<Init>>(),
-            concat!("Alignment of ", stringify!(UDF_ARGS))
+            concat!("Alignment of ", stringify!(UDF_INIT))
         );
     }
 
@@ -184,7 +179,7 @@ mod tests {
         assert_eq!(
             align_of::<UDF_INIT>(),
             align_of::<UdfCfg<Process>>(),
-            concat!("Alignment of ", stringify!(UDF_ARGS))
+            concat!("Alignment of ", stringify!(UDF_INIT))
         );
     }
 }

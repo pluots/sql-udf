@@ -65,7 +65,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     // boundary Note to possible code readers: `panic::catch_unwind` should NOT
     // be used anywhere except the FFI boundary
     panic::catch_unwind(move || {
-        let cfg = UdfCfg::from_init_ptr_mut(initid);
+        let cfg = UdfCfg::from_raw_ptr(initid);
         let arglist = ArgList::from_arg_ptr(args);
 
         // Call the user's init function
@@ -100,7 +100,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
-    let cfg: &UdfCfg<Process> = UdfCfg::from_init_ptr(initid);
+    let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
     let cfg_wrap = AssertUnwindSafe(cfg);
     panic::catch_unwind(|| *cfg_wrap.retrieve_box::<T>()).ok();
 }
@@ -152,7 +152,7 @@ where
     for<'a> T: BasicUdf<Returns<'a> = i64>,
 {
     // SAFETY: caller guarantees validity
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -172,7 +172,7 @@ pub unsafe fn wrap_process_int_null<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -193,7 +193,7 @@ where
     for<'a> T: BasicUdf<Returns<'a> = f64>,
 {
     // SAFETY: caller guarantees validity
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -213,7 +213,7 @@ pub unsafe fn wrap_process_float_null<T>(
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -236,7 +236,7 @@ where
     T: BasicUdf,
     for<'a> T::Returns<'a>: AsRef<[u8]>,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -288,7 +288,7 @@ where
     S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
                     // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -339,7 +339,7 @@ where
     T: BasicUdf,
     for<'a> T::Returns<'a>: AsRef<[u8]>,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -391,7 +391,7 @@ where
     S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
                     // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -438,7 +438,7 @@ pub unsafe fn wrap_add<T>(
 ) where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
@@ -456,7 +456,7 @@ pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error
 where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::clear(&mut b, cfg, err);
@@ -477,7 +477,7 @@ pub unsafe fn wrap_remove<T>(
 ) where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_init_ptr_mut(initid);
+    let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);

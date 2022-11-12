@@ -2,8 +2,7 @@
 
 #![allow(dead_code)]
 
-use std::cell::Cell;
-use std::ffi::c_uint;
+use std::cell::{Cell, UnsafeCell};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::{fmt, slice, str};
@@ -17,11 +16,13 @@ use crate::{SqlArg, SqlResult, UdfState};
 /// This is rusty wrapper around SQL's `UDF_ARGS` struct, providing methods to
 /// easily work with arguments.
 #[repr(transparent)]
-pub struct ArgList<'a, S: UdfState> {
-    base: UDF_ARGS,
-    // We use this zero-sized marker to hold our state
-    _marker: PhantomData<&'a S>,
-}
+pub struct ArgList<'a, S: UdfState>(
+    /// UnsafeCell indicates to the compiler that this struct may have interior
+    /// mutability (i.e., cannot make som optimizations)
+    UnsafeCell<UDF_ARGS>,
+    /// We use this zero-sized marker to hold our state
+    PhantomData<&'a S>,
+);
 
 /// Derived formatting is a bit ugly, so we clean it up by using the `Vec`
 /// format.
@@ -62,21 +63,22 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     /// Get the number of arguments
     #[inline]
     pub fn len(&self) -> usize {
-        self.base.arg_count as usize
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        unsafe { (*self.0.get()).arg_count as usize }
     }
 
     /// Safely get an argument at a given index. It it is not available, `None`
     /// will be returned.
     #[inline]
+    #[allow(clippy::missing_panics_doc)] // Attributes are identifiers in SQL and are always UTF8
     pub fn get(&self, index: usize) -> Option<SqlArg<'a, S>> {
-        // convenience
-        let base = &self.base;
-
-        if index >= base.arg_count as usize {
-            return None;
-        }
-
         unsafe {
+            let base = &*self.0.get();
+
+            if index >= base.arg_count as usize {
+                return None;
+            }
+
             let arg_buf_ptr = (*base.args.add(index)).cast::<u8>();
             let attr_buf_ptr = (*base.attributes.add(index)).cast::<u8>();
             let type_ptr = base.arg_type.add(index);
@@ -84,8 +86,8 @@ impl<'a, S: UdfState> ArgList<'a, S> {
             let attr_len = *base.attribute_lengths.add(index);
             let maybe_null = *base.maybe_null.add(index) != 0;
 
-            // Attributes are identifiers in SQL and are always UTF8
             let attr_slice = slice::from_raw_parts(attr_buf_ptr, attr_len as usize);
+
             let attribute = str::from_utf8(attr_slice).unwrap();
             let arg = SqlResult::from_ptr(arg_buf_ptr, *type_ptr, arg_len as usize).unwrap();
 
@@ -119,8 +121,7 @@ impl<'a, S: UdfState> IntoIterator for &'a ArgList<'a, S> {
 #[derive(Debug)]
 pub struct Iter<'a, S: UdfState> {
     base: &'a ArgList<'a, S>,
-    // Keep consistent with underlying UDF_ARGS
-    n: c_uint,
+    n: usize,
 }
 
 impl<'a, S: UdfState> Iter<'a, S> {
@@ -136,11 +137,11 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         // Increment counter, check if we are out of bounds
-        if self.n >= self.base.base.arg_count {
+        if self.n >= self.base.len() {
             return None;
         }
 
-        let ret = self.base.get(self.n as usize);
+        let ret = self.base.get(self.n);
         self.n += 1;
 
         ret
@@ -152,7 +153,7 @@ impl<'a, S: UdfState> Iterator for Iter<'a, S> {
     /// See [`std::iter::Iterator::size_hint`] for this method's use.
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let remaining = (self.base.base.arg_count - self.n) as usize;
+        let remaining = self.base.len() - self.n;
         (remaining, Some(remaining))
     }
 }

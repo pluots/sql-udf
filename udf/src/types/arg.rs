@@ -71,6 +71,7 @@ impl<'a> SqlArg<'a, Init> {
 
     /// Retrieve the current type coercision
     #[inline]
+    #[allow(clippy::missing_panics_doc)] // We will have a valid type
     pub fn get_type_coercion(&self) -> SqlType {
         // `.get()` on our Cell will just copy the value
         SqlType::try_from(self.arg_type.get()).unwrap()
