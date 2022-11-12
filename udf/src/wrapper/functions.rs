@@ -244,15 +244,13 @@ where
 
         // If we fit within the buffer, just copy our output. Otherwise,
         // return the pointer to s.
-        let res_ptr: *const c_char;
-
-        if s_ref.len() as u64 <= *length {
+        let res_ptr: *const c_char = if s_ref.len() as u64 <= *length {
             ptr::copy(s_ptr, result, s_ref.len());
-            res_ptr = result;
+            result
         } else {
-            res_ptr = s_ptr;
+            s_ptr
         };
-        
+
         *length = s_ref.len() as u64;
         ret = res_ptr;
     } else {
@@ -351,13 +349,11 @@ where
 
         // If we fit within the buffer, just copy our output. Otherwise,
         // return the pointer to s.
-        let res_ptr: *const c_char;
-
-        if s_ref.len() as u64 <= *length {
+        let res_ptr: *const c_char = if s_ref.len() as u64 <= *length {
             ptr::copy(s_ptr, result, s_ref.len());
-            res_ptr = result;
+            result
         } else {
-            res_ptr = s_ptr;
+            s_ptr
         };
 
         *length = s_ref.len() as u64;
