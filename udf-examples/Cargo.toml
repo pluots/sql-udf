@@ -13,8 +13,8 @@ lipsum = "0.8.2"
 uuid = { version = "1.1.2", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
 
 [dev-dependencies]
-testcontainers = "0.14.0"
 diesel = { version = "2.0.2", features = ["mysql"] }
+lazy_static = "1.4.0"
 
 [features]
 # Used to optionally enable integration tests

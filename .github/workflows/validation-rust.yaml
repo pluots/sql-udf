@@ -40,6 +40,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --all-features
 
   test:
     strategy:
@@ -82,6 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v3
+        id: cache-cargo
         with:
           path: |
             ~/.cargo/bin/
@@ -92,6 +94,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache Docker layers
         uses: actions/cache@v2
+        id: cache-docker
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -108,7 +111,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           load: true
-          tags: mdb-example-do/latest
+          tags: mdb-example-so:latest
           file: Dockerfile.examples
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -119,14 +122,11 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-      # - name: Build docker image
-      #   env:
-      #     DOCKER_BUILDKIT: 1 # github has outdated docker I think
-      #   run: |
-      #     IMAGE_TAG=mdb-example-so:$(date -u +"%Y-%m-%dT%H%MZ")
-      #     docker build  -f Dockerfile.examples . --tag $IMAGE_TAG
+      - name: Start docker
+        run: docker run --rm -d -p 12300:3306  mdb-example-so
       - name: Run integration testing
-        run: cargo test --features backend
+        # Run only integration tests with `--test '*'`
+        run: cargo test -p udf-examples --test '*' --features backend
 
   fmt:
     name: "Format (cargo fmt)"
@@ -180,7 +180,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --all-features -- -D warnings
 
   doc:
     name: "Docs (cargo doc)"
