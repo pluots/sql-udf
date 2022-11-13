@@ -6,7 +6,15 @@
 
 ### Added
 
+- Added dockerfile to build examples
+- Added preliminary integration test framework
+
 ### Changed
+
+- [CI] cleaned up pipeline configuration
+- Refactor wrappers to make use of the new `if let ... else` statements
+- Changed wrapper structs to make use of `UnsafeCell` for better mutability
+  controlability
 
 ### Removed
 
