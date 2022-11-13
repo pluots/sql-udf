@@ -1,6 +1,6 @@
 [package]
 name = "udf-macros"
-version = "0.3.9"
+version = "0.3.10"
 edition = "2021"
 description = "UDF procedural macros implementation"
 repository = "https://github.com/pluots/udf/tree/main/udf_macros"
