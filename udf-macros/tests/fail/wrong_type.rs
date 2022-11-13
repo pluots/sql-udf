@@ -2,9 +2,8 @@
 
 use udf_derive::register;
 
-
 // Registration is not allowed on non-impls
 #[register]
-struct X{}
+struct X {}
 
 fn main() {}

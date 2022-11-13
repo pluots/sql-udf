@@ -168,9 +168,9 @@ mod tests {
             arg_type: arg_types.as_mut_ptr(),
             args: arg_ptrs.as_mut_ptr() as *const *const c_char,
             lengths: arg_lens.as_mut_ptr(),
-            maybe_null: maybe_null.as_mut_ptr() as *mut c_char,
+            maybe_null: maybe_null.as_mut_ptr() as *const c_char,
             attributes: attr_ptrs.as_mut_ptr() as *const *const c_char,
-            attribute_lengths: attr_lens.as_mut_ptr() as *mut c_ulong,
+            attribute_lengths: attr_lens.as_mut_ptr() as *const c_ulong,
             extension: ptr::null_mut::<c_void>(),
         };
 

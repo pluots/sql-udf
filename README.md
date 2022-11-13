@@ -57,7 +57,7 @@ between all relevant SQL functions. These include:
 - `init` Called once per result set. Here, you can store const data to your
   struct (if applicable)
 - `process` Called once per row (or per group for aggregate functions). This
-  function uses data in the struct and in the current row's arguments 
+  function uses data in the struct and in the current row's arguments
 - `clear` Aggregate only, called once per group at the beginning. Reset the
   struct as needed.
 - `add` Aggregate only, called once per row within a group. Perform needed
@@ -144,7 +144,7 @@ compiler issues.
 ### Symbol Inspection
 
 If you would like to verify that the correct C-callable functions are present,
-you can inspect the dynamic library with `nm`. 
+you can inspect the dynamic library with `nm`.
 
 ```sh
 # Output of example .so

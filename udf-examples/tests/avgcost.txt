@@ -1,7 +1,7 @@
 i >> CREATE AGGREGATE FUNCTION avg_cost RETURNS real SONAME 'libudf_examples.so';
 i >> create database db;
 i >> use db;
-i >> 
+i >>
     create table t1 (
         id int not null auto_increment,
         qty int,
