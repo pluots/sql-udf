@@ -44,12 +44,11 @@ impl BasicUdf for SumInt {
         // version:
         // let mut res = 0;
         // for arg in args {
-        //     match arg.value.as_int() {
-        //         Some(v) => res += v,
-        //         None => (),
+        //     if let Some(v) = arg.value.as_int() {
+        //         res += v
         //     }
         // }
-        //
+
         // Ok(res)
     }
 }

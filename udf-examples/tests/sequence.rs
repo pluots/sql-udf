@@ -8,14 +8,13 @@ use diesel::prelude::*;
 use diesel::sql_types::Integer;
 
 const SETUP: [&str; 3] = [
-    "create or replace table test_seq (
-        id int auto_increment,
-        primary key (id)
-    )",
-    "insert into test_seq (id) values (1), (2), (3), (4), (5), (6)",
     "create or replace function udf_sequence
         returns integer
         soname 'libudf_examples.so'",
+    "create or replace table test_seq (
+        id int
+    )",
+    "insert into test_seq (id) values (1), (2), (3), (4), (5), (6)",
 ];
 
 #[test]
