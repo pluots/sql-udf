@@ -6,6 +6,9 @@
 
 ### Added
 
+- Mocks: added the `mock` module that provides ways to unit test UDFs. This is
+  still a work in progress, and requires the feature `mock`.
+
 ### Changed
 
 - Improved memory footprint of `SqlArg`

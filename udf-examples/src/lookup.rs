@@ -51,26 +51,19 @@ impl BasicUdf for Lookup6 {
     ) -> Result<Self::Returns<'a>, ProcessError> {
         let arg = args.get(0).unwrap().value();
 
-        let hostname = if let Some(v) = arg.as_string() {
-            v
-        } else {
+        let Some(hostname) = arg.as_string()  else {
             return Err(ProcessError);
         };
 
         // `to_socket_addrs` checks the given hostname and port (0) and returns
         // an iterator over all valid resolutions
-        let mut sock_addrs = match (hostname, 0).to_socket_addrs() {
-            Ok(v) => v,
-            Err(_) => return Ok(None),
-        };
+        let Ok(mut sock_addrs) = (hostname, 0).to_socket_addrs() else { return Ok(None) };
 
         // Prioritize an ipv6 address if it is available, take first address if
         // not.
         let first = sock_addrs.next();
-        let ret_sock_addr = match sock_addrs.find(SocketAddr::is_ipv6).or(first) {
-            Some(v) => v,
-            None => return Ok(None),
-        };
+
+        let Some(ret_sock_addr) = sock_addrs.find(SocketAddr::is_ipv6).or(first) else { return Ok(None) };
 
         // Get an ipv6 version
         let ret_addr = match ret_sock_addr {

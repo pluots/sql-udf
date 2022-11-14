@@ -15,8 +15,14 @@ chrono = "0.4.22"
 udf-macros = { path = "../udf-macros", version = "0.3.3" }
 udf-sys = { path = "../udf-sys", version = "0.3.2" }
 
+[features]
+mock = []
+
 [package.metadata.release]
 shared-version = true
+
+[package.metadata.docs.rs]
+features = ["mock"]
 
 # Can't run replacements at workspace root. Need to use this "hacky" sort of way.
 [[package.metadata.release.pre-release-replacements]]

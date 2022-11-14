@@ -81,7 +81,7 @@ pub struct UDF_ARGS {
     /// Buffer of item_result pointers that indicate argument type
     ///
     /// Remains mutable because it can be set in `xxx_init`
-    pub arg_type: *mut Item_result,
+    pub arg_types: *mut Item_result,
 
     /// Buffer of pointers to the arguments. Arguments may be of any type
     /// (specified in `arg_type`).
@@ -241,7 +241,7 @@ mod tests {
                 unsafe {
                     let uninit = ::std::mem::MaybeUninit::<UDF_ARGS>::uninit();
                     let ptr = uninit.as_ptr();
-                    ::std::ptr::addr_of!((*ptr).arg_type) as usize - ptr as usize
+                    ::std::ptr::addr_of!((*ptr).arg_types) as usize - ptr as usize
                 },
                 8usize,
                 concat!(

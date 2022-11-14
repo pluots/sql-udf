@@ -27,7 +27,10 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::similar_names)]
+
     use std::ffi::{c_ulong, c_void, CStr};
+    use std::ptr;
 
     use udf_sys::{Item_result, UDF_ARGS};
 
@@ -91,17 +94,13 @@ mod tests {
         unsafe {
             let ival = -1000i64;
             assert_eq!(
-                SqlResult::from_ptr(&ival as *const i64 as *const u8, Item_result::INT_RESULT, 0),
+                SqlResult::from_ptr(ptr::addr_of!(ival).cast(), Item_result::INT_RESULT, 0),
                 Ok(SqlResult::Int(Some(ival)))
             );
 
             let rval = -1000.0f64;
             assert_eq!(
-                SqlResult::from_ptr(
-                    &rval as *const f64 as *const u8,
-                    Item_result::REAL_RESULT,
-                    0
-                ),
+                SqlResult::from_ptr(ptr::addr_of!(rval).cast(), Item_result::REAL_RESULT, 0),
                 Ok(SqlResult::Real(Some(rval)))
             );
 
@@ -126,10 +125,10 @@ mod tests {
 
     const ARG_COUNT: usize = 4;
 
-    const IVAL: i64 = -1000i64;
-    const RVAL: f64 = -1234.5678f64;
-    const SVAL: &str = "this is a string";
-    const DVAL: &str = "123.456";
+    static IVAL: i64 = -1000i64;
+    static RVAL: f64 = -1234.5678f64;
+    static SVAL: &str = "this is a string";
+    static DVAL: &str = "123.456";
 
     #[test]
     fn process_args_ok() {
@@ -141,8 +140,8 @@ mod tests {
         ];
 
         let mut arg_ptrs: [*const u8; ARG_COUNT] = [
-            &IVAL as *const i64 as *const u8,
-            &RVAL as *const f64 as *const u8,
+            ptr::addr_of!(IVAL).cast(),
+            ptr::addr_of!(RVAL).cast(),
             SVAL.as_ptr(),
             DVAL.as_ptr(),
         ];
@@ -165,7 +164,7 @@ mod tests {
 
         let mut udf_args = UDF_ARGS {
             arg_count: ARG_COUNT as u32,
-            arg_type: arg_types.as_mut_ptr(),
+            arg_types: arg_types.as_mut_ptr(),
             args: arg_ptrs.as_mut_ptr() as *const *const c_char,
             lengths: arg_lens.as_mut_ptr(),
             maybe_null: maybe_null.as_mut_ptr() as *const c_char,
@@ -174,7 +173,7 @@ mod tests {
             extension: ptr::null_mut::<c_void>(),
         };
 
-        let arglist: &ArgList<Init> = unsafe { ArgList::from_arg_ptr(&mut udf_args) };
+        let arglist: &ArgList<Init> = unsafe { ArgList::from_raw_ptr(&mut udf_args) };
         let res: Vec<_> = arglist.into_iter().collect();
 
         let expected_args = [
