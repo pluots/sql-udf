@@ -48,7 +48,7 @@ impl BasicUdf for UdfSequence {
     ) -> Result<Self::Returns<'a>, ProcessError> {
         // If we have an argument, that will provide our base value
         let arg_val = match args.get(0) {
-            Some(v) => v.value.as_int().unwrap(),
+            Some(v) => v.value().as_int().unwrap(),
             None => 0,
         };
 

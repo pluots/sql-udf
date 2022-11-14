@@ -47,6 +47,20 @@ impl SqlType {
     }
 }
 
+// struct InternalSqLType(i8);
+
+// impl InternalSqLType {
+//     fn current_type(&self) -> SqlType {
+
+//     }
+
+//     fn current_coercion(&self) -> SqlType {
+
+//     }
+
+//     fn
+// }
+
 impl TryFrom<i8> for SqlType {
     type Error = String;
 

@@ -27,7 +27,7 @@ impl BasicUdf for Lookup6 {
             return Err(format!("Expected 1 argument; got {}", args.len()));
         }
 
-        let arg_val = args.get(0).unwrap().value;
+        let arg_val = args.get(0).unwrap().value();
 
         if !arg_val.is_string() {
             return Err(format!(
@@ -49,9 +49,9 @@ impl BasicUdf for Lookup6 {
         args: &ArgList<Process>,
         error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
-        let arg = args.get(0).unwrap();
+        let arg = args.get(0).unwrap().value();
 
-        let hostname = if let Some(v) = arg.value.as_string() {
+        let hostname = if let Some(v) = arg.as_string() {
             v
         } else {
             return Err(ProcessError);

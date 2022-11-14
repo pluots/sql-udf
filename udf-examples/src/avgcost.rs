@@ -40,14 +40,14 @@ impl<'a> Display for Errors<'a> {
             Self::FirstArgType(a) => write!(
                 f,
                 "First argument must be an integer; received {} {}",
-                a.value.display_name(),
-                a.attribute
+                a.value().display_name(),
+                a.attribute()
             ),
             Self::SecondArgType(a) => write!(
                 f,
                 "Second argument must be an integer; received {} {}",
-                a.value.display_name(),
-                a.attribute
+                a.value().display_name(),
+                a.attribute()
             ),
         }
     }
@@ -67,10 +67,10 @@ impl BasicUdf for AvgCost {
         let a0 = args.get(0).unwrap();
         let a1 = args.get(1).unwrap();
 
-        if !a0.value.is_int() {
+        if !a0.value().is_int() {
             return Err(Errors::FirstArgType(&a0).to_string());
         }
-        if !a1.value.is_real() {
+        if !a1.value().is_real() {
             return Err(Errors::SecondArgType(&a1).to_string());
         }
 
@@ -117,13 +117,13 @@ impl AggregateUdf for AvgCost {
         let mut price;
 
         // We can unwrap because we are guaranteed to have 2 args (from checks in init)
-        if let Some(q) = args.get(0).unwrap().value.as_int() {
+        if let Some(q) = args.get(0).unwrap().value().as_int() {
             in_qty = q;
         } else {
             return Ok(());
         };
 
-        if let Some(p) = args.get(1).unwrap().value.as_real() {
+        if let Some(p) = args.get(1).unwrap().value().as_real() {
             price = p;
         } else {
             return Ok(());

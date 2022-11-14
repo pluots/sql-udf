@@ -185,9 +185,9 @@ mod tests {
         ];
 
         for i in 0..ARG_COUNT {
-            assert_eq!(res[i].value, expected_args[i]);
-            assert_eq!(res[i].maybe_null, maybe_null[i]);
-            assert_eq!(res[i].attribute, attrs[i]);
+            assert_eq!(res[i].value(), expected_args[i]);
+            assert_eq!(res[i].maybe_null(), maybe_null[i]);
+            assert_eq!(res[i].attribute(), attrs[i]);
             // assert_eq!(unsafe { *res[i].type_ptr }, arg_types[i]);
         }
     }

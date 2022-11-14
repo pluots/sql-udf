@@ -38,7 +38,7 @@ impl BasicUdf for SumInt {
     ) -> Result<Self::Returns<'a>, ProcessError> {
         // Iterate all arguments, sum all that are integers. This should
         // be all of them, since we set coercion
-        Ok(args.iter().filter_map(|arg| arg.value.as_int()).sum())
+        Ok(args.iter().filter_map(|arg| arg.value().as_int()).sum())
 
         // If you're not familiar with rust's combinators, here's the for loop
         // version:
