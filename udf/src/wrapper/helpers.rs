@@ -163,7 +163,7 @@ mod tests {
             attrs[3].len(),
         ];
 
-        let udf_args = UDF_ARGS {
+        let mut udf_args = UDF_ARGS {
             arg_count: ARG_COUNT as u32,
             arg_type: arg_types.as_mut_ptr(),
             args: arg_ptrs.as_mut_ptr() as *const *const c_char,
@@ -174,7 +174,7 @@ mod tests {
             extension: ptr::null_mut::<c_void>(),
         };
 
-        let arglist: &ArgList<Init> = unsafe { ArgList::from_arg_ptr(&udf_args) };
+        let arglist: &ArgList<Init> = unsafe { ArgList::from_arg_ptr(&mut udf_args) };
         let res: Vec<_> = arglist.into_iter().collect();
 
         let expected_args = [

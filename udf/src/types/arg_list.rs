@@ -38,7 +38,7 @@ impl<'a, S: UdfState> Debug for ArgList<'a, S> {
 impl<'a, S: UdfState> ArgList<'a, S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
     #[inline]
-    pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *const UDF_ARGS) -> &'p Self {
+    pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *mut UDF_ARGS) -> &'p Self {
         &*ptr.cast()
     }
 
