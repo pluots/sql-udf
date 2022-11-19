@@ -172,23 +172,6 @@ it.
 
 ## Docker Use
 
-If you require a linux object file but are compiling on a different platform,
-building in docker is a convenient option:
-
-```sh
-# This will mount your current directory at /build, and use a new .docker-dargo
-# directory for cargo's cache. This will share the `target/` directory
-# Change the `bash -c` command based on what you want to build.
-docker run --rm -it \
-  -v "$(pwd):/build" \
-  -e CARGO_HOME=/build/.docker-cargo \
-  rustlang/rust:nightly \
-  bash -c "cd /build; cargo build -p udf-examples --release"
-```
-
-
-### Testing in Docker
-
 Testing in Docker is highly recommended, so as to avoid disturbing a host SQL
 installation. See [the udf-examples readme](udf-examples/README.md) for
 instructions on how to do this.

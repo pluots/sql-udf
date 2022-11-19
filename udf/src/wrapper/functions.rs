@@ -82,6 +82,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
             }
         };
 
+        // Apply any pending coercions
+        arglist.flush_all_coercions();
+
         // Set the `initid` struct to contain our struct
         // SAFETY: Must be cleaned up in deinit function, or we will leak!
         cfg.store_box(boxed_struct);
@@ -137,7 +140,7 @@ unsafe fn process_return_null<T: Default, E>(
 #[inline]
 pub unsafe fn wrap_process_int<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) -> c_longlong
@@ -158,7 +161,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_int_null<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) -> c_longlong
@@ -178,7 +181,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_float<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) -> c_double
@@ -199,7 +202,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_float_null<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) -> c_double
@@ -219,7 +222,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_buf_ref<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     result: *mut c_char,
     length: *mut c_ulong,
     is_null: *mut c_uchar,
@@ -272,7 +275,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_buf_ref_null<T, S>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     result: *mut c_char,
     length: *mut c_ulong,
     is_null: *mut c_uchar,
@@ -324,7 +327,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_buf<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     result: *mut c_char,
     length: *mut c_ulong,
     is_null: *mut c_uchar,
@@ -377,7 +380,7 @@ where
 #[inline]
 pub unsafe fn wrap_process_buf_null<T, S>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     result: *mut c_char,
     length: *mut c_ulong,
     is_null: *mut c_uchar,
@@ -429,7 +432,7 @@ where
 #[inline]
 pub unsafe fn wrap_add<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) where
@@ -466,7 +469,7 @@ where
 #[inline]
 pub unsafe fn wrap_remove<T>(
     initid: *mut UDF_INIT,
-    args: *const UDF_ARGS,
+    args: *mut UDF_ARGS,
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) where

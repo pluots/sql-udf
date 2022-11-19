@@ -357,7 +357,7 @@ fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStre
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::udf_sys::UDF_INIT,
-            args: *const udf::udf_sys::UDF_ARGS,
+            args: *mut udf::udf_sys::UDF_ARGS,
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
@@ -390,7 +390,7 @@ fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::udf_sys::UDF_INIT,
-            args: *const udf::udf_sys::UDF_ARGS,
+            args: *mut udf::udf_sys::UDF_ARGS,
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {

@@ -128,6 +128,33 @@ jobs:
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend
 
+  miri:
+    name: Miri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v3
+        id: cache-cargo
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+      - run: rustup component add miri
+      - name: Run Miri
+        env:
+          # Can't use chrono for time in isolation
+          MIRIFLAGS: -Zmiri-disable-isolation
+        run: cargo miri test
+
   fmt:
     name: "Format (cargo fmt)"
     runs-on: ubuntu-latest

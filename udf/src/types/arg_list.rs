@@ -2,14 +2,14 @@
 
 #![allow(dead_code)]
 
-use std::cell::{Cell, UnsafeCell};
+use std::cell::UnsafeCell;
+use std::fmt;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::{fmt, slice, str};
 
-use udf_sys::{Item_result, UDF_ARGS};
+use udf_sys::UDF_ARGS;
 
-use crate::{SqlArg, SqlResult, UdfState};
+use crate::{Init, SqlArg, UdfState};
 
 /// A collection of SQL arguments
 ///
@@ -19,7 +19,7 @@ use crate::{SqlArg, SqlResult, UdfState};
 pub struct ArgList<'a, S: UdfState>(
     /// UnsafeCell indicates to the compiler that this struct may have interior
     /// mutability (i.e., cannot make som optimizations)
-    UnsafeCell<UDF_ARGS>,
+    pub(super) UnsafeCell<UDF_ARGS>,
     /// We use this zero-sized marker to hold our state
     PhantomData<&'a S>,
 );
@@ -38,7 +38,7 @@ impl<'a, S: UdfState> Debug for ArgList<'a, S> {
 impl<'a, S: UdfState> ArgList<'a, S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
     #[inline]
-    pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *const UDF_ARGS) -> &'p Self {
+    pub(crate) unsafe fn from_arg_ptr<'p>(ptr: *mut UDF_ARGS) -> &'p Self {
         &*ptr.cast()
     }
 
@@ -71,34 +71,27 @@ impl<'a, S: UdfState> ArgList<'a, S> {
     /// will be returned.
     #[inline]
     #[allow(clippy::missing_panics_doc)] // Attributes are identifiers in SQL and are always UTF8
-    pub fn get(&self, index: usize) -> Option<SqlArg<'a, S>> {
-        unsafe {
-            let base = &*self.0.get();
+    pub fn get(&'a self, index: usize) -> Option<SqlArg<'a, S>> {
+        let base = unsafe { &*self.0.get() };
 
-            if index >= base.arg_count as usize {
-                return None;
-            }
-
-            let arg_buf_ptr = (*base.args.add(index)).cast::<u8>();
-            let attr_buf_ptr = (*base.attributes.add(index)).cast::<u8>();
-            let type_ptr = base.arg_type.add(index);
-            let arg_len = *base.lengths.add(index);
-            let attr_len = *base.attribute_lengths.add(index);
-            let maybe_null = *base.maybe_null.add(index) != 0;
-
-            let attr_slice = slice::from_raw_parts(attr_buf_ptr, attr_len as usize);
-
-            let attribute = str::from_utf8(attr_slice).unwrap();
-            let arg = SqlResult::from_ptr(arg_buf_ptr, *type_ptr, arg_len as usize).unwrap();
-
-            Some(SqlArg {
-                value: arg,
-                maybe_null,
-                attribute,
-                arg_type: &*(type_ptr as *const Cell<Item_result>),
-                marker: PhantomData,
-            })
+        if index >= base.arg_count as usize {
+            return None;
         }
+        Some(SqlArg {
+            base: self,
+            index,
+            marker: PhantomData,
+        })
+    }
+}
+
+impl<'a> ArgList<'a, Init> {
+    /// Apply the pending coercion for all arguments. Meant to be run just
+    /// before exiting the `init` function within proc macro calls.
+    #[inline]
+    #[doc(hidden)]
+    pub fn flush_all_coercions(&self) {
+        self.iter().for_each(|mut a| a.flush_coercion());
     }
 }
 

@@ -14,9 +14,12 @@
     clippy::missing_const_for_fn,
     clippy::missing_panics_doc,
     clippy::must_use_candidate,
-    clippy::cast_possible_truncation
+    clippy::cast_possible_truncation,
+    // New users probably like `match` better
+    clippy::option_if_let_else
 )]
 
+mod attribute;
 mod avg2;
 mod avgcost;
 mod is_const;

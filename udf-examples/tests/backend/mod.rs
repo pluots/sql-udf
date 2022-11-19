@@ -3,6 +3,8 @@
 //! This module requires a database that matches the description in
 //! `DEFAULT_DATABASE_URI`. If that is available, run these tests with `cargo t
 //! --features backend`
+//!
+//! Run the container with `docker run --rm -d -p 12300:3300 mdb-example-so`
 
 #![cfg(feature = "backend")]
 use std::collections::HashSet;
