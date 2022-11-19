@@ -9,7 +9,7 @@ use std::marker::PhantomData;
 
 use udf_sys::UDF_ARGS;
 
-use crate::{SqlArg, UdfState};
+use crate::{Init, SqlArg, UdfState};
 
 /// A collection of SQL arguments
 ///
@@ -82,6 +82,16 @@ impl<'a, S: UdfState> ArgList<'a, S> {
             index,
             marker: PhantomData,
         })
+    }
+}
+
+impl<'a> ArgList<'a, Init> {
+    /// Apply the pending coercion for all arguments. Meant to be run just
+    /// before exiting the `init` function within proc macro calls.
+    #[inline]
+    #[doc(hidden)]
+    pub fn flush_all_coercions(&self) {
+        self.iter().for_each(|mut a| a.flush_coercion());
     }
 }
 

@@ -56,6 +56,22 @@ pub enum Item_result {
     DECIMAL_RESULT = 4,
 }
 
+impl TryFrom<i32> for Item_result {
+    type Error = String;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            x if x == Self::INVALID_RESULT as i32 => Ok(Self::INVALID_RESULT),
+            x if x == Self::STRING_RESULT as i32 => Ok(Self::STRING_RESULT),
+            x if x == Self::REAL_RESULT as i32 => Ok(Self::REAL_RESULT),
+            x if x == Self::INT_RESULT as i32 => Ok(Self::INT_RESULT),
+            x if x == Self::ROW_RESULT as i32 => Ok(Self::ROW_RESULT),
+            x if x == Self::DECIMAL_RESULT as i32 => Ok(Self::DECIMAL_RESULT),
+            _ => Err(format!("invalid arg type {value} received")),
+        }
+    }
+}
+
 /// Representation of a sequence of SQL arguments
 #[repr(C)]
 #[derive(Debug, Clone)]

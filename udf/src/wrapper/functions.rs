@@ -82,6 +82,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
             }
         };
 
+        // Apply any pending coercions
+        arglist.flush_all_coercions();
+
         // Set the `initid` struct to contain our struct
         // SAFETY: Must be cleaned up in deinit function, or we will leak!
         cfg.store_box(boxed_struct);
