@@ -8,9 +8,15 @@
 
 ### Changed
 
-- Breaking: Changed `SqlArg` `value` and `attribute` members to be methods
+- Improved memory footprint of `SqlArg`
+
+Unfortunately, this version brought some minor breaking changes. Luckily most of
+these have little to no impact.
+
+- Changed `SqlArg` `value` and `attribute` members to be methods
   instead. Migration: replace `.value` and `.attribute` with `.value()` and
   `.attribute()`
+- `get_type_coercion` now returns a `SqlType` instead of `Option<SqlType>`
 
 ### Removed
 

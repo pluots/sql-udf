@@ -72,7 +72,7 @@ impl TryFrom<i8> for SqlType {
             x if x == Self::Real as i8 => Self::Real,
             x if x == Self::Int as i8 => Self::Int,
             x if x == Self::Decimal as i8 => Self::Decimal,
-            _ => return Err("invalid arg type {tag} received".to_owned()),
+            _ => return Err(format!("invalid arg type {tag} received")),
         };
 
         Ok(val)
@@ -91,7 +91,7 @@ impl TryFrom<Item_result> for SqlType {
             Item_result::REAL_RESULT => Self::Real,
             Item_result::INT_RESULT => Self::Int,
             Item_result::DECIMAL_RESULT => Self::Decimal,
-            _ => return Err("invalid arg type {tag} received".to_owned()),
+            _ => return Err(format!("invalid arg type {tag:?} received")),
         };
 
         Ok(val)
