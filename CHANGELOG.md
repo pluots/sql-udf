@@ -8,6 +8,10 @@
 
 ### Changed
 
+- Breaking: Changed `SqlArg` `value` and `attribute` members to be methods
+  instead. Migration: replace `.value` and `.attribute` with `.value()` and
+  `.attribute()`
+
 ### Removed
 
 
