@@ -1,7 +1,5 @@
-// #![allow(unused_imports)]
-// #![allow(unused_variables)]
-#![allow(unused)]
-// use lazy_static;
+#![allow(unused_imports)]
+
 use heck::AsSnakeCase;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
@@ -169,11 +167,23 @@ fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::T
     let deinit_fn = make_deinit_fn(dstruct_ident, &deinit_fn_name);
     let process_fn = match rt.fn_sig {
         FnSigType::BytesRef => {
-            make_proc_buf_ref_fn(dstruct_ident, &process_fn_name, rt.is_optional)
+            make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional, true)
         }
-        FnSigType::Int => make_proc_int_fn(dstruct_ident, &process_fn_name, rt.is_optional),
-        FnSigType::Float => make_proc_float_fn(dstruct_ident, &process_fn_name, rt.is_optional),
-        FnSigType::Bytes => make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional),
+        FnSigType::Bytes => {
+            make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional, false)
+        }
+        FnSigType::Int => make_proc_fn(
+            dstruct_ident,
+            &process_fn_name,
+            &quote!(::std::ffi::c_longlong),
+            rt.is_optional,
+        ),
+        FnSigType::Float => make_proc_fn(
+            dstruct_ident,
+            &process_fn_name,
+            &quote!(::std::ffi::c_double),
+            rt.is_optional,
+        ),
     };
     // let process_fn = make_str_proc_fn(&dstruct_ident, deinit_fn_name, rt.is_optional);
 
@@ -217,19 +227,20 @@ fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
     }
 }
 
-fn make_proc_int_fn(
+fn make_proc_fn(
     dstruct_ident: &Ident,
     fn_name: &Ident,
-    nullable: bool,
+    ret_type: &proc_macro2::TokenStream,
+    is_optional: bool,
 ) -> proc_macro2::TokenStream {
-    // SAFETY: we just minimally wrap the functions here, safety is handled
-    // between our caller and callee
-    let fn_title = if nullable {
-        quote! { udf::wrapper::wrap_process_int_null::<#dstruct_ident> }
+    let wrap_fn_name = if is_optional {
+        quote!(udf::wrapper::wrap_process_basic_option::<#dstruct_ident, _>)
     } else {
-        quote! { udf::wrapper::wrap_process_int::<#dstruct_ident> }
+        quote!(udf::wrapper::wrap_process_basic::<#dstruct_ident, _>)
     };
 
+    // SAFETY: we just minimally wrap the functions here, safety is handled
+    // between our caller and callee
     quote! {
         #[no_mangle]
         pub unsafe extern "C" fn #fn_name (
@@ -237,79 +248,8 @@ fn make_proc_int_fn(
             args: *mut udf::udf_sys::UDF_ARGS,
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
-        ) -> ::std::ffi::c_longlong {
-            #fn_title(
-                initid,
-                args,
-                is_null,
-                error
-            )
-        }
-    }
-}
-
-fn make_proc_float_fn(
-    dstruct_ident: &Ident,
-    fn_name: &Ident,
-    nullable: bool,
-) -> proc_macro2::TokenStream {
-    // SAFETY: we just minimally wrap the functions here, safety is handled
-    // between our caller and callee
-    let fn_title = if nullable {
-        quote! { udf::wrapper::wrap_process_float_null::<#dstruct_ident> }
-    } else {
-        quote! { udf::wrapper::wrap_process_float::<#dstruct_ident> }
-    };
-
-    quote! {
-        #[no_mangle]
-        pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::udf_sys::UDF_INIT,
-            args: *mut udf::udf_sys::UDF_ARGS,
-            is_null: *mut ::std::ffi::c_uchar,
-            error: *mut ::std::ffi::c_uchar,
-        ) -> ::std::ffi::c_double {
-            #fn_title(
-                initid,
-                args,
-                is_null,
-                error
-            )
-        }
-    }
-}
-
-fn make_proc_buf_ref_fn(
-    dstruct_ident: &Ident,
-    fn_name: &Ident,
-    nullable: bool,
-) -> proc_macro2::TokenStream {
-    // SAFETY: we just minimally wrap the functions here, safety is handled
-    // between our caller and callee
-    let fn_title = if nullable {
-        quote! { udf::wrapper::wrap_process_buf_ref_null::<#dstruct_ident, _> }
-    } else {
-        quote! { udf::wrapper::wrap_process_buf_ref::<#dstruct_ident> }
-    };
-
-    quote! {
-        #[no_mangle]
-        pub unsafe extern "C" fn #fn_name (
-            initid: *mut udf::udf_sys::UDF_INIT,
-            args: *mut udf::udf_sys::UDF_ARGS,
-            result: *mut ::std::ffi::c_char,
-            length: *mut ::std::ffi::c_ulong,
-            is_null: *mut ::std::ffi::c_uchar,
-            error: *mut ::std::ffi::c_uchar,
-        ) -> *const ::std::ffi::c_char {
-            #fn_title(
-                initid,
-                args,
-                result,
-                length,
-                is_null,
-                error
-            )
+        ) -> #ret_type {
+            #wrap_fn_name(initid, args, is_null, error)
         }
     }
 }
@@ -317,14 +257,13 @@ fn make_proc_buf_ref_fn(
 fn make_proc_buf_fn(
     dstruct_ident: &Ident,
     fn_name: &Ident,
-    nullable: bool,
+    is_optional: bool,
+    can_return_ref: bool,
 ) -> proc_macro2::TokenStream {
-    // SAFETY: we just minimally wrap the functions here, safety is handled
-    // between our caller and callee
-    let fn_title = if nullable {
-        quote! { udf::wrapper::wrap_process_buf_null::<#dstruct_ident, _> }
+    let wrap_fn_name = if is_optional {
+        quote!(udf::wrapper::wrap_process_buf_option::<#dstruct_ident, _>)
     } else {
-        quote! { udf::wrapper::wrap_process_buf::<#dstruct_ident> }
+        quote!(udf::wrapper::wrap_process_buf::<#dstruct_ident>)
     };
 
     quote! {
@@ -337,13 +276,14 @@ fn make_proc_buf_fn(
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) -> *const ::std::ffi::c_char {
-            #fn_title(
+            #wrap_fn_name(
                 initid,
                 args,
                 result,
                 length,
                 is_null,
-                error
+                error,
+                #can_return_ref,
             )
         }
     }

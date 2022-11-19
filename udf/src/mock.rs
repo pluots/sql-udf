@@ -88,24 +88,20 @@
 //! assert_eq!(res, "input")
 //! ```
 
-#![allow(unused)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::new_without_default)]
 use std::cell::UnsafeCell;
 use std::ffi::{c_char, c_uint, c_ulong};
 use std::fmt::Debug;
-use std::marker::{PhantomData, PhantomPinned};
-use std::mem;
-use std::pin::Pin;
-use std::ptr::{self, addr_of};
-use std::slice::from_raw_parts;
+use std::marker::PhantomPinned;
+use std::ptr;
 
 use udf_sys::{Item_result, UDF_ARGS, UDF_INIT};
 
 pub use crate::mock_args;
 use crate::traits::{Init, Process};
-use crate::types::{ArgList, SqlArg, UdfCfg};
-use crate::{BasicUdf, UdfState};
+use crate::types::{ArgList, UdfCfg};
+use crate::UdfState;
 
 /// A structure that allows generating a `&UdfCfg` object. See [module
 /// documentation](crate::mock) for further information.

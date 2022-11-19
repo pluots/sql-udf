@@ -142,7 +142,7 @@ pub mod mock;
 ///
 /// udf_log!(Warning: "this is a warning");
 ///
-/// udf_log!(Note: "this is info");
+/// udf_log!(Note: "this is info: value {}", 10 + 10);
 ///
 /// udf_log!(Debug: "this is a debug message");
 ///
@@ -154,26 +154,26 @@ pub mod mock;
 /// ```
 #[macro_export]
 macro_rules! udf_log {
-    (Error: $msg:expr) => {
-        let formatted = format!("[Error] UDF: {}", $msg);
+    (Error: $($msg:tt)*) => {{
+        let formatted = format!("[Error] UDF: {}", format!($($msg)*));
         udf_log!(formatted);
-    };
-    (Warning: $msg:expr) => {
-        let formatted = format!("[Warning] UDF: {}", $msg);
+    }};
+    (Warning: $($msg:tt)*) => {{
+        let formatted = format!("[Warning] UDF: {}", format!($($msg)*));
         udf_log!(formatted);
-    };
-    (Note: $msg:expr) => {
-        let formatted = format!("[Note] UDF: {}", $msg);
+    }};
+    (Note: $($msg:tt)*) => {{
+        let formatted = format!("[Note] UDF: {}", format!($($msg)*));
         udf_log!(formatted);
-    };
-    (Debug: $msg:expr) => {
-        let formatted = format!("[Debug] UDF: {}", $msg);
+    }};
+    (Debug: $($msg:tt)*) => {{
+        let formatted = format!("[Debug] UDF: {}", format!($($msg)*));
         udf_log!(formatted);
-    };
+    }};
     ($msg:tt) => {
         eprintln!(
             "{} {}",
-            udf::chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%:z"),
+            $crate::chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%:z"),
             $msg
         );
     };

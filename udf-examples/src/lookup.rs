@@ -7,7 +7,7 @@
 //! SELECT lookup6('0.0.0.0');
 //! ```
 
-#![allow(unused)]
+#![allow(unused_variables)]
 
 use std::net::{SocketAddr, ToSocketAddrs};
 
