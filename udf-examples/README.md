@@ -2,58 +2,49 @@
 
 This crate contains various simple examples for various UDFs.
 
-## Building
+## Building & Loading
 
-### Building for your local OS
+### Docker
+
+It is highly recommended to always test your functions in a docker container,
+since minor mistakes can crash your server (e.g. loading a different `.so` file
+with the same name).
+
+Getting this going is easy for examples, because of the provided
+`Dockerfile.examples` file. Just run the following:
+
+```shell
+docker build -f Dockerfile.examples . --tag mdb-example-so
+```
+
+Depending on your Docker version, you may need to prepend `DOCKER_BUILDKIT=1` to
+that command (the Dockerfile leverages cache only available with buildkit).
+
+Once built, you can start a container:
+
+```bash
+docker run --rm -d --name mariadb_udf_test mdb-example-so
+```
+
+## Local OS
 
 If you are building for your local SQL server, `cargo build` will create the
-correct library. Just copy the output to your plugin directory.
+correct library. Just copy the resulting `.so` file (within the
+`target/release/` directory) to your server's plugin directory.
 
 ```bash
 cargo build -p udf-examples --release
 ```
 
-### Building for Linux/Docker on a non-linux OS
+## Testing
 
-If you do not develop in Linux but require Linux binaries (e.g. to target
-Docker), the project can be built in a docker image:
+You will need to enter a SQL console to load the functions. This can be done
+with the `mariadb`/`mysql` command, either on your host system or within the
+docker container. If you used the provided `Dockerfile.examples`, the password
+is `example`.
 
 ```sh
-docker run --rm -it \
-  -v "$(pwd):/build" \
-  -e CARGO_HOME=/build/.docker-cargo \
-  rust:latest \
-  bash -c "cd /build; cargo build -p udf-examples --release"
-```
-
-## Running & Testing
-
-It is highly recommended to always test your functions in a docker container,
-since minor mistakes can crash your server (e.g. loading a different `.so` file
-with the same name). To do this, you can run the following in your host OS:
-
-```bash
-# Add -d to the arguments if you don't want to keep the window open
-docker run --rm -it  \
-  -v $(pwd)/target:/target \
-  -e MARIADB_ROOT_PASSWORD=banana \
-  --name mariadb_udf_test \
-  mariadb
-```
-
-This creates a container named `mariadb_udf_test` that has your `target/`
-directory mounted at `/target`. So, in a separate host terminal, you can enter a
-shell in the container:
-
-```bash
-docker exec -it mariadb_udf_test bash
-```
-
-Then copy the built & mounted `.so` file, and log in to your server:
-
-```bash
-cp /target/release/libudf_examples.so /usr/lib/mysql/plugin/
-mysql -pbanana
+docker exec -it mariadb_udf_test mysql -pexample
 ```
 
 Once logged in, you can load all available example functions:

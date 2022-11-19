@@ -1,7 +1,6 @@
 //! Rust representation of SQL arguments
 
 use core::fmt::Debug;
-use std::cmp::max;
 use std::marker::PhantomData;
 use std::{slice, str};
 
@@ -45,22 +44,13 @@ impl<'a, T: UdfState> SqlArg<'a, T> {
         let attr_slice;
         unsafe {
             let base = &(*self.base.0.get());
-            let attr_buf_ptr: *const u8 = base.attributes.add(self.index).cast();
-            let attr_len = base.attribute_lengths.add(self.index) as usize;
+            let attr_buf_ptr: *const u8 = *base.attributes.add(self.index).cast();
+            let attr_len = *base.attribute_lengths.add(self.index) as usize;
             attr_slice = slice::from_raw_parts(attr_buf_ptr, attr_len);
         }
-        // Ok to unwrap here, attributes must be utf8. Have hit this error in
-        // testing so we leave the message formatting
+        // Ok to unwrap here, attributes must be utf8
         str::from_utf8(attr_slice)
-            .map_err(|e| {
-                let subslice_min = e.valid_up_to().saturating_sub(10);
-                let subslice_max = max(e.valid_up_to() + 10, attr_slice.len());
-                let relevant_slice = &attr_slice[subslice_min..subslice_max];
-                format!(
-                    "very unexpected: attribute is not valid utf8. Error around slice {:?}",
-                    &relevant_slice
-                )
-            })
+            .map_err(|e| format!("unexpected: attribute is not valid utf8. Error: {e:?}"))
             .unwrap()
     }
 }

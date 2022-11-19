@@ -19,6 +19,7 @@
     clippy::option_if_let_else
 )]
 
+mod attribute;
 mod avg2;
 mod avgcost;
 mod is_const;
