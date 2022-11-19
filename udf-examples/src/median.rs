@@ -61,9 +61,9 @@ impl AggregateUdf for UdfMedian {
         _error: Option<NonZeroU8>,
     ) -> Result<(), NonZeroU8> {
         if let Some(a) = args.get(0) {
-            if let Some(v) = a.value.as_int() {
+            if let Some(v) = a.value().as_int() {
                 self.v.push(v);
-            } else if let Some(v) = a.value.as_real() {
+            } else if let Some(v) = a.value().as_real() {
                 self.v.push(v as i64);
             }
         }

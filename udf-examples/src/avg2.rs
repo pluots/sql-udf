@@ -33,10 +33,10 @@ impl BasicUdf for Avg2 {
         let a0 = args.get(0).unwrap();
         let a1 = args.get(1).unwrap();
 
-        if !a0.value.is_int() {
+        if !a0.value().is_int() {
             return Err(Errors::FirstArgType(&a0).to_string());
         }
-        if !a1.value.is_real() {
+        if !a1.value().is_real() {
             return Err(Errors::SecondArgType(&a1).to_string());
         }
 
@@ -81,13 +81,13 @@ impl AggregateUdf for Avg2 {
         let in_qty;
         let in_sum;
 
-        if let Some(q) = args.get(0).unwrap().value.as_int() {
+        if let Some(q) = args.get(0).unwrap().value().as_int() {
             in_qty = q;
         } else {
             return Ok(());
         };
 
-        if let Some(s) = args.get(1).unwrap().value.as_real() {
+        if let Some(s) = args.get(1).unwrap().value().as_real() {
             in_sum = s;
         } else {
             return Ok(());
@@ -109,13 +109,13 @@ impl AggregateUdf for Avg2 {
         let in_qty;
         let in_sum;
 
-        if let Some(q) = args.get(0).unwrap().value.as_int() {
+        if let Some(q) = args.get(0).unwrap().value().as_int() {
             in_qty = q;
         } else {
             return Ok(());
         };
 
-        if let Some(s) = args.get(1).unwrap().value.as_real() {
+        if let Some(s) = args.get(1).unwrap().value().as_real() {
             in_sum = s;
         } else {
             return Ok(());

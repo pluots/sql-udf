@@ -34,7 +34,7 @@ impl BasicUdf for Lipsum {
         let n = args
             .get(0)
             .unwrap()
-            .value
+            .value()
             .as_int()
             .ok_or_else(|| "First argument must be an integer".to_owned())?;
 
@@ -49,7 +49,7 @@ impl BasicUdf for Lipsum {
         // If there is an extra arg, verify it is also an integer
         if let Some(v) = args.get(1) {
             let seed = v
-                .value
+                .value()
                 .as_int()
                 .ok_or_else(|| "Second argument must be an integer".to_owned())?;
             if seed < 0 {
@@ -73,7 +73,7 @@ impl BasicUdf for Lipsum {
         let n = args
             .get(0)
             .unwrap()
-            .value
+            .value()
             .as_int()
             .ok_or(ProcessError)?
             .unsigned_abs() as usize;
@@ -81,7 +81,7 @@ impl BasicUdf for Lipsum {
         let res = match args.get(1) {
             Some(v) => {
                 // If we have a seed argument, use it.
-                let seed = v.value.as_int().ok_or(ProcessError)?;
+                let seed = v.value().as_int().ok_or(ProcessError)?;
                 lipsum_from_seed(n, seed.unsigned_abs())
             }
             None => {
