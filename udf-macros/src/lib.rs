@@ -46,7 +46,6 @@ pub(crate) use match_variant;
 ///   correct signatures and interfaces
 /// - If applied on an `impl AggregateUdf` block, create `fn_name_clear` and
 ///   `fn_name_add`. `fn_name_remove` is also included if it is redefined
-///
 // Arguments don't yet work
 //
 // # Arguments

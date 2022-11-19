@@ -283,8 +283,8 @@ pub unsafe fn wrap_process_buf_ref_null<T, S>(
 ) -> *const c_char
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
-                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
+    S: AsRef<[u8]>, /* for<'a> T::Returns<'a>: AsRef<[u8]>,
+                     * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
@@ -388,8 +388,8 @@ pub unsafe fn wrap_process_buf_null<T, S>(
 ) -> *const c_char
 where
     for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>, // for<'a> T::Returns<'a>: AsRef<[u8]>,
-                    // for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1
+    S: AsRef<[u8]>, /* for<'a> T::Returns<'a>: AsRef<[u8]>,
+                     * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_arg_ptr(args);
