@@ -66,7 +66,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     // be used anywhere except the FFI boundary
     panic::catch_unwind(move || {
         let cfg = UdfCfg::from_raw_ptr(initid);
-        let arglist = ArgList::from_arg_ptr(args);
+        let arglist = ArgList::from_raw_ptr(args);
 
         // Call the user's init function
         // If initialization succeeds, put our UDF info struct on the heap
@@ -149,7 +149,7 @@ where
 {
     // SAFETY: caller guarantees validity
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -169,7 +169,7 @@ where
     for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -190,7 +190,7 @@ where
 {
     // SAFETY: caller guarantees validity
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -210,7 +210,7 @@ where
     for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -233,7 +233,7 @@ where
     for<'a> T::Returns<'a>: AsRef<[u8]>,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let proc_res = T::process(&mut b, cfg, arglist, err);
@@ -287,7 +287,7 @@ where
                      * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -338,7 +338,7 @@ where
     for<'a> T::Returns<'a>: AsRef<[u8]>,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let proc_res = T::process(&mut b, cfg, arglist, err);
@@ -392,7 +392,7 @@ where
                      * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::process(&mut b, cfg, arglist, err);
@@ -439,7 +439,7 @@ pub unsafe fn wrap_add<T>(
     T: AggregateUdf,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::add(&mut b, cfg, arglist, err);
@@ -476,7 +476,7 @@ pub unsafe fn wrap_remove<T>(
     T: AggregateUdf,
 {
     let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_arg_ptr(args);
+    let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
     let err = *(error as *const Option<NonZeroU8>);
     let res = T::remove(&mut b, cfg, arglist, err);

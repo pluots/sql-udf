@@ -32,7 +32,7 @@ impl<'a, T: UdfState> SqlArg<'a, T> {
         unsafe {
             let base = self.get_base();
             let arg_buf_ptr: *const u8 = (*base.args.add(self.index)).cast();
-            let arg_type = *base.arg_type.add(self.index);
+            let arg_type = *base.arg_types.add(self.index);
             let arg_len = *base.lengths.add(self.index);
 
             // We can unwrap because the tag will be valid
@@ -64,7 +64,7 @@ impl<'a, T: UdfState> SqlArg<'a, T> {
 
     /// Helper method to get a pointer to this item's arg type
     unsafe fn arg_type_ptr(&self) -> *mut Item_result {
-        self.get_base().arg_type.add(self.index)
+        self.get_base().arg_types.add(self.index)
     }
 }
 
@@ -158,11 +158,7 @@ mod coerce {
 
     /// Set coercion to a desired value
     pub fn set_coercion(current: i32, desired: i32) -> i32 {
-        eprintln!("current: {current:#032b}\ndesired: {desired:#032b}");
-        let val =
-            RESET_COERCION_DESIRED_MASK & current | COERCION_SET | ((desired & BYTE_MASK) << 8);
-        eprintln!("val: {val:#032b}");
-        val
+        RESET_COERCION_DESIRED_MASK & current | COERCION_SET | ((desired & BYTE_MASK) << 8)
     }
 
     /// Get the desired coercion, ignoring currently active type
@@ -195,8 +191,8 @@ mod coerce {
 
         #[test]
         fn test_unset_coercion() {
-            for val in TESTVALS.iter().map(|v| *v) {
-                assert_eq!(coercion_is_set(val), false);
+            for val in TESTVALS.iter().copied() {
+                assert!(!coercion_is_set(val));
                 assert_eq!(get_coercion(val), None);
                 assert_eq!(get_current_type(val), val);
                 assert_eq!(get_desired_or_current(val), val);
@@ -205,11 +201,11 @@ mod coerce {
 
         #[test]
         fn test_coercion() {
-            for current in TESTVALS.iter().map(|v| *v) {
-                for desired in TESTVALS.iter().map(|v| *v) {
+            for current in TESTVALS.iter().copied() {
+                for desired in TESTVALS.iter().copied() {
                     let res = set_coercion(current, desired);
 
-                    assert_eq!(coercion_is_set(res), true);
+                    assert!(coercion_is_set(res));
                     assert_eq!(get_coercion(res), Some(desired));
                     assert_eq!(get_current_type(res), current);
                     assert_eq!(get_desired_or_current(res), desired);
@@ -222,6 +218,7 @@ mod coerce {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // use crate::mock::{MockArg, MockArgData};
 
     // Ensure our transmutes are sound
     #[test]
@@ -229,4 +226,9 @@ mod tests {
         assert_eq!(mem::size_of::<Item_result>(), mem::size_of::<i32>());
         assert_eq!(mem::align_of::<Item_result>(), mem::align_of::<i32>());
     }
+
+    // #[test]
+    // fn test_value() {
+    //     let mut m = MockArg::new_init(MockArgData::Int(Some(100)), "attribute", false);
+    // }
 }

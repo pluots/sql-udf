@@ -3,21 +3,22 @@
 //! This crate provides bindings for easy creation of SQL user-defined functions
 //! in Rust. See [the
 //! readme](https://github.com/pluots/sql-udf/blob/main/README.md) for more
-//! background information.
+//! background information on how UDFs work in general.
 //!
 //! # Usage
 //!
 //! Using this crate is fairly simple: create a struct that will be used to
-//! share data among UDF functions (which can be zero-sized), then implement
-//! needed traits for it. [`BasicUdf`] provides function signatures for standard
-//! UDFs, and [`AggregateUdf`] provides signatures for aggregate (and window)
-//! UDFs. See the documentation there for a step-by-step guide.
+//! share data among UDF function calls (which can be zero-sized), then
+//! implement needed traits for it. [`BasicUdf`] provides function signatures
+//! for standard UDFs, and [`AggregateUdf`] provides signatures for aggregate
+//! (and window) UDFs. See the documentation there for a step-by-step guide.
 //!
 //! ```
 //! use udf::prelude::*;
 //!
 //! // Our struct that will produce a UDF of name `my_udf`
-//! struct MyUdf {}
+//! // If there is no data to store between calls,it can be zero sized
+//! struct MyUdf;
 //!
 //! #[register]
 //! impl BasicUdf for MyUdf {
@@ -67,8 +68,8 @@
 //!
 //! More details on building are discussed in [the project
 //! readme](https://github.com/pluots/sql-udf/blob/main/README.md). See [the
-//! `MariaDB` documentation](https://mariadb.com/kb/en/create-function-udf/) on
-//! how to load the created libraries.
+//! `MariaDB` documentation](https://mariadb.com/kb/en/create-function-udf/) for
+//! more detailed information on how to load the created libraries.
 //!
 //! # Version Note
 //!
@@ -82,7 +83,6 @@
     // clippy::cargo,
     clippy::nursery,
     clippy::str_to_string,
-    clippy::missing_inline_in_public_items,
     clippy::exhaustive_enums,
     clippy::pattern_type_mismatch
 )]
@@ -99,8 +99,10 @@
 #[doc(hidden)]
 pub extern crate chrono;
 
-extern crate udf_macros;
+#[doc(hidden)]
 pub extern crate udf_sys;
+
+extern crate udf_macros;
 
 pub use udf_macros::register;
 
@@ -117,6 +119,9 @@ pub use traits::*;
 #[doc(inline)]
 pub use types::{MYSQL_ERRMSG_SIZE, *};
 
+// #[cfg(mock)]
+pub mod mock;
+
 /// Print a formatted log message to `stderr` to display in server logs
 ///
 /// Performs formatting to match other common SQL error logs, roughly:
@@ -126,6 +131,9 @@ pub use types::{MYSQL_ERRMSG_SIZE, *};
 /// ```
 ///
 /// ```
+/// # #[cfg(not(miri))] // need to skip Miri because. it can't cross FFI
+/// # fn test() {
+///
 /// use udf::udf_log;
 ///
 /// // Prints "2022-10-08 05:27:30+00:00 [Error] UDF: this is an error"
@@ -139,6 +147,10 @@ pub use types::{MYSQL_ERRMSG_SIZE, *};
 /// udf_log!(Debug: "this is a debug message");
 ///
 /// udf_log!("i print without the '[Level] UDF:' formatting");
+///
+/// # }
+/// # #[cfg(not(miri))]
+/// # test();
 /// ```
 #[macro_export]
 macro_rules! udf_log {

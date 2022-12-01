@@ -16,7 +16,8 @@
     clippy::must_use_candidate,
     clippy::cast_possible_truncation,
     // New users probably like `match` better
-    clippy::option_if_let_else
+    clippy::option_if_let_else,
+    clippy::wildcard_imports
 )]
 
 mod attribute;

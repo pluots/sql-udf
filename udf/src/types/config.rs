@@ -3,6 +3,7 @@
 #![allow(clippy::useless_conversion, clippy::unnecessary_cast)]
 
 use std::cell::UnsafeCell;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use udf_sys::UDF_INIT;
@@ -34,9 +35,8 @@ pub enum MaxLenOptions {
 ///
 /// This is rusty wrapper around SQL's `UDF_INIT` struct, providing methods to
 /// easily and safely work with arguments.
-#[derive(Debug)]
 #[repr(transparent)]
-pub struct UdfCfg<S: UdfState>(UnsafeCell<UDF_INIT>, PhantomData<S>);
+pub struct UdfCfg<S: UdfState>(pub(crate) UnsafeCell<UDF_INIT>, PhantomData<S>);
 
 impl<S: UdfState> UdfCfg<S> {
     /// Create an `ArgList` type on a `UDF_ARGS` struct
@@ -131,9 +131,9 @@ impl UdfCfg<Init> {
     /// This is mostly relevant for String and Decimal return types. See
     /// [`MaxLenOptions`] for possible defaults, including `BLOB` sizes.
     #[inline]
-    pub fn set_max_len(&self, v: u32) {
+    pub fn set_max_len(&self, v: u64) {
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
-        unsafe { (*self.0.get()).decimals = v.into() };
+        unsafe { (*self.0.get()).max_length = v.into() };
     }
 
     /// Set a new `const_item` value
@@ -143,15 +143,32 @@ impl UdfCfg<Init> {
     #[inline]
     pub fn set_is_const(&self, v: bool) {
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
-        unsafe { (*self.0.get()).decimals = v.into() };
+        unsafe { (*self.0.get()).const_item = v };
+    }
+}
+
+impl<T: UdfState> Debug for UdfCfg<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // SAFETY: unsafe when called from different threads, but we are `!Sync`
+        // here
+        let base = unsafe { &*self.0.get() };
+        f.debug_struct("UdfCfg")
+            .field("maybe_null", &base.maybe_null)
+            .field("decimals", &base.decimals)
+            .field("max_len", &base.max_length)
+            .field("is_const", &base.const_item)
+            .field("ptr", &base.ptr)
+            .finish()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::mem::{align_of, size_of};
 
     use super::*;
+    use crate::mock::MockUdfCfg;
     use crate::{Init, Process};
 
     // Verify no size issues
@@ -181,5 +198,76 @@ mod tests {
             align_of::<UdfCfg<Process>>(),
             concat!("Alignment of ", stringify!(UDF_INIT))
         );
+    }
+
+    #[test]
+    fn test_box_load_store() {
+        // Verify store & retrieve on a box works
+        #[derive(PartialEq, Debug, Clone)]
+        struct X {
+            s: String,
+            map: HashMap<i64, f64>,
+        }
+
+        let mut map = HashMap::new();
+        map.insert(930_984_098, 4_525_435_435.900_981);
+        map.insert(12_341_234, -234.090_909_092);
+        map.insert(-23_412_343_453, 838_383.6);
+
+        let stored = X {
+            s: "This is a string".to_owned(),
+            map,
+        };
+
+        let mut m = MockUdfCfg::new();
+        let cfg = m.build_init();
+        cfg.store_box(Box::new(stored.clone()));
+
+        let loaded: X = unsafe { *cfg.retrieve_box() };
+        assert_eq!(stored, loaded);
+    }
+
+    #[test]
+    fn maybe_null() {
+        let mut m = MockUdfCfg::new();
+
+        *m.maybe_null() = false;
+        assert!(!m.build_init().get_maybe_null());
+        *m.maybe_null() = true;
+        assert!(m.build_init().get_maybe_null());
+    }
+    #[test]
+    fn decimals() {
+        let mut m = MockUdfCfg::new();
+
+        *m.decimals() = 1234;
+        assert_eq!(m.build_init().get_decimals(), 1234);
+        *m.decimals() = 0;
+        assert_eq!(m.build_init().get_decimals(), 0);
+        *m.decimals() = 1;
+        assert_eq!(m.build_init().get_decimals(), 1);
+
+        m.build_init().set_decimals(4);
+        assert_eq!(*m.decimals(), 4);
+    }
+    #[test]
+    fn max_len() {
+        let mut m = MockUdfCfg::new();
+
+        *m.max_len() = 1234;
+        assert_eq!(m.build_init().get_max_len(), 1234);
+        *m.max_len() = 0;
+        assert_eq!(m.build_init().get_max_len(), 0);
+        *m.max_len() = 1;
+        assert_eq!(m.build_init().get_max_len(), 1);
+    }
+    #[test]
+    fn test_const() {
+        let mut m = MockUdfCfg::new();
+
+        *m.is_const() = false;
+        assert!(!m.build_init().get_is_const());
+        *m.is_const() = true;
+        assert!(m.build_init().get_is_const());
     }
 }

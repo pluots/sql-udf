@@ -37,6 +37,20 @@ pub(crate) use match_variant;
 /// block, if applicable) and exposed the C-callable functions that
 /// `MariaDB`/`MySQL` expect.
 ///
+/// Usage:
+///
+/// ```ignore
+/// #[register]
+/// impl BasicUdf for MyStruct {
+///     ...
+/// }
+///
+/// #[register]
+/// impl AggregateUdf for MyStruct {
+///     ...
+/// }
+/// ```
+///
 /// Its process is as follows:
 ///
 /// - Convert the implemented struct's name to snake case to create the function
