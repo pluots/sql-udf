@@ -37,3 +37,58 @@ impl BasicUdf for UdfAttribute {
         Ok(v.join(", "))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use udf::mock::*;
+
+    use super::*;
+
+    #[test]
+    fn test_init() {
+        // Not really anything to test here
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![];
+
+        assert!(UdfAttribute::init(mock_cfg.build_init(), mock_args.build_init()).is_ok());
+    }
+
+    #[test]
+    fn process_empty() {
+        // No arguments should give us an empty string
+        let mut inited = UdfAttribute;
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![];
+
+        let res = UdfAttribute::process(
+            &mut inited,
+            mock_cfg.build_process(),
+            mock_args.build_process(),
+            None,
+        );
+
+        assert_eq!(res.unwrap(), "");
+    }
+
+    #[test]
+    fn process_nonempty() {
+        // Test with some random arguments
+        let mut inited = UdfAttribute;
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![
+            (String None, "attr1", false),
+            (Int 42, "attr2", false),
+            (Decimal None, "attr3", false),
+            (Int None, "attr4", false),
+        ];
+
+        let res = UdfAttribute::process(
+            &mut inited,
+            mock_cfg.build_process(),
+            mock_args.build_process(),
+            None,
+        );
+
+        assert_eq!(res, Ok("attr1, attr2, attr3, attr4".to_owned()));
+    }
+}

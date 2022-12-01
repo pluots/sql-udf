@@ -27,7 +27,7 @@ pub const MYSQL_RESULT_BUFFER_SIZE: usize = 255;
 ///
 /// If you return an instance of this, it is likely a good idea to log to stderr
 /// what went wrong.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
 pub struct ProcessError;
 
 impl fmt::Display for ProcessError {

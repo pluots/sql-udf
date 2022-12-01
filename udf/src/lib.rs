@@ -131,6 +131,9 @@ pub mod mock;
 /// ```
 ///
 /// ```
+/// # #[cfg(not(miri))] // need to skip Miri because. it can't cross FFI
+/// # fn test() {
+///
 /// use udf::udf_log;
 ///
 /// // Prints "2022-10-08 05:27:30+00:00 [Error] UDF: this is an error"
@@ -144,6 +147,10 @@ pub mod mock;
 /// udf_log!(Debug: "this is a debug message");
 ///
 /// udf_log!("i print without the '[Level] UDF:' formatting");
+///
+/// # }
+/// # #[cfg(not(miri))]
+/// # test();
 /// ```
 #[macro_export]
 macro_rules! udf_log {

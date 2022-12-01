@@ -14,7 +14,10 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use udf::prelude::*;
 
 /// No data to persist
+#[derive(Debug)]
 struct Lookup6;
+
+const IPV6_MAX_LEN: u64 = 39;
 
 #[register]
 impl BasicUdf for Lookup6 {
@@ -37,7 +40,7 @@ impl BasicUdf for Lookup6 {
         }
 
         // max ipv6 address with colons
-        cfg.set_max_len(39);
+        cfg.set_max_len(IPV6_MAX_LEN);
         cfg.set_maybe_null(true);
 
         Ok(Self)
@@ -72,5 +75,59 @@ impl BasicUdf for Lookup6 {
         };
 
         Ok(Some(ret_addr.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use udf::mock::*;
+
+    use super::*;
+
+    #[test]
+    fn test_init_ok() {
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![("localhost", "attr1", true)];
+        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+
+        assert_eq!(*mock_cfg.max_len(), IPV6_MAX_LEN);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_init_wrong_arg_count() {
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![("localhost", "attr1", true), ("localhost", "attr2", true)];
+        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+
+        assert_eq!(res.unwrap_err(), "Expected 1 argument; got 2");
+    }
+
+    #[test]
+    fn test_init_wrong_arg_type() {
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![(Int 500, "attr1", true)];
+        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+
+        assert_eq!(res.unwrap_err(), "Expected string argument; got int");
+    }
+
+    #[test]
+    #[cfg(not(miri))] // need to skip Miri because. it can't cross FFI
+    fn process() {
+        // Test with some random arguments
+        let mut inited = Lookup6;
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![("localhost", "attr1", false),];
+
+        let res = Lookup6::process(
+            &mut inited,
+            mock_cfg.build_process(),
+            mock_args.build_process(),
+            None,
+        );
+
+        // Our result can be weird, so we just check it has a colon
+        assert!(res.unwrap().unwrap().contains(':'));
     }
 }

@@ -131,7 +131,7 @@ impl UdfCfg<Init> {
     /// This is mostly relevant for String and Decimal return types. See
     /// [`MaxLenOptions`] for possible defaults, including `BLOB` sizes.
     #[inline]
-    pub fn set_max_len(&self, v: u32) {
+    pub fn set_max_len(&self, v: u64) {
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
         unsafe { (*self.0.get()).max_length = v.into() };
     }
@@ -219,7 +219,7 @@ mod tests {
             map,
         };
 
-        let m = MockUdfCfg::new();
+        let mut m = MockUdfCfg::new();
         let cfg = m.build_init();
         cfg.store_box(Box::new(stored.clone()));
 

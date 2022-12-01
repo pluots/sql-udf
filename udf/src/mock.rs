@@ -1,17 +1,15 @@
 //! Mocks of argument types found in this library, available with the feature
-//! `mock` only
+//! `mock`
 //!
 //! This module can be used to create the kind of arguments passed to the
 //! [`BasicUdf`](crate::BasicUdf) and [`AggregateUdf`](crate::AggregateUdf)
-//! traits, for unit testing UDFs.
-//!
-//! To use anything in the `mock` module, ensure that the `mock` feature is
-//! enabled in your `Cargo.toml`.
+//! traits, for unit testing UDFs. To use anything in the `mock` module, ensure
+//! that the `mock` feature is enabled in your `Cargo.toml`.
 //!
 //! Do not use these for anything outside of test cases, as the inner workings
 //! are considered unstable.
 //!
-//! Full lengthy example:
+//! Full (lengthy) example:
 //!
 //! ```
 //! use std::cmp::min;
@@ -104,6 +102,7 @@ use std::slice::from_raw_parts;
 
 use udf_sys::{Item_result, UDF_ARGS, UDF_INIT};
 
+pub use crate::mock_args;
 use crate::traits::{Init, Process};
 use crate::types::{ArgList, SqlArg, UdfCfg};
 use crate::{BasicUdf, UdfState};
@@ -155,12 +154,12 @@ impl MockUdfCfg {
     }
 
     /// Create a `&UdfCfg<Init>` object to test calling a UDF `init` function
-    pub fn build_init(&self) -> &UdfCfg<Init> {
+    pub fn build_init(&mut self) -> &UdfCfg<Init> {
         unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
     }
 
     /// Create a `&UdfCfg<Process>` object to test callingg a UDF `process` function
-    pub fn build_process(&self) -> &UdfCfg<Process> {
+    pub fn build_process(&mut self) -> &UdfCfg<Process> {
         unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
     }
 
@@ -486,6 +485,8 @@ impl<const N: usize> From<[MockArg; N]> for MockArgList {
 /// let mut arglist = mock_args![
 ///     // assuming id of 1
 ///     (1, "1", false),
+///     // Type can be specified if desired
+///     (Int 1, "1", false),
 ///     ("some string", "some string", false),
 ///     (1000, "value", false),
 ///     // By default anything in "" will be a string - you can specify the `MockArgData` type
@@ -521,15 +522,15 @@ macro_rules! mock_args {
 
     // Any generic type
     (@internal $type_:ident $val:expr, $attr:expr, $nullable:expr) => {
-        $crate::mock::MockArg::new($crate::mock::MockArgData::$type_($val), $attr, $nullable)
+        $crate::mock::MockArg::new($crate::mock::MockArgData::$type_(Some($val)), $attr, $nullable)
     };
 
     // Match repeating (x y z), groups (optional trailling comma)
-    ($( ($( $tt:tt )*) ),+ $(,)?) => {
+    ($( ($( $tt:tt )*) ),* $(,)?) => {
         $crate::mock::MockArgList::from([
             $(
                 $crate::mock_args!(@internal $($tt)*)
-            ),+
+            ),*
         ])
     };
 }
