@@ -16,7 +16,7 @@ struct LogCalls {}
 impl BasicUdf for LogCalls {
     type Returns<'a> = Option<i64>;
 
-    fn init<'a>(_cfg: &UdfCfg<Init>, _args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(_cfg: &UdfCfg<Init>, _args: &ArgList<Init>) -> Result<Self, String> {
         udf_log!(Note: "called init!");
         Ok(Self {})
     }

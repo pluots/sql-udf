@@ -59,7 +59,7 @@ impl BasicUdf for AvgCost {
     where
         Self: 'a;
 
-    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.len() != 2 {
             return Err(Errors::WrongArgCount(args.len()).to_string());
         }

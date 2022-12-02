@@ -26,7 +26,7 @@
 //!     type Returns<'a> = String;
 //!
 //!     // This init function is just to demonstrate our test
-//!     fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+//!     fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
 //!         assert_eq!(cfg.get_max_len(), 10);
 //!
 //!         let arg0 = args.get(0).unwrap();

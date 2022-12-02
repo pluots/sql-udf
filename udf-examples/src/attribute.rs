@@ -17,7 +17,7 @@ impl BasicUdf for UdfAttribute {
     type Returns<'a> = String;
 
     /// Nothing to do here
-    fn init<'a>(_cfg: &UdfCfg<Init>, _args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(_cfg: &UdfCfg<Init>, _args: &ArgList<Init>) -> Result<Self, String> {
         Ok(Self)
     }
 

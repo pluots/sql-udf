@@ -25,7 +25,7 @@ struct Avg2 {
 impl BasicUdf for Avg2 {
     type Returns<'a> = Option<f64>;
 
-    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.len() != 2 {
             return Err(Errors::WrongArgCount(args.len()).to_string());
         }

@@ -20,7 +20,7 @@ struct UdfMedian {
 impl BasicUdf for UdfMedian {
     type Returns<'a> = Option<i64>;
 
-    fn init<'a>(_cfg: &UdfCfg<Init>, _args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(_cfg: &UdfCfg<Init>, _args: &ArgList<Init>) -> Result<Self, String> {
         Ok(Self { v: Vec::new() })
     }
 

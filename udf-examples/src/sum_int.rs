@@ -19,7 +19,7 @@ impl BasicUdf for SumInt {
 
     /// All we do here is set our type coercion. SQL will cancel our function if
     /// the coercion is not possible.
-    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         // Coerce each arg to an integer
         args.iter()
             .for_each(|mut arg| arg.set_type_coercion(udf::SqlType::Int));
