@@ -4,8 +4,8 @@
 # docker build -f Dockerfile.examples . --tag mdb-example-so
 # ```
 #
-# If using this for production, be sure to remove the `ENV
-# MARIADB_ROOT_PASSWORD` command
+# If using this for production, be sure to remove the `MARIADB_ROOT_PASSWORD`
+# directive.
 
 FROM rust:latest AS build
 
