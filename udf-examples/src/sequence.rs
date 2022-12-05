@@ -22,7 +22,7 @@ impl BasicUdf for UdfSequence {
         Self: 'a;
 
     /// Init just validates the argument count and initializes our empty struct
-    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.len() > 1 {
             return Err(format!(
                 "This function takes 0 or 1 arguments; got {}",

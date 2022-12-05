@@ -26,7 +26,7 @@
 //!     type Returns<'a> = Option<i64>;
 //!
 //!     // Perform initialization steps here
-//!     fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+//!     fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
 //!         todo!();
 //!     }
 //!

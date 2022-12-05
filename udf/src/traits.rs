@@ -116,7 +116,7 @@ pub trait BasicUdf: Sized {
     /// - Incorrect argument quantity or position
     /// - Incorrect argument types
     /// - Values that are `maybe_null()` when you cannot accept them
-    fn init<'a>(cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String>;
+    fn init(cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String>;
 
     /// Process the actual values and return a result
     ///

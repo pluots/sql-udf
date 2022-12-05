@@ -21,7 +21,7 @@ struct IsConst {
 impl BasicUdf for IsConst {
     type Returns<'a> = &'static str;
 
-    fn init<'a>(_cfg: &UdfCfg<Init>, args: &'a ArgList<'a, Init>) -> Result<Self, String> {
+    fn init(_cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
         if args.len() != 1 {
             return Err("IS_CONST only accepts one argument".to_owned());
         }
