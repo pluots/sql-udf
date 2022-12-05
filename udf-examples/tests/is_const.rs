@@ -49,7 +49,7 @@ fn test_too_many_args() {
     let res = sql::<(Text,)>("select is_const(1, 2)").get_result::<(String,)>(conn);
 
     let Err(DieselError::DatabaseError(_, info)) = res else {
-        panic!("Got unexpected response: {:?}", res);
+        panic!("Got unexpected response: {res:?}");
     };
 
     assert!(info.message().contains("only accepts one argument"));

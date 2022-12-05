@@ -40,7 +40,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all-features
+          args: --all-features --all-targets
 
   test:
     strategy:
@@ -207,7 +207,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-features --tests -- -D warnings
+          args: --all-features --all-targets -- -D warnings
 
   doc:
     name: "Docs (cargo doc)"
