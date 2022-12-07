@@ -1,10 +1,12 @@
 //! Private module that handles the implementation of the wrapper module
 
-#![allow(dead_code)]
+// #![allow(dead_code)]
 
 use std::cmp::min;
-use std::os::raw::c_char;
+use std::ffi::{c_char, c_ulong};
 use std::ptr;
+
+use crate::udf_log;
 
 /// Write a string message to a buffer. Accepts a const generic size `N` that
 /// length of the message will check against (N must be the size of the buffer)
@@ -23,6 +25,66 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
         ptr::copy_nonoverlapping(msg.as_ptr().cast::<c_char>(), buf, bytes_to_write);
         *buf.add(bytes_to_write) = 0;
     }
+}
+
+/// Data that is only relevant to buffer return types
+pub struct BufOptions {
+    res_buf: *mut c_char,
+    length: *mut c_ulong,
+    /// True if we can return a reference to our source buffer. If false, we must
+    /// truncate
+    can_return_ref: bool,
+}
+
+impl BufOptions {
+    /// Create a new `BufOptions` struct
+    pub fn new(res_buf: *mut c_char, length: *mut c_ulong, can_return_ref: bool) -> Self {
+        Self {
+            res_buf,
+            length,
+            can_return_ref,
+        }
+    }
+}
+
+/// Handle the result of SQL function that returns a buffer
+///
+/// Accept any input byte slice and a set of buffer options. Performs one of
+/// three:
+///
+/// - If slice fits in buffer: copy to buffer, return pointer to the buffer
+/// - If slice does not fit in the buffer and returning references are
+///   permitted: return pointer to the buffer
+/// - If slice does not fit and returning references is not permitted: copy
+///   truncated data, print error messages
+pub unsafe fn buf_result_callback<T: AsRef<[u8]>>(input: T, opts: &BufOptions) -> *const c_char {
+    let slice_ref = input.as_ref();
+    let slice_len = slice_ref.len();
+    let slice_ptr: *const c_char = slice_ref.as_ptr().cast();
+    let buf_len = *opts.length as usize;
+
+    if slice_len <= buf_len {
+        // If we fit in the buffer, just copy
+        ptr::copy(slice_ptr, opts.res_buf, slice_len);
+        *opts.length = slice_len as u64;
+        return opts.res_buf;
+    }
+
+    if !opts.can_return_ref {
+        // We can't return a reference but also can't fit in the buffer
+        // So, copy what we can and print an error
+        ptr::copy(slice_ptr, opts.res_buf, buf_len);
+        *opts.length = buf_len as u64;
+        udf_log!(
+            Error: "output truncated. Buffer size: {}, data length: {}", buf_len, slice_len
+        );
+        udf_log!(Error: "contact your UDF vendor as this may be a serious bug");
+        return opts.res_buf;
+    }
+
+    // If we don't fit in the buffer but can return a reference, do so
+    *opts.length = slice_len as u64;
+    slice_ptr
 }
 
 #[cfg(test)]
@@ -189,5 +251,69 @@ mod tests {
             assert_eq!(res[i].attribute(), attrs[i]);
             // assert_eq!(unsafe { *res[i].type_ptr }, arg_types[i]);
         }
+    }
+}
+
+#[cfg(test)]
+mod buffer_tests {
+    use core::slice;
+
+    use super::*;
+
+    const BUF_LEN: usize = 10;
+
+    #[test]
+    fn test_buf_fits() {
+        // Test a buffer that simply fits into the available result buffer
+        let input = b"1234";
+        let mut res_buf = [0u8; BUF_LEN];
+        let zeroes = [0u8; BUF_LEN];
+        let mut len = res_buf.len() as u64;
+        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
+
+        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
+        let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
+
+        assert_eq!(len as usize, input.len());
+        assert_eq!(res_slice, input);
+        assert_eq!(res_ptr.cast(), res_buf.as_ptr());
+        // Check residual buffer
+        assert_eq!(
+            res_buf[input.len()..res_buf.len()],
+            zeroes[input.len()..res_buf.len()]
+        );
+    }
+
+    #[test]
+    fn test_buf_no_fit_ref() {
+        // Test a buffer that does not fit but can be used as a ref
+        let input = b"123456789012345";
+        let mut res_buf = [0u8; BUF_LEN];
+        let mut len = res_buf.len() as u64;
+        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, true);
+
+        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
+        let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
+
+        assert_eq!(len as usize, input.len());
+        assert_eq!(res_slice, input);
+        assert_eq!(res_ptr.cast(), input.as_ptr());
+    }
+
+    #[test]
+    fn test_buf_no_fit_no_ref() {
+        // Test a buffer that does not fit but can not be used as a ref
+        // This should truncate
+        let input = b"123456789012345";
+        let mut res_buf = [0u8; BUF_LEN];
+        let mut len = res_buf.len() as u64;
+        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
+
+        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
+        let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
+
+        assert_eq!(len as usize, res_buf.len());
+        assert_eq!(res_slice, &input[0..BUF_LEN]);
+        assert_eq!(res_ptr.cast(), res_buf.as_ptr());
     }
 }

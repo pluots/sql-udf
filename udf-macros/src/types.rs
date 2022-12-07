@@ -10,10 +10,12 @@ pub enum ImplType {
 /// Possible return types in SQL
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FnSigType {
-    Bytes,
     Int,
     Float,
+    /// Bytes that can be properly returned
     BytesRef,
+    /// Bytest that must be truncated
+    Bytes,
 }
 
 /// Struct containing information about a return type

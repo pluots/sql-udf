@@ -236,6 +236,7 @@ mod tests {
         *m.maybe_null() = true;
         assert!(m.build_init().get_maybe_null());
     }
+
     #[test]
     fn decimals() {
         let mut m = MockUdfCfg::new();

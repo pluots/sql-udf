@@ -3,15 +3,14 @@
 //! This file ties together C types and rust types, providing a safe wrapper.
 //! Functions in this module are generally not meant to be used directly.
 
-use std::ffi::{c_char, c_double, c_longlong, c_uchar, c_ulong};
+use std::ffi::{c_char, c_uchar};
 use std::num::NonZeroU8;
 use std::panic::{self, AssertUnwindSafe};
-use std::ptr;
 
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
 use crate::wrapper::write_msg_to_buf;
-use crate::{AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE};
+use crate::{udf_log, AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE};
 
 /// This function provides the same signature as the C FFI expects. It is used
 /// to perform setup within a renamed function, and will apply it to a specific
@@ -71,7 +70,6 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         // Call the user's init function
         // If initialization succeeds, put our UDF info struct on the heap
         // If initialization fails, copy a message to the buffer
-
         let boxed_struct: Box<T> = match T::init(cfg, arglist) {
             Ok(v) => Box::new(v),
             Err(e) => {
@@ -89,7 +87,11 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         // SAFETY: Must be cleaned up in deinit function, or we will leak!
         cfg.store_box(boxed_struct);
     })
-    .unwrap_or_else(|_| ret = true);
+    .unwrap_or_else(|_| {
+        write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(b"error: init function panicked", message);
+        udf_log!(Error: "init function panicked");
+        ret = true;
+    });
 
     ret
 }
@@ -103,330 +105,11 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
-    let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
-    let cfg_wrap = AssertUnwindSafe(cfg);
-    panic::catch_unwind(|| *cfg_wrap.retrieve_box::<T>()).ok();
-}
-
-// NOTE: the below sections are super redundant and ugly, we will aim to clean
-// them up with a macro or some other architecture
-
-unsafe fn process_return<T: Default, E>(res: Result<T, E>, error: *mut c_uchar) -> T {
-    let Ok(val) = res else {
-        *error = 1;
-        return T::default();
-    };
-    val
-}
-
-unsafe fn process_return_null<T: Default, E>(
-    res: Result<Option<T>, E>,
-    error: *mut c_uchar,
-    is_null: *mut c_uchar,
-) -> T {
-    match res {
-        Ok(Some(v)) => v,
-        Ok(None) => {
-            *is_null = 1;
-            T::default()
-        }
-        Err(_) => {
-            *error = 1;
-            T::default()
-        }
-    }
-}
-
-#[inline]
-pub unsafe fn wrap_process_int<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    _is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> c_longlong
-where
-    for<'a> T: BasicUdf<Returns<'a> = i64>,
-{
-    // SAFETY: caller guarantees validity
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    process_return(res, error)
-}
-
-#[inline]
-pub unsafe fn wrap_process_int_null<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> c_longlong
-where
-    for<'a> T: BasicUdf<Returns<'a> = Option<i64>>,
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    process_return_null(res, error, is_null)
-}
-
-#[inline]
-pub unsafe fn wrap_process_float<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    _is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> c_double
-where
-    for<'a> T: BasicUdf<Returns<'a> = f64>,
-{
-    // SAFETY: caller guarantees validity
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    process_return(res, error)
-}
-
-#[inline]
-pub unsafe fn wrap_process_float_null<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> c_double
-where
-    for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    process_return_null(res, error, is_null)
-}
-
-#[inline]
-pub unsafe fn wrap_process_buf_ref<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    result: *mut c_char,
-    length: *mut c_ulong,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> *const c_char
-where
-    T: BasicUdf,
-    for<'a> T::Returns<'a>: AsRef<[u8]>,
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let proc_res = T::process(&mut b, cfg, arglist, err);
-
-    let ret: *const c_char;
-    if let Ok(ref s) = proc_res {
-        // Cast u8 to c_char (u8/i8)
-        let s_ref: &[u8] = s.as_ref();
-        let s_ptr = s_ref.as_ptr().cast::<c_char>();
-        *is_null = c_uchar::from(false);
-
-        // If we fit within the buffer, just copy our output. Otherwise,
-        // return the pointer to s.
-        let res_ptr: *const c_char = if s_ref.len() as u64 <= *length {
-            ptr::copy(s_ptr, result, s_ref.len());
-            result
-        } else {
-            s_ptr
-        };
-
-        *length = s_ref.len() as u64;
-        ret = res_ptr;
-    } else {
-        *error = 1;
-        *length = 0;
-        ret = result;
-    };
-
-    std::mem::forget(proc_res);
-    cfg.store_box(b);
-
-    // let ret = result;
-
-    // Need to get the pointer after, since the reference is in `b`.
-
-    ret
-}
-
-#[inline]
-pub unsafe fn wrap_process_buf_ref_null<T, S>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    result: *mut c_char,
-    length: *mut c_ulong,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> *const c_char
-where
-    for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>, /* for<'a> T::Returns<'a>: AsRef<[u8]>,
-                     * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    let Ok(res_ok) = res else {
-        *error = 1;
-        *length = 0;
-        return result;
-    };
-
-    // Result is an Ok(); set null as needed
-    let Some(s) = res_ok else {
-        *is_null = 1;
-        *length = 0;
-        return result;
-    };
-
-    // Cast u8 to c_char (u8/i8)
-    let s_ref = s.as_ref();
-    let s_ptr = s_ref.as_ptr().cast::<c_char>();
-    *is_null = c_uchar::from(false);
-
-    // If we fit within the buffer, just copy our output. Otherwise,
-    // return the pointer to s.
-    let res_ptr = if s_ref.len() as u64 <= *length {
-        ptr::copy(s_ptr, result, s_ref.len());
-        result
-    } else {
-        s_ptr
-    };
-    *length = s_ref.len() as u64;
-
-    res_ptr
-}
-
-#[inline]
-pub unsafe fn wrap_process_buf<T>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    result: *mut c_char,
-    length: *mut c_ulong,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> *const c_char
-where
-    T: BasicUdf,
-    for<'a> T::Returns<'a>: AsRef<[u8]>,
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let proc_res = T::process(&mut b, cfg, arglist, err);
-
-    let ret: *const c_char;
-    if let Ok(ref s) = proc_res {
-        // Cast u8 to c_char (u8/i8)
-        let s_ref: &[u8] = s.as_ref();
-        let s_ptr = s_ref.as_ptr().cast::<c_char>();
-        *is_null = c_uchar::from(false);
-
-        // If we fit within the buffer, just copy our output. Otherwise,
-        // return the pointer to s.
-        let res_ptr: *const c_char = if s_ref.len() as u64 <= *length {
-            ptr::copy(s_ptr, result, s_ref.len());
-            result
-        } else {
-            s_ptr
-        };
-
-        *length = s_ref.len() as u64;
-        ret = res_ptr;
-    } else {
-        *error = 1;
-        *length = 0;
-        ret = result;
-    };
-
-    std::mem::forget(proc_res);
-    cfg.store_box(b);
-
-    // let ret = result;
-
-    // Need to get the pointer after, since the reference is in `b`.
-
-    ret
-}
-
-#[inline]
-pub unsafe fn wrap_process_buf_null<T, S>(
-    initid: *mut UDF_INIT,
-    args: *mut UDF_ARGS,
-    result: *mut c_char,
-    length: *mut c_ulong,
-    is_null: *mut c_uchar,
-    error: *mut c_uchar,
-) -> *const c_char
-where
-    for<'a> T: BasicUdf<Returns<'a> = Option<S>>,
-    S: AsRef<[u8]>, /* for<'a> T::Returns<'a>: AsRef<[u8]>,
-                     * for<'a> T: BasicUdf<Returns<'a> = Option<f64>>,1 */
-{
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::process(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
-
-    let Ok(res_ok) = res else {
-        *error = 1;
-        *length = 0;
-        return result;
-    };
-
-    // Result is an Ok(); set null as needed
-    let Some(s) = res_ok else {
-        *is_null = 1;
-        *length = 0;
-        return result;
-    };
-
-    // Cast u8 to c_char (u8/i8)
-    let s_ref = s.as_ref();
-    let s_ptr = s_ref.as_ptr().cast::<c_char>();
-    *is_null = c_uchar::from(false);
-
-    // If we fit within the buffer, just copy our output. Otherwise,
-    // return the pointer to s.
-    let res_ptr = if s_ref.len() as u64 <= *length {
-        ptr::copy(s_ptr, result, s_ref.len());
-        result
-    } else {
-        s_ptr
-    };
-    *length = s_ref.len() as u64;
-
-    res_ptr
+    panic::catch_unwind(|| {
+        let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
+        cfg.retrieve_box::<T>();
+    })
+    .unwrap_or_else(|_| udf_log!(Error: "deinit function panicked"));
 }
 
 #[inline]
@@ -438,16 +121,19 @@ pub unsafe fn wrap_add<T>(
 ) where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::add(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
+    panic::catch_unwind(|| {
+        let cfg = UdfCfg::from_raw_ptr(initid);
+        let arglist = ArgList::from_raw_ptr(args);
+        let err = *(error as *const Option<NonZeroU8>);
+        let mut b = cfg.retrieve_box();
+        let res = T::add(&mut b, cfg, arglist, err);
+        cfg.store_box(b);
 
-    if let Err(e) = res {
-        *error = e.into();
-    }
+        if let Err(e) = res {
+            *error = e.into();
+        }
+    })
+    .unwrap_or_else(|_| udf_log!(Error: "add function panicked"));
 }
 
 #[inline]
@@ -455,15 +141,18 @@ pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error
 where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::clear(&mut b, cfg, err);
-    cfg.store_box(b);
+    panic::catch_unwind(|| {
+        let cfg = UdfCfg::from_raw_ptr(initid);
+        let err = *(error as *const Option<NonZeroU8>);
+        let mut b = cfg.retrieve_box();
+        let res = T::clear(&mut b, cfg, err);
+        cfg.store_box(b);
 
-    if let Err(e) = res {
-        *error = e.into();
-    }
+        if let Err(e) = res {
+            *error = e.into();
+        }
+    })
+    .unwrap_or_else(|_| udf_log!(Error: "clear function panicked"));
 }
 
 #[inline]
@@ -475,14 +164,17 @@ pub unsafe fn wrap_remove<T>(
 ) where
     T: AggregateUdf,
 {
-    let cfg = UdfCfg::from_raw_ptr(initid);
-    let arglist = ArgList::from_raw_ptr(args);
-    let mut b = cfg.retrieve_box();
-    let err = *(error as *const Option<NonZeroU8>);
-    let res = T::remove(&mut b, cfg, arglist, err);
-    cfg.store_box(b);
+    panic::catch_unwind(|| {
+        let cfg = UdfCfg::from_raw_ptr(initid);
+        let arglist = ArgList::from_raw_ptr(args);
+        let err = *(error as *const Option<NonZeroU8>);
+        let mut b = cfg.retrieve_box();
+        let res = T::remove(&mut b, cfg, arglist, err);
+        cfg.store_box(b);
 
-    if let Err(e) = res {
-        *error = e.into();
-    }
+        if let Err(e) = res {
+            *error = e.into();
+        }
+    })
+    .unwrap_or_else(|_| udf_log!(Error: "remove function panicked"));
 }
