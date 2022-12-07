@@ -12,9 +12,10 @@
 ### Changed
 
 - Improved memory footprint of `SqlArg`
+- (internal) Cleaned up `wrapper` internal structure to some extent
 
 Unfortunately, this version brought some minor breaking changes. Luckily most of
-these have little to no impact.
+these have little to no impact:
 
 - Changed `SqlArg` `value` and `attribute` members to be methods
   instead. Migration: replace `.value` and `.attribute` with `.value()` and
