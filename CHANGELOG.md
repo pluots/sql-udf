@@ -4,6 +4,16 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+### Changed
+
+### Removed
+
+
+
+## [0.4.1] - 2022-12-08
+
 ### Fixed
 
 - Corrected dependency version for `udf-macros`
@@ -139,7 +149,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/pluots/stringmetrics/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/pluots/stringmetrics/compare/v0.3.10...v0.4.0
 [0.3.10]: https://github.com/pluots/stringmetrics/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/pluots/stringmetrics/compare/v0.3.8...v0.3.9
