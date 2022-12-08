@@ -17,7 +17,7 @@
 //! use udf::prelude::*;
 //!
 //! // Our struct that will produce a UDF of name `my_udf`
-//! // If there is no data to store between calls,it can be zero sized
+//! // If there is no data to store between calls, it can be zero sized
 //! struct MyUdf;
 //!
 //! #[register]
