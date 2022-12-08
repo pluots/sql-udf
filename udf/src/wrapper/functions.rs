@@ -92,8 +92,8 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         cfg.store_box(boxed_struct);
     })
     .unwrap_or_else(|_| {
-        write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(b"error: init function panicked", message);
-        udf_log!(Error: "init function panicked for `{}`", type_name::<T>());
+        write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(b"(critical) init function panicked", message);
+        udf_log!(Critical: "init function panicked for `{}`", type_name::<T>());
         ret = true;
     });
 
@@ -143,7 +143,7 @@ pub unsafe fn wrap_add<T>(
             *error = e.into();
         }
     })
-    .unwrap_or_else(|_| udf_log!(Error: "add function panicked for `{}`", type_name::<T>()));
+    .unwrap_or_else(|_| udf_log!(Critical: "add function panicked for `{}`", type_name::<T>()));
 }
 
 #[inline]
@@ -165,7 +165,7 @@ where
             *error = e.into();
         }
     })
-    .unwrap_or_else(|_| udf_log!(Error: "clear function panicked for `{}`", type_name::<T>()));
+    .unwrap_or_else(|_| udf_log!(Critical: "clear function panicked for `{}`", type_name::<T>()));
 }
 
 #[inline]
@@ -192,5 +192,5 @@ pub unsafe fn wrap_remove<T>(
             *error = e.into();
         }
     })
-    .unwrap_or_else(|_| udf_log!(Error: "remove function panicked for `{}`", type_name::<T>()));
+    .unwrap_or_else(|_| udf_log!(Critical: "remove function panicked for `{}`", type_name::<T>()));
 }

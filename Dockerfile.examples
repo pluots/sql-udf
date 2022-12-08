@@ -1,13 +1,15 @@
-# Dockerfile to build the udf-examples crate and load it. Build with:
+# Dockerfile to build the udf-examples crate and load it. Usage:
 #
 # ```
+# # Build the image
 # docker build -f Dockerfile.examples . --tag mdb-example-so
-# ```
 #
-# And run with
+# # Run the container
+# docker run --rm -e MARIADB_ROOT_PASSWORD=example \
+#   --name mdb-example-container mdb-example-so
 #
-# ```
-# docker run --rm -e MARIADB_ROOT_PASSWORD=example mdb-example-so
+# # Enter a SQL console
+# docker exec -it mdb-example-container mysql -pexample
 # ```
 
 FROM rust:latest AS build
