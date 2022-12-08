@@ -23,7 +23,7 @@ that command (the Dockerfile leverages cache only available with buildkit).
 Once built, you can start a container:
 
 ```bash
-docker run --rm -d --name mariadb_udf_test mdb-example-so
+docker run --rm -d -e MARIADB_ROOT_PASSWORD=example --name mariadb_udf_test mdb-example-so
 ```
 
 ## Local OS

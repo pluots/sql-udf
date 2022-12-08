@@ -5,9 +5,13 @@
 use std::cell::UnsafeCell;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+#[cfg(feature = "logging-debug")]
+use std::{any::type_name, mem::size_of};
 
 use udf_sys::UDF_INIT;
 
+#[cfg(feature = "logging-debug")]
+use crate::udf_log;
 use crate::{Init, UdfState};
 
 /// Helpful constants related to the `max_length` parameter
@@ -57,6 +61,14 @@ impl<S: UdfState> UdfCfg<S> {
     /// _must_ be called to free the memory!
     pub(crate) fn store_box<T>(&self, b: Box<T>) {
         let box_ptr = Box::into_raw(b);
+
+        // Note: if T is zero-sized, this will print `0x1` for the address
+        #[cfg(feature = "logging-debug")]
+        udf_log!(
+            Debug: "{box_ptr:p} {} bytes udf->server control transfer ({})",
+            size_of::<T>(),type_name::<T>()
+        );
+
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
         // here
         unsafe { (*self.0.get()).ptr = box_ptr.cast() };
@@ -70,7 +82,15 @@ impl<S: UdfState> UdfCfg<S> {
     /// T _must_ be the type of this struct's pointer, likely created with
     /// [`store_box`]
     pub(crate) unsafe fn retrieve_box<T>(&self) -> Box<T> {
-        Box::from_raw((*self.0.get()).ptr.cast::<T>())
+        let box_ptr = (*self.0.get()).ptr.cast::<T>();
+
+        #[cfg(feature = "logging-debug")]
+        udf_log!(
+            Debug: "{box_ptr:p} {} bytes server->udf control transfer ({})",
+            size_of::<T>(),type_name::<T>()
+        );
+
+        Box::from_raw(box_ptr)
     }
 
     /// Retrieve the setting for whether this UDF may return `null`
@@ -98,7 +118,7 @@ impl<S: UdfState> UdfCfg<S> {
     #[inline]
     pub fn set_decimals(&self, v: u32) {
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
-        unsafe { (*self.0.get()).decimals = v.into() };
+        unsafe { (*self.0.get()).decimals = v.into() }
     }
 
     /// Retrieve the current maximum length setting for this in-progress UDF

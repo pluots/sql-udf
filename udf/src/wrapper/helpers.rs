@@ -2,6 +2,7 @@
 
 // #![allow(dead_code)]
 
+use std::any::type_name;
 use std::cmp::min;
 use std::ffi::{c_char, c_ulong};
 use std::ptr;
@@ -54,10 +55,15 @@ impl BufOptions {
 ///
 /// - If slice fits in buffer: copy to buffer, return pointer to the buffer
 /// - If slice does not fit in the buffer and returning references are
-///   permitted: return pointer to the buffer
-/// - If slice does not fit and returning references is not permitted: copy
-///   truncated data, print error messages
-pub unsafe fn buf_result_callback<T: AsRef<[u8]>>(input: T, opts: &BufOptions) -> *const c_char {
+///   permitted: return pointer to the source slice
+/// - If slice does not fit and returning references is not permitted: print
+///   an error message, return None
+///
+/// The `U` type parameter is just used for output formatting
+pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
+    input: T,
+    opts: &BufOptions,
+) -> Option<*const c_char> {
     let slice_ref = input.as_ref();
     let slice_len = slice_ref.len();
     let slice_ptr: *const c_char = slice_ref.as_ptr().cast();
@@ -67,24 +73,23 @@ pub unsafe fn buf_result_callback<T: AsRef<[u8]>>(input: T, opts: &BufOptions) -
         // If we fit in the buffer, just copy
         ptr::copy(slice_ptr, opts.res_buf, slice_len);
         *opts.length = slice_len as u64;
-        return opts.res_buf;
+        return Some(opts.res_buf);
     }
 
     if !opts.can_return_ref {
         // We can't return a reference but also can't fit in the buffer
-        // So, copy what we can and print an error
-        ptr::copy(slice_ptr, opts.res_buf, buf_len);
-        *opts.length = buf_len as u64;
+        *opts.length = 0;
         udf_log!(
-            Error: "output truncated. Buffer size: {}, data length: {}", buf_len, slice_len
+            Critical: "output overflow, returning NULL. Buffer size: {}, data length: {} at `{}::process`",
+            buf_len, slice_len, type_name::<U>()
         );
-        udf_log!(Error: "contact your UDF vendor as this may be a serious bug");
-        return opts.res_buf;
+        udf_log!(Critical: "contact your UDF vendor as this is a serious bug");
+        return None;
     }
 
     // If we don't fit in the buffer but can return a reference, do so
     *opts.length = slice_len as u64;
-    slice_ptr
+    Some(slice_ptr)
 }
 
 #[cfg(test)]
@@ -271,7 +276,9 @@ mod buffer_tests {
         let mut len = res_buf.len() as u64;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
 
-        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
+        let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
+            .unwrap()
+            .cast();
         let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
 
         assert_eq!(len as usize, input.len());
@@ -292,7 +299,9 @@ mod buffer_tests {
         let mut len = res_buf.len() as u64;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, true);
 
-        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
+        let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
+            .unwrap()
+            .cast();
         let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
 
         assert_eq!(len as usize, input.len());
@@ -303,17 +312,14 @@ mod buffer_tests {
     #[test]
     fn test_buf_no_fit_no_ref() {
         // Test a buffer that does not fit but can not be used as a ref
-        // This should truncate
+        // This must return an error
         let input = b"123456789012345";
         let mut res_buf = [0u8; BUF_LEN];
         let mut len = res_buf.len() as u64;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
 
-        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts) }.cast();
-        let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
-
-        assert_eq!(len as usize, res_buf.len());
-        assert_eq!(res_slice, &input[0..BUF_LEN]);
-        assert_eq!(res_ptr.cast(), res_buf.as_ptr());
+        let res = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) };
+        assert_eq!(len, 0);
+        assert_eq!(res, None);
     }
 }

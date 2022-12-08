@@ -6,10 +6,14 @@
 
 ### Added
 
+- Feature `logging-debug` for potentially helpful output messages
+
 ### Changed
 
-### Removed
-
+- Removed `MARIADB_ROOT_PASSWORD` from dockerfile
+- Updated return buffer overflow action to return `NULL` instead copying some
+  data.
+- Added type names to printed output
 
 
 ## [0.4.1] - 2022-12-08

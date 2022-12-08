@@ -16,7 +16,8 @@ udf-macros = { path = "../udf-macros", version = "0.4.0" }
 udf-sys = { path = "../udf-sys", version = "0.4.0" }
 
 [features]
-mock = []
+mock = []           # enable this feature for the `mock` module
+logging-debug = []  # enable this feature to turn on debug printing
 
 [package.metadata.release]
 shared-version = true

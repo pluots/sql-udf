@@ -3,6 +3,8 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::option_if_let_else)]
 
+#[cfg(feature = "logging-debug")]
+use std::any::type_name;
 use std::ffi::{c_char, c_uchar, c_ulong};
 use std::num::NonZeroU8;
 use std::ptr;
@@ -10,9 +12,13 @@ use std::ptr;
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
 use super::helpers::{buf_result_callback, BufOptions};
+#[cfg(feature = "logging-debug")]
+use crate::udf_log;
 use crate::{ArgList, BasicUdf, ProcessError, UdfCfg};
 
 /// Callback for properly unwrapping and setting values for `Option<T>`
+///
+/// Returns `None` if the value is `Err` or `None`, `Some` otherwise
 #[inline]
 unsafe fn ret_callback_option<R>(
     res: Result<Option<R>, ProcessError>,
@@ -33,6 +39,8 @@ unsafe fn ret_callback_option<R>(
 }
 
 /// Callback for properly unwrapping and setting values for any `T`
+///
+/// Returns `None` if the value is `Err`, `Some` otherwise
 #[inline]
 unsafe fn ret_callback<R>(
     res: Result<R, ProcessError>,
@@ -64,6 +72,9 @@ where
     for<'a> U: BasicUdf<Returns<'a> = R>,
     R: Default,
 {
+    #[cfg(feature = "logging-debug")]
+    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
@@ -87,6 +98,9 @@ where
     for<'a> U: BasicUdf<Returns<'a> = Option<R>>,
     R: Default,
 {
+    #[cfg(feature = "logging-debug")]
+    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
@@ -113,6 +127,9 @@ where
     for<'b> U: BasicUdf,
     for<'a> <U as BasicUdf>::Returns<'a>: AsRef<[u8]>,
 {
+    #[cfg(feature = "logging-debug")]
+    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
     let mut b = cfg.retrieve_box();
@@ -123,7 +140,10 @@ where
     let post_effects_val = ret_callback(proc_res, error, is_null);
 
     let ret = match post_effects_val {
-        Some(ref v) => buf_result_callback(v, &buf_opts),
+        Some(ref v) => buf_result_callback::<U, _>(v, &buf_opts).unwrap_or_else(|| {
+            *error = 1;
+            ptr::null()
+        }),
         None => ptr::null(),
     };
 
@@ -149,6 +169,9 @@ where
     for<'a> U: BasicUdf<Returns<'a> = Option<B>>,
     B: AsRef<[u8]>,
 {
+    #[cfg(feature = "logging-debug")]
+    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
     let err = *(error as *const Option<NonZeroU8>);
@@ -159,7 +182,14 @@ where
     let post_effects_val = ret_callback_option(proc_res, error, is_null);
 
     let ret = match post_effects_val {
-        Some(ref v) => buf_result_callback(v, &buf_opts),
+        Some(ref v) => {
+            if let Some(x) = buf_result_callback::<U, _>(v, &buf_opts) {
+                x
+            } else {
+                *error = 1;
+                ptr::null()
+            }
+        }
         None => ptr::null(),
     };
 

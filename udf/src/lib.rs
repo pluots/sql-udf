@@ -71,6 +71,20 @@
 //! `MariaDB` documentation](https://mariadb.com/kb/en/create-function-udf/) for
 //! more detailed information on how to load the created libraries.
 //!
+//! # Crate Features
+//!
+//! This crate includes some optional features. They can be enabled in your
+//! `Cargo.toml`.
+//!
+//! - `mock`: enable this feature to add the [mock] module for easier unit
+//!   testing. _(note: this feature will become unneeded in the future and
+//!   `mock` will be available by default. It is currently feature-gated because
+//!   it is considered unstable.)_
+//! - `logging-debug`: enable this feature to turn on debug level logging for
+//!   this crate. This uses the `udf_log!` macro and includes information about
+//!   memory management and function calls. These will show up with your SQL
+//!   server logs.
+//!
 //! # Version Note
 //!
 //! Because of reliance on a feature called GATs, this library requires Rust
@@ -119,7 +133,6 @@ pub use traits::*;
 #[doc(inline)]
 pub use types::{MYSQL_ERRMSG_SIZE, *};
 
-// #[cfg(mock)]
 pub mod mock;
 
 /// Print a formatted log message to `stderr` to display in server logs
@@ -154,6 +167,10 @@ pub mod mock;
 /// ```
 #[macro_export]
 macro_rules! udf_log {
+    (Critical: $($msg:tt)*) => {{
+        let formatted = format!("[Critical] UDF: {}", format!($($msg)*));
+        udf_log!(formatted);
+    }};
     (Error: $($msg:tt)*) => {{
         let formatted = format!("[Error] UDF: {}", format!($($msg)*));
         udf_log!(formatted);
