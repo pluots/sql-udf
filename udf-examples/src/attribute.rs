@@ -50,7 +50,7 @@ mod tests {
         let mut mock_cfg = MockUdfCfg::new();
         let mut mock_args = mock_args![];
 
-        assert!(UdfAttribute::init(mock_cfg.build_init(), mock_args.build_init()).is_ok());
+        assert!(UdfAttribute::init(mock_cfg.as_init(), mock_args.as_init()).is_ok());
     }
 
     #[test]
@@ -62,8 +62,8 @@ mod tests {
 
         let res = UdfAttribute::process(
             &mut inited,
-            mock_cfg.build_process(),
-            mock_args.build_process(),
+            mock_cfg.as_process(),
+            mock_args.as_process(),
             None,
         );
 
@@ -84,8 +84,8 @@ mod tests {
 
         let res = UdfAttribute::process(
             &mut inited,
-            mock_cfg.build_process(),
-            mock_args.build_process(),
+            mock_cfg.as_process(),
+            mock_args.as_process(),
             None,
         );
 

@@ -88,7 +88,7 @@ mod tests {
     fn test_init_ok() {
         let mut mock_cfg = MockUdfCfg::new();
         let mut mock_args = mock_args![("localhost", "attr1", true)];
-        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+        let res = Lookup6::init(mock_cfg.as_init(), mock_args.as_init());
 
         assert_eq!(*mock_cfg.max_len(), IPV6_MAX_LEN);
         assert!(res.is_ok());
@@ -98,7 +98,7 @@ mod tests {
     fn test_init_wrong_arg_count() {
         let mut mock_cfg = MockUdfCfg::new();
         let mut mock_args = mock_args![("localhost", "attr1", true), ("localhost", "attr2", true)];
-        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+        let res = Lookup6::init(mock_cfg.as_init(), mock_args.as_init());
 
         assert_eq!(res.unwrap_err(), "Expected 1 argument; got 2");
     }
@@ -107,7 +107,7 @@ mod tests {
     fn test_init_wrong_arg_type() {
         let mut mock_cfg = MockUdfCfg::new();
         let mut mock_args = mock_args![(Int 500, "attr1", true)];
-        let res = Lookup6::init(mock_cfg.build_init(), mock_args.build_init());
+        let res = Lookup6::init(mock_cfg.as_init(), mock_args.as_init());
 
         assert_eq!(res.unwrap_err(), "Expected string argument; got int");
     }
@@ -122,8 +122,8 @@ mod tests {
 
         let res = Lookup6::process(
             &mut inited,
-            mock_cfg.build_process(),
-            mock_args.build_process(),
+            mock_cfg.as_process(),
+            mock_args.as_process(),
             None,
         );
 
