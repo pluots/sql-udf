@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.4.2] - 2022-12-08
+
+### Added
+
 - Feature `logging-debug` for potentially helpful output messages
 
 ### Changed
@@ -153,7 +163,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/pluots/stringmetrics/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/pluots/stringmetrics/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/pluots/stringmetrics/compare/v0.3.10...v0.4.0
 [0.3.10]: https://github.com/pluots/stringmetrics/compare/v0.3.9...v0.3.10
