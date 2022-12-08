@@ -112,7 +112,7 @@ fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::Toke
         .map_or_else(
             || {
                 let emsg = format!(
-                    "expected `Result` to be one of `i64`, `f64`, `&str`, `String`, \
+                    "expected `Returns` to be one of `i64`, `f64`, `&str`, `String`, \
             or their `Option<...>` types, but got {impl_item_type:?}",
                 );
                 Error::new_spanned(impl_item_type, emsg).into_compile_error()
