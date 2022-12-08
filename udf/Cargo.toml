@@ -62,3 +62,14 @@ replace = """\
   [Unreleased]: https://github.com/pluots/stringmetrics/compare/{{tag_name}}...HEAD\
   """
 exactly = 1
+
+[[package.metadata.release.pre-release-replacements]]
+file = "Cargo.toml"
+# Need \d match so we don't accidentally match our pattern here
+search = 'udf-macros = \{ path = "../udf-macros", version = "\d.*" \}'
+replace = 'udf-macros = { path = "../udf-macros", version = "{{version}}" }'
+
+[[package.metadata.release.pre-release-replacements]]
+file = "Cargo.toml"
+search = 'udf-sys = \{ path = "../udf-sys", version = "\d.*" \}'
+replace = 'udf-sys = { path = "../udf-sys", version = "{{version}}" }'
