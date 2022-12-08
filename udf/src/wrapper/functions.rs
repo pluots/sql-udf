@@ -56,9 +56,6 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
-    #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling init for `{}`", type_name::<T>());
-
     // ret holds our return type, we need to tell the compiler it is safe across
     // unwind boundaries
     let mut ret = false;
@@ -68,6 +65,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     // boundary Note to possible code readers: `panic::catch_unwind` should NOT
     // be used anywhere except the FFI boundary
     panic::catch_unwind(move || {
+        #[cfg(feature = "logging-debug")]
+        udf_log!(Debug: "calling init for `{}`", type_name::<T>());
+
         let cfg = UdfCfg::from_raw_ptr(initid);
         let arglist = ArgList::from_raw_ptr(args);
 
@@ -107,12 +107,12 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 /// There is no specific wrapped function here
 #[inline]
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
-    #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling deinit for `{}`", type_name::<T>());
-
-    // SAFETY: we constructed this box so it is formatted correctly
-    // caller ensures validity of initid
     panic::catch_unwind(|| {
+        #[cfg(feature = "logging-debug")]
+        udf_log!(Debug: "calling deinit for `{}`", type_name::<T>());
+
+        // SAFETY: we constructed this box so it is formatted correctly
+        // caller ensures validity of initid
         let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
         cfg.retrieve_box::<T>();
     })
@@ -128,10 +128,10 @@ pub unsafe fn wrap_add<T>(
 ) where
     T: AggregateUdf,
 {
-    #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "add `{}`", type_name::<T>());
-
     panic::catch_unwind(|| {
+        #[cfg(feature = "logging-debug")]
+        udf_log!(Debug: "add `{}`", type_name::<T>());
+
         let cfg = UdfCfg::from_raw_ptr(initid);
         let arglist = ArgList::from_raw_ptr(args);
         let err = *(error as *const Option<NonZeroU8>);
@@ -151,10 +151,10 @@ pub unsafe fn wrap_clear<T>(initid: *mut UDF_INIT, _is_null: *mut c_uchar, error
 where
     T: AggregateUdf,
 {
-    #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling clear for `{}`", type_name::<T>());
-
     panic::catch_unwind(|| {
+        #[cfg(feature = "logging-debug")]
+        udf_log!(Debug: "calling clear for `{}`", type_name::<T>());
+
         let cfg = UdfCfg::from_raw_ptr(initid);
         let err = *(error as *const Option<NonZeroU8>);
         let mut b = cfg.retrieve_box();
@@ -177,10 +177,10 @@ pub unsafe fn wrap_remove<T>(
 ) where
     T: AggregateUdf,
 {
-    #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling remove for `{}`", type_name::<T>());
-
     panic::catch_unwind(|| {
+        #[cfg(feature = "logging-debug")]
+        udf_log!(Debug: "calling remove for `{}`", type_name::<T>());
+
         let cfg = UdfCfg::from_raw_ptr(initid);
         let arglist = ArgList::from_raw_ptr(args);
         let err = *(error as *const Option<NonZeroU8>);
