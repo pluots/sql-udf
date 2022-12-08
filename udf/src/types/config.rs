@@ -220,7 +220,7 @@ mod tests {
         };
 
         let mut m = MockUdfCfg::new();
-        let cfg = m.build_init();
+        let cfg = m.as_init();
         cfg.store_box(Box::new(stored.clone()));
 
         let loaded: X = unsafe { *cfg.retrieve_box() };
@@ -232,9 +232,9 @@ mod tests {
         let mut m = MockUdfCfg::new();
 
         *m.maybe_null() = false;
-        assert!(!m.build_init().get_maybe_null());
+        assert!(!m.as_init().get_maybe_null());
         *m.maybe_null() = true;
-        assert!(m.build_init().get_maybe_null());
+        assert!(m.as_init().get_maybe_null());
     }
 
     #[test]
@@ -242,13 +242,13 @@ mod tests {
         let mut m = MockUdfCfg::new();
 
         *m.decimals() = 1234;
-        assert_eq!(m.build_init().get_decimals(), 1234);
+        assert_eq!(m.as_init().get_decimals(), 1234);
         *m.decimals() = 0;
-        assert_eq!(m.build_init().get_decimals(), 0);
+        assert_eq!(m.as_init().get_decimals(), 0);
         *m.decimals() = 1;
-        assert_eq!(m.build_init().get_decimals(), 1);
+        assert_eq!(m.as_init().get_decimals(), 1);
 
-        m.build_init().set_decimals(4);
+        m.as_init().set_decimals(4);
         assert_eq!(*m.decimals(), 4);
     }
     #[test]
@@ -256,19 +256,19 @@ mod tests {
         let mut m = MockUdfCfg::new();
 
         *m.max_len() = 1234;
-        assert_eq!(m.build_init().get_max_len(), 1234);
+        assert_eq!(m.as_init().get_max_len(), 1234);
         *m.max_len() = 0;
-        assert_eq!(m.build_init().get_max_len(), 0);
+        assert_eq!(m.as_init().get_max_len(), 0);
         *m.max_len() = 1;
-        assert_eq!(m.build_init().get_max_len(), 1);
+        assert_eq!(m.as_init().get_max_len(), 1);
     }
     #[test]
     fn test_const() {
         let mut m = MockUdfCfg::new();
 
         *m.is_const() = false;
-        assert!(!m.build_init().get_is_const());
+        assert!(!m.as_init().get_is_const());
         *m.is_const() = true;
-        assert!(m.build_init().get_is_const());
+        assert!(m.as_init().get_is_const());
     }
 }

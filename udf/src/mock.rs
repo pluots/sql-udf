@@ -74,13 +74,13 @@
 //! // ****** Test section ******
 //!
 //! // Run the init function
-//! let init_cfg = mock_cfg.build_init();
-//! let init_args = mock_arglist.build_init();
+//! let init_cfg = mock_cfg.as_init();
+//! let init_args = mock_arglist.as_init();
 //! let mut udf_struct = ExampleUdf::init(init_cfg, init_args).unwrap();
 //!
 //! // Run the process function
-//! let proc_cfg = mock_cfg.build_process();
-//! let proc_args = mock_arglist.build_process();
+//! let proc_cfg = mock_cfg.as_process();
+//! let proc_args = mock_arglist.as_process();
 //! let res = udf_struct.process(proc_cfg, proc_args, None).unwrap();
 //!
 //! // The goal of our fake UDF was to split the input string ("input value") at the specified
@@ -122,7 +122,7 @@ use crate::UdfState;
 /// *mock_cfg.decimals() = 0;
 ///
 /// // You would really call `MyUdf::init(...)` here, this is just for an example
-/// example_init(mock_cfg.build_init());
+/// example_init(mock_cfg.as_init());
 ///
 /// assert_eq!(*mock_cfg.max_len(), 4);
 /// assert_eq!(*mock_cfg.is_const(), true);
@@ -150,12 +150,12 @@ impl MockUdfCfg {
     }
 
     /// Create a `&UdfCfg<Init>` object to test calling a UDF `init` function
-    pub fn build_init(&mut self) -> &UdfCfg<Init> {
+    pub fn as_init(&mut self) -> &UdfCfg<Init> {
         unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
     }
 
     /// Create a `&UdfCfg<Process>` object to test callingg a UDF `process` function
-    pub fn build_process(&mut self) -> &UdfCfg<Process> {
+    pub fn as_process(&mut self) -> &UdfCfg<Process> {
         unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
     }
 
@@ -440,12 +440,12 @@ impl MockArgList {
     }
 
     /// Create a `&ArgList<Init>` for testing with the `init()` function call
-    pub fn build_init(&mut self) -> &ArgList<Init> {
+    pub fn as_init(&mut self) -> &ArgList<Init> {
         self.build()
     }
 
     /// Create a `&ArgList<Process>` for testing with the `process()` function call
-    pub fn build_process(&mut self) -> &ArgList<Process> {
+    pub fn as_process(&mut self) -> &ArgList<Process> {
         self.build()
     }
 
@@ -491,7 +491,7 @@ impl<const N: usize> From<[MockArg; N]> for MockArgList {
 ///     (Int None, "NULL", false),
 /// ];
 ///
-/// let init_args = arglist.build_init();
+/// let init_args = arglist.as_init();
 /// // Call to your `init` function with `init_args`
 /// ```
 #[macro_export]
