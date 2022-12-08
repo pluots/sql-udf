@@ -4,12 +4,9 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
+### Fixed
 
-### Changed
-
-### Removed
-
+- Corrected dependency version for `udf-macros`
 
 
 ## [0.4.0] - 2022-12-08
@@ -31,9 +28,6 @@ these have little to no impact:
   instead. Migration: replace `.value` and `.attribute` with `.value()` and
   `.attribute()`
 - `get_type_coercion` now returns a `SqlType` instead of `Option<SqlType>`
-
-### Removed
-
 
 
 ## [0.3.10] - 2022-11-13

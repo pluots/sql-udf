@@ -12,8 +12,8 @@ publish = true
 
 [dependencies]
 chrono = "0.4.22"
-udf-macros = { path = "../udf-macros", version = "0.4.0-rc.1" }
-udf-sys = { path = "../udf-sys", version = "0.4.0-rc.1" }
+udf-macros = { path = "../udf-macros", version = "0.4.0" }
+udf-sys = { path = "../udf-sys", version = "0.4.0" }
 
 [features]
 mock = []
