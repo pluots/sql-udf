@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.4.0] - 2022-12-08
+
+### Added
+
 - Mocks: added the `mock` module that provides ways to unit test UDFs. This is
   still a work in progress, and requires the feature `mock`.
 
@@ -135,7 +145,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.3.10...HEAD
+[Unreleased]: https://github.com/pluots/stringmetrics/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/pluots/stringmetrics/compare/v0.3.10...v0.4.0
 [0.3.10]: https://github.com/pluots/stringmetrics/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/pluots/stringmetrics/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/pluots/stringmetrics/compare/v0.3.7...v0.3.8
