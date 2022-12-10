@@ -116,6 +116,10 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+      - name: Enable logging-debug-calls
+        run: |
+          perl -0777 -i -pe 's/(udf =.*features = \[)/\1"logging-debug-calls",\3/g' udf-examples/Cargo.toml
+          cat udf-examples/Cargo.toml
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Build Image
@@ -138,6 +142,8 @@ jobs:
           docker run --rm -d
           -p 12300:3306
           -e MARIADB_ROOT_PASSWORD=example
+          -e RUST_LIB_BACKTRACE=1
+          --name mdb-example-container
           mdb-example-so
       - uses: actions-rs/toolchain@v1
         with:
@@ -150,6 +156,13 @@ jobs:
       - name: Run integration testing
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend
+      - name: Print docker logs
+        run: |
+          docker logs mdb-example-container
+          # If any critical / debug options were printed, error out
+          docker logs mdb-example-container 2>&1 | grep -E '\[(Critical|Error)\]' || exit 0 && exit 1;
+          docker stop mdb-example-container
+
 
   miri:
     name: Miri

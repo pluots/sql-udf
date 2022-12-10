@@ -14,10 +14,12 @@ publish = true
 chrono = "0.4.22"
 udf-macros = { path = "../udf-macros", version = "0.4.5" }
 udf-sys = { path = "../udf-sys", version = "0.4.5" }
+cfg-if = "1.0"
 
 [features]
 mock = []           # enable this feature for the `mock` module
 logging-debug = []  # enable this feature to turn on debug printing
+logging-debug-calls = ["logging-debug"]  # enable this feature to turn on logging calls
 
 [package.metadata.release]
 shared-version = true

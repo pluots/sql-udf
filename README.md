@@ -187,10 +187,12 @@ there.
 ## Logging & Debugging Note
 
 If you need to log things like warnings during normal use of the function,
-anything printed to `stderr` will appear in the server logs (which can be
-viewed with e.g. `docker logs mariadb_udf_test` if testing in Docker). The
-`udf_log!` macro will print a message that matches the formatting of other SQL
-log information.
+anything printed to `stderr` will appear in the server logs (which can be viewed
+with e.g. `docker logs mariadb_udf_test` if testing in Docker). The `udf_log!`
+macro will print a message that matches the formatting of other SQL log
+information. You can also enable the crate features `logging-debug` for function
+entry/exitpoint debugging, or `logging-debug-calls` for information on the exact
+call parameters from the MariaDB/MySQL server.
 
 The best way to debug is to use the `udf::mock` module to create s.all unit
 tests. These can be run to validate correctness, or stepped through with a
