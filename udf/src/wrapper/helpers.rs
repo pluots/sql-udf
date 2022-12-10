@@ -213,7 +213,7 @@ mod tests {
             DVAL.as_ptr(),
         ];
 
-        let mut arg_lens = [0u64, 0, SVAL.len() as u64, DVAL.len() as u64];
+        let mut arg_lens: [c_ulong; 4] = [0, 0, SVAL.len() as c_ulong, DVAL.len() as c_ulong];
         let mut maybe_null = [true, true, false, false];
         let attrs = ["ival", "rval", "sval", "dval"];
         let mut attr_ptrs = [
@@ -273,7 +273,7 @@ mod buffer_tests {
         let input = b"1234";
         let mut res_buf = [0u8; BUF_LEN];
         let zeroes = [0u8; BUF_LEN];
-        let mut len = res_buf.len() as u64;
+        let mut len = res_buf.len() as c_ulong;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
 
         let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
@@ -296,7 +296,7 @@ mod buffer_tests {
         // Test a buffer that does not fit but can be used as a ref
         let input = b"123456789012345";
         let mut res_buf = [0u8; BUF_LEN];
-        let mut len = res_buf.len() as u64;
+        let mut len = res_buf.len() as c_ulong;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, true);
 
         let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
@@ -315,7 +315,7 @@ mod buffer_tests {
         // This must return an error
         let input = b"123456789012345";
         let mut res_buf = [0u8; BUF_LEN];
-        let mut len = res_buf.len() as u64;
+        let mut len = res_buf.len() as c_ulong;
         let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
 
         let res = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) };
