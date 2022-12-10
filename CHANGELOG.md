@@ -4,12 +4,10 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
+### Fixed
 
-### Changed
-
-### Removed
-
+- Corrected issue with the size of `unsigned long` that would cause MSVC to not
+  compile (`c_ulong` is 32 bits on MSVC, 64 bits everywhere else)
 
 
 ## [0.4.2] - 2022-12-08
