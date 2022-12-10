@@ -59,7 +59,7 @@ file = "../CHANGELOG.md"
 search = "<!-- next-url -->"
 replace = """\
   <!-- next-url -->\n\
-  [Unreleased]: https://github.com/pluots/udf/compare/{{tag_name}}...HEAD\
+  [Unreleased]: https://github.com/pluots/sql-udf/compare/{{tag_name}}...HEAD\
   """
 exactly = 1
 

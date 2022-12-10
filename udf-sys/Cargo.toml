@@ -3,7 +3,7 @@ name = "udf-sys"
 version = "0.4.4"
 edition = "2021"
 description = "UDF system bindings"
-repository = "https://github.com/pluots/udf/tree/main/udf_sys"
+repository = "https://github.com/pluots/sql-udf/tree/main/udf_sys"
 license = "Apache-2.0"
 publish = true
 

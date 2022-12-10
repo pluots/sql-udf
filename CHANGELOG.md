@@ -173,19 +173,19 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/udf/compare/v0.4.4...HEAD
-[0.4.3]: https://github.com/pluots/udf/compare/v0.4.2...v0.4.4
-[0.4.2]: https://github.com/pluots/udf/compare/v0.4.1...v0.4.2
-[0.4.1]: https://github.com/pluots/udf/compare/v0.4.0...v0.4.1
-[0.4.0]: https://github.com/pluots/udf/compare/v0.3.10...v0.4.0
-[0.3.10]: https://github.com/pluots/udf/compare/v0.3.9...v0.3.10
-[0.3.9]: https://github.com/pluots/udf/compare/v0.3.8...v0.3.9
-[0.3.8]: https://github.com/pluots/udf/compare/v0.3.7...v0.3.8
-[0.3.7]: https://github.com/pluots/udf/compare/v0.3.6...v0.3.7
-[0.3.6]: https://github.com/pluots/udf/compare/v0.3.5...v0.3.6
-[0.3.5]: https://github.com/pluots/udf/compare/v0.3.4...v0.3.5
-[0.3.4]: https://github.com/pluots/udf/compare/v0.3.3...v0.3.4
-[0.3.3]: https://github.com/pluots/udf/compare/v0.3.2...v0.3.3
-[0.3.2]: https://github.com/pluots/udf/compare/v0.3.1...v0.3.2
-[0.3.1]: https://github.com/pluots/udf/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/pluots/udf/compare/v0.0.1...v0.3.0
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/pluots/sql-udf/compare/v0.4.2...v0.4.4
+[0.4.2]: https://github.com/pluots/sql-udf/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/pluots/sql-udf/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/pluots/sql-udf/compare/v0.3.10...v0.4.0
+[0.3.10]: https://github.com/pluots/sql-udf/compare/v0.3.9...v0.3.10
+[0.3.9]: https://github.com/pluots/sql-udf/compare/v0.3.8...v0.3.9
+[0.3.8]: https://github.com/pluots/sql-udf/compare/v0.3.7...v0.3.8
+[0.3.7]: https://github.com/pluots/sql-udf/compare/v0.3.6...v0.3.7
+[0.3.6]: https://github.com/pluots/sql-udf/compare/v0.3.5...v0.3.6
+[0.3.5]: https://github.com/pluots/sql-udf/compare/v0.3.4...v0.3.5
+[0.3.4]: https://github.com/pluots/sql-udf/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/pluots/sql-udf/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/pluots/sql-udf/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/pluots/sql-udf/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/pluots/sql-udf/compare/v0.0.1...v0.3.0
