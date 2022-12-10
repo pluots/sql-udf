@@ -6,9 +6,7 @@
 
 ### Added
 
-### Changed
-
-### Removed
+* Added option to print full backtraces for buffer issues with `RUST_LIB_BACKTRACE=1`
 
 
 
