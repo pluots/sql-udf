@@ -128,16 +128,20 @@ use crate::UdfState;
 /// assert_eq!(*mock_cfg.is_const(), true);
 /// assert_eq!(*mock_cfg.decimals(), 0);
 /// ```
-
 #[derive(Debug)]
-pub struct MockUdfCfg(UnsafeCell<UDF_INIT>, PhantomPinned);
+pub struct MockUdfCfg {
+    inner: UnsafeCell<UDF_INIT>,
+    // Workaround for MSVC 32 bit ulong
+    maxlen_tmp: u64,
+    _marker: PhantomPinned,
+}
 
 impl MockUdfCfg {
     /// Create a new structure that can be turned into a `UdfCfg` object
     #[inline]
     pub fn new() -> Self {
-        Self(
-            UnsafeCell::new(UDF_INIT {
+        Self {
+            inner: UnsafeCell::new(UDF_INIT {
                 maybe_null: false,
                 decimals: 0,
                 max_length: 0,
@@ -145,36 +149,51 @@ impl MockUdfCfg {
                 const_item: false,
                 extension: ptr::null_mut(),
             }),
-            PhantomPinned,
-        )
+            maxlen_tmp: 0,
+            _marker: PhantomPinned,
+        }
     }
 
     /// Create a `&UdfCfg<Init>` object to test calling a UDF `init` function
+    #[allow(clippy::useless_conversion)]
     pub fn as_init(&mut self) -> &UdfCfg<Init> {
-        unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
+        // flush maxlen workaround
+        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or(c_ulong::MAX);
+        unsafe { (*self.inner.get()).max_length = tmp };
+        unsafe { UdfCfg::from_raw_ptr(self.inner.get()) }
     }
 
     /// Create a `&UdfCfg<Process>` object to test callingg a UDF `process` function
+    #[allow(clippy::useless_conversion)]
     pub fn as_process(&mut self) -> &UdfCfg<Process> {
-        unsafe { UdfCfg::from_raw_ptr(self.0.get()) }
+        // flush maxlen workaround
+        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or(c_ulong::MAX);
+        unsafe { (*self.inner.get()).max_length = tmp };
+        unsafe { UdfCfg::from_raw_ptr(self.inner.get()) }
     }
 
     /// Get or set the `maybe_null` field
     pub fn maybe_null(&mut self) -> &mut bool {
-        unsafe { &mut (*self.0.get()).maybe_null }
+        unsafe { &mut (*self.inner.get()).maybe_null }
     }
 
     /// Get or set the `decimals` field
     pub fn decimals(&mut self) -> &mut u32 {
-        unsafe { &mut (*self.0.get()).decimals }
+        unsafe { &mut (*self.inner.get()).decimals }
     }
+
     /// Get or set the `max_len` field
+    #[allow(clippy::useless_conversion)]
     pub fn max_len(&mut self) -> &mut u64 {
-        unsafe { &mut (*self.0.get()).max_length }
+        // Workaround for MSVC 32 bit ulong
+        self.maxlen_tmp = unsafe { (*self.inner.get()).max_length }.into();
+        &mut self.maxlen_tmp
+        // let tmp = unsafe { &mut (*self.0.get()).max_length };
+        // tmp.into() // Accounting for c_ulong differences
     }
     /// Get or set the `is_const` field
     pub fn is_const(&mut self) -> &mut bool {
-        unsafe { &mut (*self.0.get()).const_item }
+        unsafe { &mut (*self.inner.get()).const_item }
     }
 }
 

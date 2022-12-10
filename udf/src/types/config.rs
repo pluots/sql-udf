@@ -3,6 +3,7 @@
 #![allow(clippy::useless_conversion, clippy::unnecessary_cast)]
 
 use std::cell::UnsafeCell;
+use std::ffi::c_ulong;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 #[cfg(feature = "logging-debug")]
@@ -152,8 +153,10 @@ impl UdfCfg<Init> {
     /// [`MaxLenOptions`] for possible defaults, including `BLOB` sizes.
     #[inline]
     pub fn set_max_len(&self, v: u64) {
+        // Need to try_into because ulong is 64 bits in GNU but 32 bits MSVC
+        let set: c_ulong = v.try_into().unwrap_or(c_ulong::MAX);
         // SAFETY: unsafe when called from different threads, but we are `!Sync`
-        unsafe { (*self.0.get()).max_length = v.into() };
+        unsafe { (*self.0.get()).max_length = set };
     }
 
     /// Set a new `const_item` value
