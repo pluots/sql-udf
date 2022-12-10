@@ -65,11 +65,10 @@ jobs:
         - build: windows-msvc
           os: windows-latest
           target: x86_64-pc-windows-msvc
-          env:
-            MYSQLCLIENT_LIB_DIR: C:\mysql\lib
-
     name: "Test on ${{ matrix.os }} (cargo test)"
     runs-on: ${{ matrix.os }}
+    env:
+      MYSQLCLIENT_LIB_DIR: C:\mysql\lib
     steps:
       - uses: actions/checkout@v2
       - name: List files
