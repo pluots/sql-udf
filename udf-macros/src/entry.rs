@@ -17,7 +17,7 @@ use crate::types::{make_type_list, FnSigType, ImplType, RetType};
 
 /// Create an identifier from another identifier, changing the name to snake case
 macro_rules! format_ident_str {
-    ($formatter: tt, $ident: ident) => {
+    ($formatter:tt, $ident:ident) => {
         Ident::new(
             format!($formatter, AsSnakeCase($ident.to_string())).as_str(),
             Span::call_site(),
