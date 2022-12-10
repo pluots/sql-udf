@@ -68,7 +68,7 @@ jobs:
           env:
             MYSQLCLIENT_LIB_DIR: C:\mysql\lib
 
-    name: "Test on ${{ matrix.name }} (cargo test)"
+    name: "Test on ${{ matrix.os }} (cargo test)"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2

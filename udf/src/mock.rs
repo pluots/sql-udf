@@ -168,9 +168,12 @@ impl MockUdfCfg {
     pub fn decimals(&mut self) -> &mut u32 {
         unsafe { &mut (*self.0.get()).decimals }
     }
+
     /// Get or set the `max_len` field
+    #[allow(clippy::useless_conversion)]
     pub fn max_len(&mut self) -> &mut u64 {
-        unsafe { &mut (*self.0.get()).max_length }
+        let tmp = unsafe { &mut (*self.0.get()).max_length };
+        tmp.into() // Again accounting for c_ulong differences
     }
     /// Get or set the `is_const` field
     pub fn is_const(&mut self) -> &mut bool {

@@ -72,7 +72,7 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
     if slice_len <= buf_len {
         // If we fit in the buffer, just copy
         ptr::copy(slice_ptr, opts.res_buf, slice_len);
-        *opts.length = slice_len as u64;
+        *opts.length = slice_len.try_into().unwrap_or(c_ulong::MAX);
         return Some(opts.res_buf);
     }
 
@@ -88,7 +88,7 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
     }
 
     // If we don't fit in the buffer but can return a reference, do so
-    *opts.length = slice_len as u64;
+    *opts.length = slice_len.try_into().unwrap_or(c_ulong::MAX);
     Some(slice_ptr)
 }
 
