@@ -14,16 +14,6 @@
 
 ## [0.4.4] - 2022-12-10
 
-### Added
-
-### Changed
-
-### Removed
-
-
-
-## [0.4.3] - 2022-12-10
-
 ### Fixed
 
 - Corrected issue with the size of `unsigned long` that would cause MSVC to not
@@ -52,6 +42,8 @@
 
 
 ## [0.4.0] - 2022-12-08
+
+This version is now yanked
 
 ### Added
 
@@ -182,8 +174,7 @@ these have little to no impact:
 
 <!-- next-url -->
 [Unreleased]: https://github.com/pluots/udf/compare/v0.4.4...HEAD
-[0.4.4]: https://github.com/pluots/udf/compare/v0.4.3...v0.4.4
-[0.4.3]: https://github.com/pluots/udf/compare/v0.4.2...v0.4.3
+[0.4.3]: https://github.com/pluots/udf/compare/v0.4.2...v0.4.4
 [0.4.2]: https://github.com/pluots/udf/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/pluots/udf/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/pluots/udf/compare/v0.3.10...v0.4.0
