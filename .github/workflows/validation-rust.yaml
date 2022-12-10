@@ -51,12 +51,22 @@ jobs:
 
   test:
     strategy:
-        fail-fast: true
-        matrix:
-          os: [ubuntu-latest]
-          include:
-            - os: ubuntu-latest
-              name: linux
+      fail-fast: true
+      matrix:
+        include:
+        - build: linux
+          os: ubuntu-latest
+          target: x86_64-unknown-linux-musl
+          extension: ''
+        # - build: macos
+        #   os: macos-latest
+        #   target: x86_64-apple-darwin
+        #   extension: ''
+        - build: windows-msvc
+          os: windows-latest
+          target: x86_64-pc-windows-msvc
+          env:
+            MYSQLCLIENT_LIB_DIR: C:\mysql\lib
 
     name: "Test on ${{ matrix.name }} (cargo test)"
     runs-on: ${{ matrix.os }}
