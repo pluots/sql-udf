@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.4.5] - 2022-12-10
+
+### Added
+
 * Added option to print full backtraces for buffer issues with `RUST_LIB_BACKTRACE=1`
 
 
@@ -171,7 +181,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.4.5...HEAD
+[0.4.5]: https://github.com/pluots/sql-udf/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/pluots/sql-udf/compare/v0.4.2...v0.4.4
 [0.4.2]: https://github.com/pluots/sql-udf/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/pluots/sql-udf/compare/v0.4.0...v0.4.1
