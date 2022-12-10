@@ -3,6 +3,7 @@
 // #![allow(dead_code)]
 
 use std::any::type_name;
+use std::backtrace::Backtrace;
 use std::cmp::min;
 use std::ffi::{c_char, c_ulong};
 use std::ptr;
@@ -87,6 +88,8 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
             buf_len, slice_len, type_name::<U>()
         );
         udf_log!(Critical: "contact your UDF vendor as this is a serious bug");
+        udf_log!(Critical: "run with `RUST_LIB_BACKTRACE=1` for a full backtrace");
+        eprintln!("{:?}", Backtrace::capture());
         return None;
     }
 
