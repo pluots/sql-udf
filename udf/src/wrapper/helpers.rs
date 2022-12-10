@@ -66,13 +66,16 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
 ) -> Option<*const c_char> {
     let slice_ref = input.as_ref();
     let slice_len = slice_ref.len();
+    let slice_len_ulong: c_ulong = slice_len.try_into().unwrap_or_else(|_| {
+        udf_log!(Error: "Buffer size {}, platform limitation of {}. Truncating", slice_len, c_ulong::MAX);
+        c_ulong::MAX});
     let slice_ptr: *const c_char = slice_ref.as_ptr().cast();
     let buf_len = *opts.length as usize;
 
     if slice_len <= buf_len {
         // If we fit in the buffer, just copy
         ptr::copy(slice_ptr, opts.res_buf, slice_len);
-        *opts.length = slice_len.try_into().unwrap_or(c_ulong::MAX);
+        *opts.length = slice_len_ulong;
         return Some(opts.res_buf);
     }
 
@@ -88,7 +91,7 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
     }
 
     // If we don't fit in the buffer but can return a reference, do so
-    *opts.length = slice_len.try_into().unwrap_or(c_ulong::MAX);
+    *opts.length = slice_len_ulong;
     Some(slice_ptr)
 }
 

@@ -155,19 +155,37 @@ impl MockUdfCfg {
     }
 
     /// Create a `&UdfCfg<Init>` object to test calling a UDF `init` function
+    ///
+    /// # Panics
+    ///
+    /// Panics if on Windows and the set `max_len` is greater than `c_ulong::MAX`
     #[allow(clippy::useless_conversion)]
     pub fn as_init(&mut self) -> &UdfCfg<Init> {
-        // flush maxlen workaround
-        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or(c_ulong::MAX);
+        // flush maxlen workaround for windows
+        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or_else(|_| {
+            panic!(
+                "Max length is limited to c_ulong::MAX, got {}",
+                self.maxlen_tmp,
+            )
+        });
         unsafe { (*self.inner.get()).max_length = tmp };
         unsafe { UdfCfg::from_raw_ptr(self.inner.get()) }
     }
 
     /// Create a `&UdfCfg<Process>` object to test callingg a UDF `process` function
+    ///
+    /// # Panics
+    ///
+    /// Panics if on Windows and the set `max_len` is greater than `c_ulong::MAX`
     #[allow(clippy::useless_conversion)]
     pub fn as_process(&mut self) -> &UdfCfg<Process> {
-        // flush maxlen workaround
-        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or(c_ulong::MAX);
+        // flush maxlen workaround for windows
+        let tmp: c_ulong = self.maxlen_tmp.try_into().unwrap_or_else(|_| {
+            panic!(
+                "Max length is limited to `c_ulong::MAX`, got {}",
+                self.maxlen_tmp,
+            )
+        });
         unsafe { (*self.inner.get()).max_length = tmp };
         unsafe { UdfCfg::from_raw_ptr(self.inner.get()) }
     }
