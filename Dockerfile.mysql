@@ -1,0 +1,29 @@
+# Dockerfile to build the udf-examples crate and load it with MySQL. Usage:
+#
+# ```
+# # Build the image
+# docker build -f Dockerfile.examples . --tag mysql-example-so
+#
+# # Run the container
+# docker run --rm -e MYSQL_ROOT_PASSWORD=example \
+#   --name mysql-example-container mysql-example-so
+#
+# # Enter a SQL console
+# docker exec -it mysql-example-container mysql -pexample
+# ```
+
+FROM rust:latest AS build
+
+WORKDIR /build
+
+COPY . .
+# RUN cargo fetch
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/build/target \
+    cargo build --release -p udf-examples \
+    && mkdir /output \
+    && cp target/release/libudf_examples.so /output
+
+FROM mysql:8.0-debian
+
+COPY --from=build /output/* /usr/lib/mysql/plugin/
