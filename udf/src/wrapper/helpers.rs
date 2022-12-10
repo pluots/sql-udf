@@ -89,7 +89,7 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
         );
         udf_log!(Critical: "contact your UDF vendor as this is a serious bug");
         udf_log!(Critical: "run with `RUST_LIB_BACKTRACE=1` for a full backtrace");
-        eprintln!("{:?}", Backtrace::capture());
+        eprintln!("{:#?}", Backtrace::capture());
         return None;
     }
 
