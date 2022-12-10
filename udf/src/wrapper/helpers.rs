@@ -222,11 +222,11 @@ mod tests {
             attrs[2].as_ptr(),
             attrs[3].as_ptr(),
         ];
-        let mut attr_lens = [
-            attrs[0].len(),
-            attrs[1].len(),
-            attrs[2].len(),
-            attrs[3].len(),
+        let mut attr_lens: [c_ulong; 4] = [
+            attrs[0].len() as c_ulong,
+            attrs[1].len() as c_ulong,
+            attrs[2].len() as c_ulong,
+            attrs[3].len() as c_ulong,
         ];
 
         let mut udf_args = UDF_ARGS {
