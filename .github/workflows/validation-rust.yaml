@@ -130,6 +130,7 @@ jobs:
           file: Dockerfile.examples
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
+          context: .
       - # Temp fix
         # https://github.com/docker/build-push-action/issues/252
         # https://github.com/moby/buildkit/issues/1896
@@ -157,6 +158,7 @@ jobs:
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend
       - name: Print docker logs
+        if: always()
         run: |
           docker logs mdb-example-container
           # If any critical / debug options were printed, error out
