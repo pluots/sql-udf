@@ -60,6 +60,7 @@ unsafe fn ret_callback<R>(
 /// Apply the `process` function for any implementation returning a nonbuffer type
 /// (`f64`, `i64`)
 #[inline]
+#[allow(clippy::let_and_return)]
 pub unsafe fn wrap_process_basic<U, R>(
     initid: *mut UDF_INIT,
     args: *mut UDF_ARGS,
@@ -91,6 +92,7 @@ where
 /// Apply the `process` function for any implementation returning an optional
 /// nonbuffer type (`Option<f64>`, `Option<i64>`)
 #[inline]
+#[allow(clippy::let_and_return)]
 pub unsafe fn wrap_process_basic_option<U, R>(
     initid: *mut UDF_INIT,
     args: *mut UDF_ARGS,
@@ -136,7 +138,7 @@ where
     for<'a> <U as BasicUdf>::Returns<'a>: AsRef<[u8]>,
 {
     #[cfg(feature = "logging-debug")]
-    debug::pre_process_call::<U>(initid, args, is_null, error);
+    debug::pre_process_call_buf::<U>(initid, args, result, length, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -159,7 +161,7 @@ where
     cfg.store_box(b);
 
     #[cfg(feature = "logging-debug")]
-    debug::post_process_call::<U>(initid, args, is_null, error);
+    debug::post_process_call_buf::<U>(initid, args, result, length, is_null, error, ret);
 
     ret
 }
@@ -181,7 +183,7 @@ where
     B: AsRef<[u8]>,
 {
     #[cfg(feature = "logging-debug")]
-    debug::pre_process_call::<U>(initid, args, is_null, error);
+    debug::pre_process_call_buf::<U>(initid, args, result, length, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -208,7 +210,7 @@ where
     cfg.store_box(b);
 
     #[cfg(feature = "logging-debug")]
-    debug::post_process_call::<U>(initid, args, is_null, error);
+    debug::post_process_call_buf::<U>(initid, args, result, length, is_null, error, ret);
 
     ret
 }
