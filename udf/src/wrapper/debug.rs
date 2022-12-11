@@ -26,7 +26,6 @@ pub unsafe fn pre_init_call<T>(
     }
 }
 
-#[cfg(feature = "logging-debug")]
 pub unsafe fn post_init_call<T>(
     initid: *const UDF_INIT,
     _args: *const UDF_ARGS,
@@ -47,7 +46,6 @@ pub unsafe fn post_init_call<T>(
     }
 }
 
-#[cfg(feature = "logging-debug")]
 pub unsafe fn pre_deinit_call<T>(initid: *const UDF_INIT) {
     udf_log!(Debug: "entering deinit for `{}`", type_name::<T>());
 
@@ -107,7 +105,6 @@ pub unsafe fn pre_remove_call<T>(
     }
 }
 
-#[allow(dead_code)]
 pub unsafe fn pre_process_call<T>(
     initid: *const UDF_INIT,
     args: *const UDF_ARGS,
@@ -127,7 +124,6 @@ pub unsafe fn pre_process_call<T>(
     }
 }
 
-#[allow(dead_code)]
 pub unsafe fn post_process_call<T>(
     initid: *const UDF_INIT,
     args: *const UDF_ARGS,
