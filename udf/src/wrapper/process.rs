@@ -3,17 +3,15 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::option_if_let_else)]
 
-#[cfg(feature = "logging-debug")]
-use std::any::type_name;
 use std::ffi::{c_char, c_uchar, c_ulong};
 use std::num::NonZeroU8;
 use std::ptr;
 
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
-use super::helpers::{buf_result_callback, BufOptions};
 #[cfg(feature = "logging-debug")]
-use crate::udf_log;
+use super::debug;
+use super::helpers::{buf_result_callback, BufOptions};
 use crate::{ArgList, BasicUdf, ProcessError, UdfCfg};
 
 /// Callback for properly unwrapping and setting values for `Option<T>`
@@ -73,7 +71,7 @@ where
     R: Default,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+    debug::pre_process_call::<U>(initid, args, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -82,7 +80,12 @@ where
     let proc_res = U::process(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    ret_callback(proc_res, error, is_null).unwrap_or_default()
+    let ret = ret_callback(proc_res, error, is_null).unwrap_or_default();
+
+    #[cfg(feature = "logging-debug")]
+    debug::post_process_call::<U>(initid, args, is_null, error);
+
+    ret
 }
 
 /// Apply the `process` function for any implementation returning an optional
@@ -99,7 +102,7 @@ where
     R: Default,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+    debug::pre_process_call::<U>(initid, args, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -108,7 +111,12 @@ where
     let proc_res = U::process(&mut b, cfg, arglist, err);
     cfg.store_box(b);
 
-    ret_callback_option(proc_res, error, is_null).unwrap_or_default()
+    let ret = ret_callback_option(proc_res, error, is_null).unwrap_or_default();
+
+    #[cfg(feature = "logging-debug")]
+    debug::post_process_call::<U>(initid, args, is_null, error);
+
+    ret
 }
 
 /// Apply the `process` function for any implementation returning a buffer type
@@ -128,7 +136,7 @@ where
     for<'a> <U as BasicUdf>::Returns<'a>: AsRef<[u8]>,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+    debug::pre_process_call::<U>(initid, args, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -150,6 +158,9 @@ where
     std::mem::forget(post_effects_val);
     cfg.store_box(b);
 
+    #[cfg(feature = "logging-debug")]
+    debug::post_process_call::<U>(initid, args, is_null, error);
+
     ret
 }
 
@@ -170,7 +181,7 @@ where
     B: AsRef<[u8]>,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling process for `{}`", type_name::<U>());
+    debug::pre_process_call::<U>(initid, args, is_null, error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -195,6 +206,9 @@ where
 
     std::mem::forget(post_effects_val);
     cfg.store_box(b);
+
+    #[cfg(feature = "logging-debug")]
+    debug::post_process_call::<U>(initid, args, is_null, error);
 
     ret
 }

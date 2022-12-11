@@ -6,17 +6,14 @@
 
 ### Added
 
-### Changed
-
-### Removed
-
+* Added feature `logging-debug-calls` for full debug printing of call parameters
 
 
 ## [0.4.5] - 2022-12-10
 
 ### Added
 
-* Added option to print full backtraces for buffer issues with `RUST_LIB_BACKTRACE=1`
+- Added option to print full backtraces for buffer issues with `RUST_LIB_BACKTRACE=1`
 
 
 

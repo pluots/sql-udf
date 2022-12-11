@@ -3,6 +3,8 @@
 //! Warning: This module should be considered unstable and generally not for
 //! public use
 
+#[cfg(feature = "logging-debug")]
+mod debug;
 mod functions;
 mod helpers;
 mod process;

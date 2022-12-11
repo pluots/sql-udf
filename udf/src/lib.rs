@@ -84,6 +84,8 @@
 //!   this crate. This uses the `udf_log!` macro and includes information about
 //!   memory management and function calls. These will show up with your SQL
 //!   server logs.
+//! - `logging-debug-calls` full debugging printing of the structs passed
+//!   between this library and the SQL server. Implies `logging-debug`.
 //!
 //! # Version Note
 //!

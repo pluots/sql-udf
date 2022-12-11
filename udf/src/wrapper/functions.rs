@@ -10,6 +10,8 @@ use std::panic::{self, AssertUnwindSafe};
 
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
+#[cfg(feature = "logging-debug")]
+use crate::wrapper::debug;
 use crate::wrapper::write_msg_to_buf;
 use crate::{udf_log, AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE};
 
@@ -57,7 +59,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
     message: *mut c_char,
 ) -> bool {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling init for `{}`", type_name::<T>());
+    debug::pre_init_call::<T>(initid, args, message);
 
     // ret holds our return type, we need to tell the compiler it is safe across
     // unwind boundaries
@@ -97,6 +99,9 @@ pub unsafe fn wrap_init<T: BasicUdf>(
         ret = true;
     });
 
+    #[cfg(feature = "logging-debug")]
+    debug::post_init_call::<T>(initid, args, message, ret);
+
     ret
 }
 
@@ -108,7 +113,7 @@ pub unsafe fn wrap_init<T: BasicUdf>(
 #[inline]
 pub unsafe fn wrap_deinit<T: BasicUdf>(initid: *const UDF_INIT) {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling deinit for `{}`", type_name::<T>());
+    debug::pre_deinit_call::<T>(initid);
 
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
@@ -129,7 +134,7 @@ pub unsafe fn wrap_add<T>(
     T: AggregateUdf,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "add `{}`", type_name::<T>());
+    debug::pre_add_call::<T>(initid, args, error);
 
     panic::catch_unwind(|| {
         let cfg = UdfCfg::from_raw_ptr(initid);
@@ -152,7 +157,7 @@ where
     T: AggregateUdf,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling clear for `{}`", type_name::<T>());
+    debug::pre_clear_call::<T>(initid, error);
 
     panic::catch_unwind(|| {
         let cfg = UdfCfg::from_raw_ptr(initid);
@@ -178,7 +183,7 @@ pub unsafe fn wrap_remove<T>(
     T: AggregateUdf,
 {
     #[cfg(feature = "logging-debug")]
-    udf_log!(Debug: "calling remove for `{}`", type_name::<T>());
+    debug::pre_remove_call::<T>(initid, args, error);
 
     panic::catch_unwind(|| {
         let cfg = UdfCfg::from_raw_ptr(initid);

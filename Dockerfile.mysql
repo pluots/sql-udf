@@ -2,7 +2,7 @@
 #
 # ```
 # # Build the image
-# docker build -f Dockerfile.examples . --tag mysql-example-so
+# docker build -f Dockerfile.mysql . --tag mysql-example-so
 #
 # # Run the container
 # docker run --rm -e MYSQL_ROOT_PASSWORD=example \
