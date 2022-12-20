@@ -13,7 +13,7 @@ use syn::{
 };
 
 use crate::match_variant;
-use crate::types::{make_type_list, FnSigType, ImplType, RetType};
+use crate::types::{make_type_list, ImplType, RetType, TypeClass};
 
 /// Create an identifier from another identifier, changing the name to snake case
 macro_rules! format_ident_str {
@@ -80,10 +80,12 @@ pub fn register(_args: &TokenStream, input: TokenStream) -> TokenStream {
         }
     };
 
+    let wrapper_ident = Ident::new(&format!("_{impl_for_name}Wrapper"), Span::call_site());
+
     let content = if impls_basic {
-        make_basic_fns(&parsed, &impl_for_name)
+        make_basic_fns(&parsed, &impl_for_name, &wrapper_ident)
     } else {
-        make_agg_fns(&parsed, &impl_for_name)
+        make_agg_fns(&parsed, &impl_for_name, &wrapper_ident)
     };
 
     quote! {
@@ -95,7 +97,11 @@ pub fn register(_args: &TokenStream, input: TokenStream) -> TokenStream {
 }
 
 /// Create the basic function signatures (`xxx_init`, `xxx_deinit`, `xxx`)
-fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::TokenStream {
+fn make_basic_fns(
+    parsed: &ItemImpl,
+    impl_for_name: &Ident,
+    wrapper_ident: &Ident,
+) -> proc_macro2::TokenStream {
     // Get the return type from the macro
     // There is only one type for this trait, which is "Returns"
     let impl_item_type = &parsed
@@ -111,20 +117,26 @@ fn make_basic_fns(parsed: &ItemImpl, impl_for_name: &Ident) -> proc_macro2::Toke
         .find(|x| x.type_ == *impl_item_type)
         .map_or_else(
             || {
-                let emsg = format!(
-                    "expected `Returns` to be one of `i64`, `f64`, `&str`, `String`, \
-            or their `Option<...>` types, but got {impl_item_type:?}",
-                );
-                Error::new_spanned(impl_item_type, emsg).into_compile_error()
+                Error::new_spanned(
+                    impl_item_type,
+                    format!(
+                        "expected `Returns` to be one of `i64`, `f64`, `&str`, `String`, or their `Option<...>` types, but got {impl_item_type:?}",
+                    ),
+                )
+                .into_compile_error()
             },
-            |t| make_basic_fns_content(t, impl_for_name),
+            |t| make_basic_fns_content(t, impl_for_name,wrapper_ident),
         );
 
     content
 }
 
 /// Create the aggregate function signatures (`xxx_add`, `xxx_clear`, `xxx_remove`)
-fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenStream {
+fn make_agg_fns(
+    parsed: &ItemImpl,
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+) -> proc_macro2::TokenStream {
     let clear_fn_name = format_ident_str!("{}_clear", dstruct_ident);
     let add_fn_name = format_ident_str!("{}_add", dstruct_ident);
     let remove_fn_name = format_ident_str!("{}_remove", dstruct_ident);
@@ -137,16 +149,16 @@ fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenS
         .map(|m| &m.sig.ident)
         .any(|id| *id == "remove");
 
-    let clear_fn = make_clear_fn(dstruct_ident, &clear_fn_name);
-    let add_fn = make_add_fn(dstruct_ident, &add_fn_name);
-    let remove_fn_impl = make_remove_fn(dstruct_ident, &remove_fn_name);
+    let clear_fn = make_clear_fn(dstruct_ident, wrapper_ident, &clear_fn_name);
+    let add_fn = make_add_fn(dstruct_ident, wrapper_ident, &add_fn_name);
+    let remove_fn_impl = make_remove_fn(dstruct_ident, wrapper_ident, &remove_fn_name);
 
     // If we implement remove, add a remove function. Otherwise, we don't need
     // anything.
     let remove_fn = if *impls_remove {
         remove_fn_impl
     } else {
-        quote! {}
+        proc_macro2::TokenStream::default()
     };
 
     quote! {
@@ -158,36 +170,54 @@ fn make_agg_fns(parsed: &ItemImpl, dstruct_ident: &Ident) -> proc_macro2::TokenS
     }
 }
 
-fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::TokenStream {
+fn make_basic_fns_content(
+    rt: &RetType,
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+) -> proc_macro2::TokenStream {
     let init_fn_name = format_ident_str!("{}_init", dstruct_ident);
     let deinit_fn_name = format_ident_str!("{}_deinit", dstruct_ident);
     let process_fn_name = format_ident_str!("{}", dstruct_ident);
 
-    let init_fn = make_init_fn(dstruct_ident, &init_fn_name);
-    let deinit_fn = make_deinit_fn(dstruct_ident, &deinit_fn_name);
-    let process_fn = match rt.fn_sig {
-        FnSigType::BytesRef => {
-            make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional, true)
-        }
-        FnSigType::Bytes => {
-            make_proc_buf_fn(dstruct_ident, &process_fn_name, rt.is_optional, false)
-        }
-        FnSigType::Int => make_proc_fn(
+    let init_fn = make_init_fn(dstruct_ident, wrapper_ident, &init_fn_name);
+    let deinit_fn = make_deinit_fn(dstruct_ident, wrapper_ident, &deinit_fn_name);
+    let process_fn = match rt.type_cls {
+        TypeClass::BytesRef | TypeClass::Bytes => make_proc_buf_fn(
             dstruct_ident,
+            wrapper_ident,
+            &process_fn_name,
+            rt.is_optional,
+            true,
+        ),
+        TypeClass::Int => make_proc_fn(
+            dstruct_ident,
+            wrapper_ident,
             &process_fn_name,
             &quote!(::std::ffi::c_longlong),
             rt.is_optional,
         ),
-        FnSigType::Float => make_proc_fn(
+        TypeClass::Float => make_proc_fn(
             dstruct_ident,
+            wrapper_ident,
             &process_fn_name,
             &quote!(::std::ffi::c_double),
             rt.is_optional,
         ),
     };
+
+    let ret_type = &rt.type_;
+    let wrapper_struct = if rt.type_cls == TypeClass::Bytes {
+        quote! {
+            type #wrapper_ident = udf::wrapper::BufConverter<#dstruct_ident, #ret_type>;
+        }
+    } else {
+        quote! { type #wrapper_ident = #dstruct_ident; }
+    };
     // let process_fn = make_str_proc_fn(&dstruct_ident, deinit_fn_name, rt.is_optional);
 
     quote! {
+        #wrapper_struct
+
         #init_fn
 
         #deinit_fn
@@ -197,7 +227,11 @@ fn make_basic_fns_content(rt: &RetType, dstruct_ident: &Ident) -> proc_macro2::T
 }
 
 /// Given the name of a type or struct, create a function that will be evaluated (`xxx`)
-fn make_init_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+fn make_init_fn(
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+    fn_name: &Ident,
+) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
@@ -208,13 +242,17 @@ fn make_init_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStr
             message: *mut std::ffi::c_char,
         ) -> bool
         {
-            udf::wrapper::wrap_init::<#dstruct_ident>(initid, args, message)
+            udf::wrapper::wrap_init::<#wrapper_ident, #dstruct_ident>(initid, args, message)
         }
     }
 }
 
 /// Make the `xxx_deinit` function signature
-fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+fn make_deinit_fn(
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+    fn_name: &Ident,
+) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
@@ -222,21 +260,22 @@ fn make_deinit_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
         pub unsafe extern "C" fn #fn_name (
             initid: *mut udf::udf_sys::UDF_INIT,
         ) {
-            udf::wrapper::wrap_deinit::<#dstruct_ident>(initid)
+            udf::wrapper::wrap_deinit::<#wrapper_ident, #dstruct_ident>(initid)
         }
     }
 }
 
 fn make_proc_fn(
     dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
     fn_name: &Ident,
     ret_type: &proc_macro2::TokenStream,
     is_optional: bool,
 ) -> proc_macro2::TokenStream {
     let wrap_fn_name = if is_optional {
-        quote!(udf::wrapper::wrap_process_basic_option::<#dstruct_ident, _>)
+        quote!(udf::wrapper::wrap_process_basic_option::<#wrapper_ident, #dstruct_ident, _>)
     } else {
-        quote!(udf::wrapper::wrap_process_basic::<#dstruct_ident, _>)
+        quote!(udf::wrapper::wrap_process_basic::<#wrapper_ident, #dstruct_ident, _>)
     };
 
     // SAFETY: we just minimally wrap the functions here, safety is handled
@@ -256,14 +295,15 @@ fn make_proc_fn(
 
 fn make_proc_buf_fn(
     dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
     fn_name: &Ident,
     is_optional: bool,
     can_return_ref: bool,
 ) -> proc_macro2::TokenStream {
     let wrap_fn_name = if is_optional {
-        quote!(udf::wrapper::wrap_process_buf_option::<#dstruct_ident, _>)
+        quote!(udf::wrapper::wrap_process_buf_option::<#wrapper_ident, #dstruct_ident, _>)
     } else {
-        quote!(udf::wrapper::wrap_process_buf::<#dstruct_ident>)
+        quote!(udf::wrapper::wrap_process_buf::<#wrapper_ident, #dstruct_ident>)
     };
 
     quote! {
@@ -290,7 +330,11 @@ fn make_proc_buf_fn(
 }
 
 /// Create the function signature for aggregate `xxx_add`
-fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+fn make_add_fn(
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+    fn_name: &Ident,
+) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
@@ -301,13 +345,17 @@ fn make_add_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStre
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            udf::wrapper::wrap_add::<#dstruct_ident>(initid, args, is_null, error)
+            udf::wrapper::wrap_add::<#wrapper_ident, #dstruct_ident>(initid, args, is_null, error)
         }
     }
 }
 
 /// Create the function signature for aggregate `xxx_clear`
-fn make_clear_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+fn make_clear_fn(
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+    fn_name: &Ident,
+) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
@@ -317,13 +365,17 @@ fn make_clear_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenSt
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            udf::wrapper::wrap_clear::<#dstruct_ident>(initid, is_null, error)
+            udf::wrapper::wrap_clear::<#wrapper_ident, #dstruct_ident>(initid, is_null, error)
         }
     }
 }
 
 /// Create the function signature for aggregate `xxx_remove`
-fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenStream {
+fn make_remove_fn(
+    dstruct_ident: &Ident,
+    wrapper_ident: &Ident,
+    fn_name: &Ident,
+) -> proc_macro2::TokenStream {
     // SAFETY: we just minimally wrap the functions here, safety is handled
     // between our caller and callee
     quote! {
@@ -334,7 +386,8 @@ fn make_remove_fn(dstruct_ident: &Ident, fn_name: &Ident) -> proc_macro2::TokenS
             is_null: *mut ::std::ffi::c_uchar,
             error: *mut ::std::ffi::c_uchar,
         ) {
-            udf::wrapper::wrap_remove::<#dstruct_ident>(initid, args, is_null, error)
+            udf::wrapper::wrap_remove::<#wrapper_ident, #dstruct_ident>
+                (initid, args, is_null, error)
         }
     }
 }

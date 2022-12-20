@@ -9,7 +9,7 @@ pub enum ImplType {
 
 /// Possible return types in SQL
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FnSigType {
+pub enum TypeClass {
     Int,
     Float,
     /// Bytes that can be properly returned
@@ -23,15 +23,15 @@ pub enum FnSigType {
 pub struct RetType {
     pub type_: Type,
     pub is_optional: bool,
-    pub fn_sig: FnSigType,
+    pub type_cls: TypeClass,
 }
 
 impl RetType {
-    fn new(type_: Type, is_optional: bool, fn_sig: FnSigType) -> Self {
+    fn new(type_: Type, is_optional: bool, fn_sig: TypeClass) -> Self {
         Self {
             type_,
             is_optional,
-            fn_sig,
+            type_cls: fn_sig,
         }
     }
 }
@@ -44,36 +44,36 @@ impl RetType {
 pub fn make_type_list() -> Vec<RetType> {
     vec![
         // Only valid integer types
-        RetType::new(parse_quote! { i64 }, false, FnSigType::Int),
-        RetType::new(parse_quote! { Option<i64> }, true, FnSigType::Int),
+        RetType::new(parse_quote! { i64 }, false, TypeClass::Int),
+        RetType::new(parse_quote! { Option<i64> }, true, TypeClass::Int),
         // Only valid float types
-        RetType::new(parse_quote! { f64 }, false, FnSigType::Float),
-        RetType::new(parse_quote! { Option<f64> }, true, FnSigType::Float),
+        RetType::new(parse_quote! { f64 }, false, TypeClass::Float),
+        RetType::new(parse_quote! { Option<f64> }, true, TypeClass::Float),
         // Tons of possible byte slice references. These will get copied if they
         // fit, otherwise the reference returned
-        RetType::new(parse_quote! { &'a [u8] }, false, FnSigType::BytesRef),
-        RetType::new(parse_quote! { Option<&'a [u8]> }, true, FnSigType::BytesRef),
-        RetType::new(parse_quote! { &str }, false, FnSigType::BytesRef),
-        RetType::new(parse_quote! { Option<&str> }, true, FnSigType::BytesRef),
-        RetType::new(parse_quote! { &'a str }, false, FnSigType::BytesRef),
-        RetType::new(parse_quote! { Option<&'a str> }, true, FnSigType::BytesRef),
-        RetType::new(parse_quote! { &'static str }, false, FnSigType::BytesRef),
+        RetType::new(parse_quote! { &'a [u8] }, false, TypeClass::BytesRef),
+        RetType::new(parse_quote! { Option<&'a [u8]> }, true, TypeClass::BytesRef),
+        RetType::new(parse_quote! { &str }, false, TypeClass::BytesRef),
+        RetType::new(parse_quote! { Option<&str> }, true, TypeClass::BytesRef),
+        RetType::new(parse_quote! { &'a str }, false, TypeClass::BytesRef),
+        RetType::new(parse_quote! { Option<&'a str> }, true, TypeClass::BytesRef),
+        RetType::new(parse_quote! { &'static str }, false, TypeClass::BytesRef),
         RetType::new(
             parse_quote! { Option<&'static str> },
             true,
-            FnSigType::BytesRef,
+            TypeClass::BytesRef,
         ),
-        RetType::new(parse_quote! { &'a String }, false, FnSigType::BytesRef),
+        RetType::new(parse_quote! { &'a String }, false, TypeClass::BytesRef),
         RetType::new(
             parse_quote! { Option<&'a String> },
             true,
-            FnSigType::BytesRef,
+            TypeClass::BytesRef,
         ),
         // Bytes types that aren't in a reference. These will get copied if they fit,
         // truncated with a stderr message if not
-        RetType::new(parse_quote! { Vec<u8> }, false, FnSigType::Bytes),
-        RetType::new(parse_quote! { Option<Vec<u8>>}, true, FnSigType::Bytes),
-        RetType::new(parse_quote! { String }, false, FnSigType::Bytes),
-        RetType::new(parse_quote! { Option<String>}, true, FnSigType::Bytes),
+        RetType::new(parse_quote! { Vec<u8> }, false, TypeClass::Bytes),
+        RetType::new(parse_quote! { Option<Vec<u8>>}, true, TypeClass::Bytes),
+        RetType::new(parse_quote! { String }, false, TypeClass::Bytes),
+        RetType::new(parse_quote! { Option<String>}, true, TypeClass::Bytes),
     ]
 }
