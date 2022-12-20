@@ -43,6 +43,9 @@ A quick overview of the workflow process is:
 - Load the struct into MariaDB/MySql using `CREATE FUNCTION ...`
 - Use the function in SQL
 
+For an example of some UDFs written using this library, see
+<https://github.com/pluots/udf-suite>.
+
 ## Detailed overview
 
 This section goes into the details of implementing a UDF with this library, but
