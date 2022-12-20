@@ -6,7 +6,12 @@
 
 ### Added
 
-* Added feature `logging-debug-calls` for full debug printing of call parameters
+- Added feature `logging-debug-calls` for full debug printing of call parameters
+
+### Changed
+
+- Reworked behind the scenes for returning owned results (e.g. `String`) of any
+  length, which nicely simplifies the API.
 
 
 ## [0.4.5] - 2022-12-10

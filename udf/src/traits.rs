@@ -39,24 +39,22 @@ pub trait BasicUdf: Sized {
     ///   potentially nullable
     /// - There is no meaningful difference between `String`, `Vec<u8>`, `str`,
     ///   and `[u8]` - return whichever is most convenient (following the below
-    ///   rules), since they always just get copied to a buffer. Any of these
-    ///   types are acceptable for returning `string` or `decimal` types.
+    ///   rules). Any of these types are acceptable for returning `string` or
+    ///   `decimal` types.
     /// - Out of these buffer options, prefer returning `&'static str` or
     ///   `&'static [u8]` where possible. These are usable when only returning
     ///   const/static values.
-    /// - "Owned allocated" types (`String`, `Vec<u8>`) may _only_ be returned
-    ///   if their length is known to be <= 255. If this is exceeded, the result
-    ///   will be truncated.
-    /// - The last resort (but most powerful) options are `&'a str` and `&'a
-    ///   [u8]`, for any-length return types. To use these, your function's
-    ///   struct must have a `String` or `Vec<u8>` field. Just return a
-    ///   reference to your struct's field (GATs allow this to work)
+    /// - "Owned allocated" types (`String`, `Vec<u8>`) are the next preference
+    ///   for buffer types, and can be used whenever
+    /// - If you have an owned type that updates itself, you can store the
+    ///   relevant `String` or `Vec<u8>` in your struct and return a `&'a str`
+    ///   or `&'a [u8]` that references them. This is useful for something like
+    ///   a `concat` function that updates its result string with each call
+    ///   (GATs allow this to work).
     ///
-    /// This all sounds somewhat complex, which is just due to the limitations
-    /// of the underlying C SQL API. Choosing a type may seem tricky at first
-    /// but rest assured, whatever successfully compiles will work.
-    ///
-    /// The flow chart below helps clarify some of the decisions making:
+    /// Choosing a type may seem tricky at first but anything that successfully
+    /// compiles will likely work. The flow chart below helps clarify some of
+    /// the decisions making:
     ///
     /// ```text
     ///     Desired                Use Option<T> if the result may be null
@@ -71,22 +69,20 @@ pub trait BasicUdf: Sized {
     ///                   ╭───────────╮
     /// ╭─────────────╮   │  static   ├─> &'static str / Option<&'static str>
     /// │ utf8 string ├─> │           │
-    /// ╰─────────────╯   │           │   ╭───────────╮
-    ///                   │  dynamic  ├─> │ len ≤ 255 ├─> String / Option<String>
-    ///                   ╰───────────╯   │           │
-    ///                                   │ len ?     ├─> &'a str / Option<&'a str>
-    ///                                   ╰───────────╯
+    /// ╰─────────────╯   │           │   ╭───────────────╮
+    ///                   │  dynamic  ├─> │  independent  ├─> String / Option<String>
+    ///                   ╰───────────╯   │               │
+    ///                                   │ self-updating ├─> &'a str / Option<&'a str>
+    ///                                   ╰───────────────╯
     /// ╭─────────────╮   ╭───────────╮
-    /// │  non utf8   │   │  static   ├─> &'static str / Option<&'static str>
+    /// │  non utf8   │   │  static   ├─> &'static [u8] / Option<&'static [u8]>
     /// │ string/blob ├─> │           │
-    /// ╰─────────────╯   │           │   ╭───────────╮
-    ///                   │  dynamic  ├─> │ len ≤ 255 ├─> Vec<u8> / Option<Vec<u8>>
-    ///                   ╰───────────╯   │           │
-    ///                                   │ len ?     ├─> &'a [u8] / Option<&'a [u8]>
-    ///                                   ╰───────────╯
+    /// ╰─────────────╯   │           │   ╭───────────────╮
+    ///                   │  dynamic  ├─> │  independent  ├─> Vec<u8> / Option<Vec<u8>>
+    ///                   ╰───────────╯   │               │
+    ///                                   │ self-updating ├─> &'a [u8] / Option<&'a [u8]>
+    ///                                   ╰───────────────╯
     /// ```
-    ///
-    /// Important note:
     type Returns<'a>
     where
         Self: 'a;
