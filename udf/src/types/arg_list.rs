@@ -9,6 +9,7 @@ use std::marker::PhantomData;
 
 use udf_sys::UDF_ARGS;
 
+use crate::wrapper::UDF_ARGSx;
 use crate::{Init, SqlArg, UdfState};
 
 /// A collection of SQL arguments
@@ -19,7 +20,7 @@ use crate::{Init, SqlArg, UdfState};
 pub struct ArgList<'a, S: UdfState>(
     /// UnsafeCell indicates to the compiler that this struct may have interior
     /// mutability (i.e., cannot make som optimizations)
-    pub(super) UnsafeCell<UDF_ARGS>,
+    pub(super) UnsafeCell<UDF_ARGSx>,
     /// We use this zero-sized marker to hold our state
     PhantomData<&'a S>,
 );

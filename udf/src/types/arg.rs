@@ -2,12 +2,13 @@
 
 use core::fmt::Debug;
 use std::marker::PhantomData;
-use std::{mem, slice, str};
+use std::{slice, str};
 
 use coerce::{get_coercion, get_current_type, get_desired_or_current, set_coercion};
-use udf_sys::{Item_result, UDF_ARGS};
+use udf_sys::Item_result;
 
 use crate::types::{SqlResult, SqlType};
+use crate::wrapper::UDF_ARGSx;
 use crate::{ArgList, Init, UdfState};
 
 /// A single SQL argument, including its attributes
@@ -36,7 +37,8 @@ impl<'a, T: UdfState> SqlArg<'a, T> {
             let arg_len = *base.lengths.add(self.index);
 
             // We can unwrap because the tag will be valid
-            SqlResult::from_ptr(arg_buf_ptr, arg_type, arg_len as usize).unwrap()
+            SqlResult::from_ptr(arg_buf_ptr, arg_type.try_into().unwrap(), arg_len as usize)
+                .unwrap()
         }
     }
 
@@ -58,12 +60,12 @@ impl<'a, T: UdfState> SqlArg<'a, T> {
     }
 
     /// Simple helper method to get the internal base
-    unsafe fn get_base(&'a self) -> &'a UDF_ARGS {
+    unsafe fn get_base(&'a self) -> &'a UDF_ARGSx {
         &(*self.base.0.get())
     }
 
     /// Helper method to get a pointer to this item's arg type
-    unsafe fn arg_type_ptr(&self) -> *mut Item_result {
+    unsafe fn arg_type_ptr(&self) -> *mut i32 {
         self.get_base().arg_types.add(self.index)
     }
 }
@@ -107,7 +109,7 @@ impl<'a> SqlArg<'a, Init> {
 
             // SAFETY: our tests validate size & align line up, so a C enum will
             // be the same layout as a C `int`
-            *arg_ptr = mem::transmute(set_coercion(*arg_ptr as i32, newtype as i32));
+            *arg_ptr = set_coercion(*arg_ptr, newtype as i32);
         }
     }
 
@@ -117,7 +119,7 @@ impl<'a> SqlArg<'a, Init> {
     pub fn get_type_coercion(&self) -> SqlType {
         // SAFETY: Caller guarantees
         unsafe {
-            let arg_type = *self.arg_type_ptr() as i32;
+            let arg_type = *self.arg_type_ptr();
             let coerced_type = get_coercion(arg_type).unwrap_or_else(|| get_current_type(arg_type));
             SqlType::try_from(coerced_type as i8).expect("critical: invalid sql type")
         }
@@ -126,10 +128,11 @@ impl<'a> SqlArg<'a, Init> {
     /// Assign the currently desired coercion
     #[inline]
     pub(crate) fn flush_coercion(&mut self) {
+        // SAFETY: we validate that we are setting a valid value
         unsafe {
-            *self.arg_type_ptr() = get_desired_or_current(*self.arg_type_ptr() as i32)
-                .try_into()
-                .unwrap();
+            let to_set = get_desired_or_current(*self.arg_type_ptr());
+            let _ = Item_result::try_from(to_set).unwrap();
+            *self.arg_type_ptr() = to_set;
         }
     }
 }
@@ -217,18 +220,14 @@ mod coerce {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    // use crate::mock::{MockArg, MockArgData};
+    use std::mem;
 
-    // Ensure our transmutes are sound
+    use super::*;
+
+    // Ensure our fake transmutes are sound
     #[test]
     fn verify_item_result_layout() {
         assert_eq!(mem::size_of::<Item_result>(), mem::size_of::<i32>());
         assert_eq!(mem::align_of::<Item_result>(), mem::align_of::<i32>());
     }
-
-    // #[test]
-    // fn test_value() {
-    //     let mut m = MockArg::new_init(MockArgData::Int(Some(100)), "attribute", false);
-    // }
 }

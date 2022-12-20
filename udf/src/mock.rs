@@ -502,8 +502,14 @@ impl<const N: usize> From<[MockArg; N]> for MockArgList {
 
 /// Helper macro to create a [`MockArgList`]
 ///
-/// Use this macro to easily create a `MockArgList`
-/// For example, to produce the following SQL arguments:
+/// Use this macro to easily create a `MockArgList`. Format is:
+///
+/// ```text
+/// ([Type] value, "attribute name", nullable), ...
+/// ```
+///
+/// Type can be omitted if it can be inferred. For example, to produce the
+/// following SQL arguments:
 ///
 /// ```sql
 /// -- Assuming `id` is the table column
