@@ -6,6 +6,16 @@
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+
+## [0.5.0] - 2022-12-20
+
+### Added
+
 - Added feature `logging-debug-calls` for full debug printing of call parameters
 
 ### Changed
@@ -184,7 +194,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/pluots/sql-udf/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/pluots/sql-udf/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/pluots/sql-udf/compare/v0.4.2...v0.4.4
 [0.4.2]: https://github.com/pluots/sql-udf/compare/v0.4.1...v0.4.2

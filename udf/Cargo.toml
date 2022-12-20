@@ -1,6 +1,6 @@
 [package]
 name = "udf"
-version = "0.5.0-rc.2"
+version = "0.5.0"
 rust-version = "1.65"
 edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
@@ -12,8 +12,8 @@ publish = true
 
 [dependencies]
 chrono = "0.4.22"
-udf-macros = { path = "../udf-macros", version = "0.5.0-rc.2" }
-udf-sys = { path = "../udf-sys", version = "0.5.0-rc.2" }
+udf-macros = { path = "../udf-macros", version = "0.5.0" }
+udf-sys = { path = "../udf-sys", version = "0.5.0" }
 cfg-if = "1.0"
 
 [features]
