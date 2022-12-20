@@ -12,6 +12,7 @@
 
 - Reworked behind the scenes for returning owned results (e.g. `String`) of any
   length, which nicely simplifies the API.
+- Now using an internal type wrapper to solve `Miri`'s bad transmute suggestion
 
 
 ## [0.4.5] - 2022-12-10
