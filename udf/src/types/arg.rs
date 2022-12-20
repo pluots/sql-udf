@@ -109,7 +109,7 @@ impl<'a> SqlArg<'a, Init> {
 
             // SAFETY: our tests validate size & align line up, so a C enum will
             // be the same layout as a C `int`
-            *arg_ptr = set_coercion(*arg_ptr as i32, newtype as i32);
+            *arg_ptr = set_coercion(*arg_ptr, newtype as i32);
         }
     }
 
@@ -119,7 +119,7 @@ impl<'a> SqlArg<'a, Init> {
     pub fn get_type_coercion(&self) -> SqlType {
         // SAFETY: Caller guarantees
         unsafe {
-            let arg_type = *self.arg_type_ptr() as i32;
+            let arg_type = *self.arg_type_ptr();
             let coerced_type = get_coercion(arg_type).unwrap_or_else(|| get_current_type(arg_type));
             SqlType::try_from(coerced_type as i8).expect("critical: invalid sql type")
         }
@@ -130,7 +130,7 @@ impl<'a> SqlArg<'a, Init> {
     pub(crate) fn flush_coercion(&mut self) {
         // SAFETY: we validate that we are setting a valid value
         unsafe {
-            let to_set = get_desired_or_current(*self.arg_type_ptr() as i32);
+            let to_set = get_desired_or_current(*self.arg_type_ptr());
             let _ = Item_result::try_from(to_set).unwrap();
             *self.arg_type_ptr() = to_set;
         }
@@ -220,8 +220,9 @@ mod coerce {
 
 #[cfg(test)]
 mod tests {
+    use std::mem;
+
     use super::*;
-    // use crate::mock::{MockArg, MockArgData};
 
     // Ensure our fake transmutes are sound
     #[test]
@@ -229,9 +230,4 @@ mod tests {
         assert_eq!(mem::size_of::<Item_result>(), mem::size_of::<i32>());
         assert_eq!(mem::align_of::<Item_result>(), mem::align_of::<i32>());
     }
-
-    // #[test]
-    // fn test_value() {
-    //     let mut m = MockArg::new_init(MockArgData::Int(Some(100)), "attribute", false);
-    // }
 }

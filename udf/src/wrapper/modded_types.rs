@@ -2,7 +2,7 @@
 
 /// Representation of a sequence of SQL arguments
 ///
-/// This should be identical to `udf_sys::UDF_ARGS` except arg_types is a
+/// This should be identical to `udf_sys::UDF_ARGS` except `arg_types` is a
 /// `c_int` rather than an `Item_result`. This just allows us to
 #[repr(C)]
 #[derive(Debug, Clone)]

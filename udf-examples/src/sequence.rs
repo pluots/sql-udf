@@ -84,11 +84,11 @@ mod tests {
             (mock_args![(Int 0, "", false)], 3),
         ];
 
-        for (arg, expected) in arglist.iter_mut() {
+        for (arg, expected) in &mut arglist {
             let res =
                 UdfSequence::process(&mut inited, mock_cfg.as_process(), arg.as_process(), None)
                     .unwrap();
-            assert_eq!(res, *expected)
+            assert_eq!(res, *expected);
         }
     }
 }
