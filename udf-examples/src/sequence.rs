@@ -46,7 +46,7 @@ impl BasicUdf for UdfSequence {
         args: &ArgList<Process>,
         _error: Option<NonZeroU8>,
     ) -> Result<Self::Returns<'a>, ProcessError> {
-        // If we have an argument, that will provide our base value
+        // If we have an argument, that will provide our offset value
         let arg_val = match args.get(0) {
             Some(v) => v.value().as_int().unwrap(),
             None => 0,
@@ -55,5 +55,40 @@ impl BasicUdf for UdfSequence {
         // Increment our last value, return the total
         self.last_val += 1;
         Ok(self.last_val + arg_val)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use udf::mock::*;
+
+    use super::*;
+
+    #[test]
+    fn test_init() {
+        // Not really anything to test here
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut mock_args = mock_args![(Int 1, "", false)];
+
+        assert!(UdfSequence::init(mock_cfg.as_init(), mock_args.as_init()).is_ok());
+    }
+
+    #[test]
+    fn test_process() {
+        // Test with some random arguments
+        let mut inited = UdfSequence { last_val: 0 };
+        let mut mock_cfg = MockUdfCfg::new();
+        let mut arglist: Vec<(_, i64)> = vec![
+            (mock_args![(Int 0, "", false)], 1),
+            (mock_args![(Int 0, "", false)], 2),
+            (mock_args![(Int 0, "", false)], 3),
+        ];
+
+        for (arg, expected) in arglist.iter_mut() {
+            let res =
+                UdfSequence::process(&mut inited, mock_cfg.as_process(), arg.as_process(), None)
+                    .unwrap();
+            assert_eq!(res, *expected)
+        }
     }
 }
