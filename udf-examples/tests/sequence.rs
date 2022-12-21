@@ -22,11 +22,11 @@ fn test_single() {
     let conn = &mut get_db_connection(&SETUP);
 
     // First result should be 1
-    let res: (i32,) = sql::<(Integer,)>("select udf_sequence()")
+    let res: i32 = sql::<Integer>("select udf_sequence()")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 1);
+    assert_eq!(res, 1);
 }
 
 #[test]
@@ -35,11 +35,11 @@ fn test_offset() {
 
     // With argument specified, we should have one more than the
     // specified value
-    let res: (i32,) = sql::<(Integer,)>("select udf_sequence(4)")
+    let res: i32 = sql::<Integer>("select udf_sequence(4)")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 5);
+    assert_eq!(res, 5);
 }
 
 #[test]

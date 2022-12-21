@@ -23,9 +23,9 @@ const SETUP: [&str; 3] = [
 fn test_empty() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (i32,) = sql::<(Integer,)>("select udf_median(val) from test_median")
+    let res: i32 = sql::<Integer>("select udf_median(val) from test_median")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 2);
+    assert_eq!(res, 2);
 }
