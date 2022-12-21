@@ -15,31 +15,31 @@ const SETUP: [&str; 1] = ["create or replace function sum_int
 fn test_empty() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (i32,) = sql::<(Integer,)>("select sum_int()")
+    let res: i32 = sql::<Integer>("select sum_int()")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 0);
+    assert_eq!(res, 0);
 }
 
 #[test]
 fn test_basic() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (i32,) = sql::<(Integer,)>("select sum_int(1, 2, 3, 4, -6)")
+    let res: i32 = sql::<Integer>("select sum_int(1, 2, 3, 4, -6)")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 4);
+    assert_eq!(res, 4);
 }
 
 #[test]
 fn test_coercion() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (i32,) = sql::<(Integer,)>("select sum_int(1.0, 2, '-5', '11')")
+    let res: i32 = sql::<Integer>("select sum_int(1, 2, '-5', '11')")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0, 9);
+    assert_eq!(res, 9);
 }

@@ -23,10 +23,10 @@ const SETUP: [&str; 3] = [
 fn test_basic() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (String,) =
-        sql::<(Text,)>("select udf_attribute(1, 'string', val, 3.2) from test_attribute")
+    let res: String =
+        sql::<Text>("select udf_attribute(1, 'string', val, 3.2) from test_attribute")
             .get_result(conn)
             .expect("bad result");
 
-    assert_eq!(res.0, "1, 'string', val, 3.2");
+    assert_eq!(res, "1, 'string', val, 3.2");
 }

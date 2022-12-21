@@ -15,33 +15,33 @@ const SETUP: [&str; 1] = ["create or replace function lookup6
 fn test_zeros() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (Option<String>,) = sql::<(Nullable<Text>,)>("select lookup6('0.0.0.0')")
+    let res: Option<String> = sql::<Nullable<Text>>("select lookup6('0.0.0.0')")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0.unwrap(), "::ffff:0.0.0.0");
+    assert_eq!(res.unwrap(), "::ffff:0.0.0.0");
 }
 
 #[test]
 fn test_localhost() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (Option<String>,) = sql::<(Nullable<Text>,)>("select lookup6('localhost')")
+    let res: Option<String> = sql::<Nullable<Text>>("select lookup6('localhost')")
         .get_result(conn)
         .expect("bad result");
 
-    assert_eq!(res.0.unwrap(), "::1");
+    assert_eq!(res.unwrap(), "::1");
 }
 
 #[test]
 fn test_nonexistant() {
     let conn = &mut get_db_connection(&SETUP);
 
-    let res: (Option<String>,) = sql::<(Nullable<Text>,)>("select lookup6('nonexistant')")
+    let res: Option<String> = sql::<Nullable<Text>>("select lookup6('nonexistant')")
         .get_result(conn)
         .expect("bad result");
 
-    assert!(res.0.is_none());
+    assert!(res.is_none());
 }
 
 #[test]
@@ -51,14 +51,13 @@ fn test_sql_buffer_bug() {
 
     let conn = &mut get_db_connection(&SETUP);
 
-    sql::<(Untyped,)>("set @testval = (select lookup6('0.0.0.0'))")
+    sql::<Untyped>("set @testval = (select lookup6('0.0.0.0'))")
         .execute(conn)
         .unwrap();
 
-    let res: (Option<String>,) =
-        sql::<(Nullable<Text>,)>("select  regexp_replace(@testval,'[:.]','')")
-            .get_result(conn)
-            .expect("bad result");
+    let res: Option<String> = sql::<Nullable<Text>>("select  regexp_replace(@testval,'[:.]','')")
+        .get_result(conn)
+        .expect("bad result");
 
-    assert_eq!(res.0.unwrap(), "ffff0000");
+    assert_eq!(res.unwrap(), "ffff0000");
 }

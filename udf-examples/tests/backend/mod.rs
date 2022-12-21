@@ -42,7 +42,7 @@ pub fn get_db_connection(init: &[&str]) -> MysqlConnection {
         let mut conn = MysqlConnection::establish(db_url.rsplit_once('/').unwrap().0)
             .expect("initial connection failed");
 
-        sql::<(Untyped,)>("create or replace database udf_tests")
+        sql::<Untyped>("create or replace database udf_tests")
             .execute(&mut conn)
             .expect("could not create databases");
     });
@@ -55,7 +55,7 @@ pub fn get_db_connection(init: &[&str]) -> MysqlConnection {
         if hset.contains(*stmt) {
             continue;
         }
-        sql::<(Untyped,)>(stmt)
+        sql::<Untyped>(stmt)
             .execute(&mut conn)
             .expect("could not run setup");
 
