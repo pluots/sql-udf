@@ -6,7 +6,7 @@ edition = "2021"
 description = "Easily create user defined functions (UDFs) for MariaDB and MySQL."
 repository = "https://github.com/pluots/sql-udf"
 readme = "../README.md"
-license = "Apache-2.0"
+license = "Apache-2.0 OR GPL-2.0-or-later"
 keywords = ["sql", "udf"]
 publish = true
 

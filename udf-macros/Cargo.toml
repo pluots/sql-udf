@@ -4,7 +4,7 @@ version = "0.5.0"
 edition = "2021"
 description = "UDF procedural macros implementation"
 repository = "https://github.com/pluots/sql-udf/tree/main/udf_macros"
-license = "Apache-2.0"
+license = "Apache-2.0 OR GPL-2.0-or-later"
 publish = true
 # autotests = false
 
