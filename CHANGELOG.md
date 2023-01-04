@@ -4,12 +4,7 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
-
-### Changed
-
-### Removed
-
+Changed licensing from 'Apache-2.0' to 'Apache-2.0 OR GPL-2.0-or-later'
 
 
 ## [0.5.0] - 2022-12-20
