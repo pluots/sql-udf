@@ -4,6 +4,16 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+### Changed
+
+### Removed
+
+
+
+## [0.5.1] - 2023-01-04
+
 Changed licensing from 'Apache-2.0' to 'Apache-2.0 OR GPL-2.0-or-later'
 
 
@@ -189,7 +199,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/pluots/sql-udf/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/pluots/sql-udf/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/pluots/sql-udf/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/pluots/sql-udf/compare/v0.4.2...v0.4.4
