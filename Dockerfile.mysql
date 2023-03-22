@@ -12,11 +12,12 @@
 # ```
 
 FROM rust:latest AS build
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 WORKDIR /build
 
 COPY . .
-# RUN cargo fetch
+
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/build/target \
     cargo build --release -p udf-examples \

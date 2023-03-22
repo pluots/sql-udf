@@ -16,11 +16,11 @@ name: Rust Validation
 env:
   RUSTDOCFLAGS: -D warnings
   RUSTFLAGS: -D warnings
-  CARGO_UNSTABLE_SPARSE_REGISTRY: true
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
-  check:
-    name: "Check (cargo check)"
+  clippy:
+    name: "Clippy (cargo clippy)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -33,21 +33,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: beta
-          override: true
-      - uses: actions-rs/cargo@v1
-        # check with all features
-        with:
-          command: check
-          args: --all-features --all-targets
-      - uses: actions-rs/cargo@v1
-        # check with no features
-        with:
-          command: check
-          args: --no-default-features --all-targets
+          components: clippy
+      - run: cargo clippy --all-features --all-targets -- -D warnings
+      - run: cargo clippy --no-default-features --all-targets -- -D warnings
 
   test:
     strategy:
@@ -84,14 +74,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
+      - uses: dtolnay/rust-toolchain@1.65.0
+      - run: cargo test
 
   integration:
     name: "Integration testing (docker)"
@@ -146,14 +130,7 @@ jobs:
           -e RUST_LIB_BACKTRACE=1
           --name mdb-example-container
           mdb-example-so
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          # Our built integration images use stable so we are testing that (as
-          # intended). We use nightly here to speed up this time chunk with
-          # cargo sparse
-          toolchain: nightly
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Run integration testing
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend
@@ -164,7 +141,6 @@ jobs:
           # If any critical / debug options were printed, error out
           docker logs mdb-example-container 2>&1 | grep -E '\[(Critical|Error)\]' || exit 0 && exit 1;
           docker stop mdb-example-container
-
 
   miri:
     name: Miri
@@ -181,12 +157,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - run: rustup component add miri
+          components: miri
       - name: Run Miri
         env:
           # Can't use chrono for time in isolation
@@ -207,45 +180,14 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+            components: rustfmt
+      - run: cargo fmt --all -- --check
       - uses: actions/setup-python@v3
       - name: Validate pre-commit
         uses: pre-commit/action@v3.0.0
 
-  clippy:
-    name: "Clippy (cargo clippy)"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          # Some nice checks are only nightly
-          toolchain: nightly
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features --all-targets -- -D warnings
 
   doc:
     name: "Docs (cargo doc)"
@@ -261,12 +203,15 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: doc
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo doc
+
+  outdated:
+    name: Outdated
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/install@cargo-outdated
+      - run: cargo outdated --workspace --exit-code 1

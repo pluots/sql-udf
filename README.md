@@ -144,6 +144,9 @@ types (GATs) which are only available on rust >= 1.65. This version only just
 became stable (2022-11-03), so be sure to run `rustup update` if you run into
 compiler issues.
 
+CI runs tests on both Linux and Windows, and this crate should work for either.
+MacOS is untested, but will likely work as well.
+
 ### Symbol Inspection
 
 If you would like to verify that the correct C-callable functions are present,
