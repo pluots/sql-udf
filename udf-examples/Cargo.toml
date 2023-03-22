@@ -8,7 +8,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-udf = { path = "../udf", features = ["mock"] }
+udf = { path = "../udf", features = ["mock", "logging-debug"] }
 lipsum = "0.8.2"
 uuid = { version = "1.3.0", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
 

@@ -9,8 +9,6 @@ use std::ptr;
 
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
-#[cfg(feature = "logging-debug")]
-use super::debug;
 use super::functions::UdfConverter;
 use super::helpers::{buf_result_callback, BufOptions};
 use crate::{ArgList, BasicUdf, ProcessError, UdfCfg};
@@ -71,10 +69,9 @@ pub unsafe fn wrap_process_basic<W, U, R>(
 where
     W: UdfConverter<U>,
     for<'a> U: BasicUdf<Returns<'a> = R>,
-    R: Default,
+    R: Default + std::fmt::Debug,
 {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_process_call::<U>(initid, args, is_null, error);
+    log_call!(enter: "process", U, &*initid, &*args, &*is_null, &*error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -84,10 +81,7 @@ where
     cfg.store_box(b);
 
     let ret = ret_callback(proc_res, error, is_null).unwrap_or_default();
-
-    #[cfg(feature = "logging-debug")]
-    debug::post_process_call::<U>(initid, args, is_null, error);
-
+    log_call!(exit: "process", U, &*initid, &*args, &*is_null, &*error, ret);
     ret
 }
 
@@ -104,10 +98,9 @@ pub unsafe fn wrap_process_basic_option<W, U, R>(
 where
     W: UdfConverter<U>,
     for<'a> U: BasicUdf<Returns<'a> = Option<R>>,
-    R: Default,
+    R: Default + std::fmt::Debug,
 {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_process_call::<U>(initid, args, is_null, error);
+    log_call!(enter: "process", U, &*initid, &*args, &*is_null, &*error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -117,10 +110,7 @@ where
     cfg.store_box(b);
 
     let ret = ret_callback_option(proc_res, error, is_null).unwrap_or_default();
-
-    #[cfg(feature = "logging-debug")]
-    debug::post_process_call::<U>(initid, args, is_null, error);
-
+    log_call!(exit: "process", U, &*initid, &*args, &*is_null, &*error, ret);
     ret
 }
 
@@ -141,8 +131,7 @@ where
     for<'b> U: BasicUdf,
     for<'a> <U as BasicUdf>::Returns<'a>: AsRef<[u8]>,
 {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_process_call_buf::<U>(initid, args, result, length, is_null, error);
+    log_call!(exit: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -165,9 +154,7 @@ where
     std::mem::forget(post_effects_val);
     cfg.store_box(b);
 
-    #[cfg(feature = "logging-debug")]
-    debug::post_process_call_buf::<U>(initid, args, result, length, is_null, error, ret);
-
+    log_call!(exit: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error, ret);
     ret
 }
 
@@ -188,8 +175,7 @@ where
     for<'a> U: BasicUdf<Returns<'a> = Option<B>>,
     B: AsRef<[u8]>,
 {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_process_call_buf::<U>(initid, args, result, length, is_null, error);
+    log_call!(enter: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error);
 
     let cfg = UdfCfg::from_raw_ptr(initid);
     let arglist = ArgList::from_raw_ptr(args);
@@ -215,8 +201,6 @@ where
     std::mem::forget(post_effects_val);
     cfg.store_box(b);
 
-    #[cfg(feature = "logging-debug")]
-    debug::post_process_call_buf::<U>(initid, args, result, length, is_null, error, ret);
-
+    log_call!(exit: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error, ret);
     ret
 }

@@ -26,6 +26,11 @@ Once built, you can start a container:
 docker run --rm -d -e MARIADB_ROOT_PASSWORD=example --name mariadb_udf_test mdb-example-so
 ```
 
+This will start it in headless mode. If you need to stop it, you can use
+`docker stop mariadb_udf_test`. (Note that the server will delete its docker image
+and thus its data upon stop, due to the `--rm` flag, so don't use this example
+for anything permanent).
+
 ## Local OS
 
 If you are building for your local SQL server, `cargo build` will create the
@@ -40,12 +45,15 @@ cargo build -p udf-examples --release
 
 You will need to enter a SQL console to load the functions. This can be done
 with the `mariadb`/`mysql` command, either on your host system or within the
-docker container. If you used the provided `Dockerfile.examples`, the password
+docker container. If you used the provided command above, the password
 is `example`.
 
 ```sh
 docker exec -it mariadb_udf_test mysql -pexample
 ```
+
+Note that this won't work immediately after launching the server, it takes a few
+seconds to start.
 
 Once logged in, you can load all available example functions:
 
@@ -136,3 +144,7 @@ MariaDB [db]> select avg_cost(qty, cost) from t1 group by class order by class;
 MariaDB [(db)]> select log_calls();
 
 ```
+
+If you check your log files, you will notice that full call logging is enabled. You
+can disable this by removing the `logging-debug` feature in the `udf-examples`
+`Cargo.toml`.
