@@ -6,7 +6,6 @@ use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::token::Colon2;
 use syn::{
     parse_macro_input, parse_quote, DeriveInput, Error, Ident, ImplItem, ImplItemType, Item,
     ItemImpl, Path, PathSegment, Token, Type, TypePath, TypeReference,
@@ -31,12 +30,12 @@ macro_rules! format_ident_str {
 fn impls_path(itemimpl: &ItemImpl, expected: ImplType) -> bool {
     let implemented = &itemimpl.trait_.as_ref().unwrap().1.segments;
 
-    let basic_paths: [Punctuated<PathSegment, Colon2>; 3] = [
+    let basic_paths: [Punctuated<PathSegment, Token![::]>; 3] = [
         parse_quote! {udf::traits::BasicUdf},
         parse_quote! {udf::BasicUdf},
         parse_quote! {BasicUdf},
     ];
-    let arg_paths: [Punctuated<PathSegment, Colon2>; 3] = [
+    let arg_paths: [Punctuated<PathSegment, Token![::]>; 3] = [
         parse_quote! {udf::traits::AggregateUdf},
         parse_quote! {udf::AggregateUdf},
         parse_quote! {AggregateUdf},
@@ -145,7 +144,7 @@ fn make_agg_fns(
     let impls_remove = &parsed
         .items
         .iter()
-        .filter_map(match_variant!(ImplItem::Method))
+        .filter_map(match_variant!(ImplItem::Fn))
         .map(|m| &m.sig.ident)
         .any(|id| *id == "remove");
 

@@ -12,7 +12,7 @@
     clippy::cast_possible_truncation
 )]
 
-mod entry;
+mod register;
 mod types;
 
 use proc_macro::TokenStream;
@@ -72,5 +72,5 @@ pub(crate) use match_variant;
 // #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn register(args: TokenStream, item: TokenStream) -> TokenStream {
     // Keep this file clean by keeping the dirty work in entry
-    entry::register(&args, item)
+    register::register(&args, item)
 }
