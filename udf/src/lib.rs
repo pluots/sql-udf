@@ -83,9 +83,33 @@
 //! - `logging-debug`: enable this feature to turn on debug level logging for
 //!   this crate. This uses the `udf_log!` macro and includes information about
 //!   memory management and function calls. These will show up with your SQL
-//!   server logs.
+//!   server logs, like:
+//!
+//!   ```text
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: ENTER init for 'udf_examples::lookup::Lookup6'
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: 0x7fdea4022220 24 bytes udf->server control transfer
+//!                                          (BufConverter<Lookup6, Option<String>>)
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: EXIT init for 'udf_examples::lookup::Lookup6'
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: ENTER process for 'udf_examples::lookup::Lookup6'
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: 0x7fdea4022220 24 bytes server->udf control transfer
+//!                                          (BufConverter<Lookup6, Option<String>>)
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: 0x7fdea4022220 24 bytes udf->server control transfer
+//!                                          (BufConverter<Lookup6, Option<String>>)
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: EXIT process for 'udf_examples::lookup::Lookup6'
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: ENTER deinit for 'udf_examples::lookup::Lookup6'
+//!   2023-03-23 00:45:53+00:00 [Debug] UDF: 0x7fdea4022220 24 bytes server->udf control transfer
+//!                                          (BufConverter<Lookup6, Option<String>>)
+//!   ```
+//!
+//!   This output can be helpful to understand the exact data flow between
+//!   the library and the server. They are enabled by default in the `udf-examples`
+//!   library.
+//!
 //! - `logging-debug-calls` full debugging printing of the structs passed
-//!   between this library and the SQL server. Implies `logging-debug`.
+//!   between this library and the SQL server. Implies `logging-debug`. This
+//!   output can be noisy, but can help to debug issues related to the lower
+//!   level interfaces (i.e. problems with this library or with the server
+//!   itself).
 //!
 //! # Version Note
 //!
@@ -122,6 +146,8 @@ extern crate udf_macros;
 
 pub use udf_macros::register;
 
+#[macro_use]
+mod macros;
 pub mod prelude;
 pub mod traits;
 pub mod types;
@@ -136,64 +162,3 @@ pub use traits::*;
 pub use types::{MYSQL_ERRMSG_SIZE, *};
 
 pub mod mock;
-
-/// Print a formatted log message to `stderr` to display in server logs
-///
-/// Performs formatting to match other common SQL error logs, roughly:
-///
-/// ```text
-/// 2022-10-15 13:12:54+00:00 [Warning] Udf: this is the message
-/// ```
-///
-/// ```
-/// # #[cfg(not(miri))] // need to skip Miri because. it can't cross FFI
-/// # fn test() {
-///
-/// use udf::udf_log;
-///
-/// // Prints "2022-10-08 05:27:30+00:00 [Error] UDF: this is an error"
-/// // This matches the default entrypoint log format
-/// udf_log!(Error: "this is an error");
-///
-/// udf_log!(Warning: "this is a warning");
-///
-/// udf_log!(Note: "this is info: value {}", 10 + 10);
-///
-/// udf_log!(Debug: "this is a debug message");
-///
-/// udf_log!("i print without the '[Level] UDF:' formatting");
-///
-/// # }
-/// # #[cfg(not(miri))]
-/// # test();
-/// ```
-#[macro_export]
-macro_rules! udf_log {
-    (Critical: $($msg:tt)*) => {{
-        let formatted = format!("[Critical] UDF: {}", format!($($msg)*));
-        udf_log!(formatted);
-    }};
-    (Error: $($msg:tt)*) => {{
-        let formatted = format!("[Error] UDF: {}", format!($($msg)*));
-        udf_log!(formatted);
-    }};
-    (Warning: $($msg:tt)*) => {{
-        let formatted = format!("[Warning] UDF: {}", format!($($msg)*));
-        udf_log!(formatted);
-    }};
-    (Note: $($msg:tt)*) => {{
-        let formatted = format!("[Note] UDF: {}", format!($($msg)*));
-        udf_log!(formatted);
-    }};
-    (Debug: $($msg:tt)*) => {{
-        let formatted = format!("[Debug] UDF: {}", format!($($msg)*));
-        udf_log!(formatted);
-    }};
-    ($msg:tt) => {
-        eprintln!(
-            "{} {}",
-            $crate::chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%:z"),
-            $msg
-        );
-    };
-}

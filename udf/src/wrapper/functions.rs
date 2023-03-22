@@ -3,17 +3,13 @@
 //! This file ties together C types and rust types, providing a safe wrapper.
 //! Functions in this module are generally not meant to be used directly.
 
-use std::any::type_name;
 use std::ffi::{c_char, c_uchar};
 use std::num::NonZeroU8;
-use std::panic::{self, AssertUnwindSafe};
 
 use udf_sys::{UDF_ARGS, UDF_INIT};
 
-#[cfg(feature = "logging-debug")]
-use crate::wrapper::debug;
 use crate::wrapper::write_msg_to_buf;
-use crate::{udf_log, AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE};
+use crate::{AggregateUdf, ArgList, BasicUdf, Process, UdfCfg, MYSQL_ERRMSG_SIZE};
 
 /// A wrapper that lets us handle return types when the user returns an
 /// allocated buffer (rather than a reference). We wrap the user's type within
@@ -115,50 +111,35 @@ pub unsafe fn wrap_init<W: UdfConverter<U>, U: BasicUdf>(
     args: *mut UDF_ARGS,
     message: *mut c_char,
 ) -> bool {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_init_call::<U>(initid, args, message);
+    log_call!(enter: "init", U, args, message);
 
-    // ret holds our return type, we need to tell the compiler it is safe across
-    // unwind boundaries
-    let mut ret = false;
-    let mut ret_wrap = AssertUnwindSafe(&mut ret);
+    let cfg = UdfCfg::from_raw_ptr(initid);
+    let arglist = ArgList::from_raw_ptr(args);
 
-    // Unwinding into C is UB so we need to catch potential panics at the FFI
-    // boundary Note to possible code readers: `panic::catch_unwind` should NOT
-    // be used anywhere except the FFI boundary
-    panic::catch_unwind(move || {
-        let cfg = UdfCfg::from_raw_ptr(initid);
-        let arglist = ArgList::from_raw_ptr(args);
+    // Call the user's init function
+    let init_res = U::init(cfg, arglist);
 
-        // Call the user's init function
-        // If initialization succeeds, put our UDF info struct on the heap
-        // If initialization fails, copy a message to the buffer
-        let boxed_struct: Box<W> = match U::init(cfg, arglist) {
-            Ok(v) => Box::new(W::into_storable(v)),
-            Err(e) => {
-                // SAFETY: buffer size is correct
-                write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(e.as_bytes(), message);
-                **ret_wrap = true;
-                return;
-            }
-        };
+    // Apply any pending coercions
+    arglist.flush_all_coercions();
 
-        // Apply any pending coercions
-        arglist.flush_all_coercions();
+    // If initialization succeeds, put our UDF info struct on the heap
+    // If initialization fails, copy a message to the buffer
+    let ret = match init_res {
+        Ok(v) => {
+            // set the `initid` struct to contain our struct
+            // SAFETY: must be cleaned up in deinit function, or we will leak!
+            let boxed_struct: Box<W> = Box::new(W::into_storable(v));
+            cfg.store_box(boxed_struct);
+            false
+        }
+        Err(e) => {
+            // SAFETY: buffer size is correct
+            write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(e.as_bytes(), message);
+            true
+        }
+    };
 
-        // Set the `initid` struct to contain our struct
-        // SAFETY: Must be cleaned up in deinit function, or we will leak!
-        cfg.store_box(boxed_struct);
-    })
-    .unwrap_or_else(|_| {
-        write_msg_to_buf::<MYSQL_ERRMSG_SIZE>(b"(critical) init function panicked", message);
-        udf_log!(Critical: "init function panicked for `{}`", type_name::<U>());
-        ret = true;
-    });
-
-    #[cfg(feature = "logging-debug")]
-    debug::post_init_call::<U>(initid, args, message, ret);
-
+    log_call!(exit: "init", U, &*args, &*message, ret);
     ret
 }
 
@@ -169,16 +150,12 @@ pub unsafe fn wrap_init<W: UdfConverter<U>, U: BasicUdf>(
 /// There is no specific wrapped function here
 #[inline]
 pub unsafe fn wrap_deinit<W: UdfConverter<U>, U: BasicUdf>(initid: *const UDF_INIT) {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_deinit_call::<U>(initid);
+    log_call!(enter: "deinit", U, &*initid);
 
     // SAFETY: we constructed this box so it is formatted correctly
     // caller ensures validity of initid
-    panic::catch_unwind(|| {
-        let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
-        cfg.retrieve_box::<W>();
-    })
-    .unwrap_or_else(|_| udf_log!(Critical: "deinit function panicked for `{}`", type_name::<U>()));
+    let cfg: &UdfCfg<Process> = UdfCfg::from_raw_ptr(initid);
+    cfg.retrieve_box::<W>();
 }
 
 #[inline]
@@ -188,22 +165,18 @@ pub unsafe fn wrap_add<W: UdfConverter<U>, U: AggregateUdf>(
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_add_call::<U>(initid, args, error);
+    log_call!(enter: "add", U, &*initid, &*args, &*error);
 
-    panic::catch_unwind(|| {
-        let cfg = UdfCfg::from_raw_ptr(initid);
-        let arglist = ArgList::from_raw_ptr(args);
-        let err = *(error as *const Option<NonZeroU8>);
-        let mut b = cfg.retrieve_box::<W>();
-        let res = U::add(b.as_mut_ref(), cfg, arglist, err);
-        cfg.store_box(b);
+    let cfg = UdfCfg::from_raw_ptr(initid);
+    let arglist = ArgList::from_raw_ptr(args);
+    let err = *(error as *const Option<NonZeroU8>);
+    let mut b = cfg.retrieve_box::<W>();
+    let res = U::add(b.as_mut_ref(), cfg, arglist, err);
+    cfg.store_box(b);
 
-        if let Err(e) = res {
-            *error = e.into();
-        }
-    })
-    .unwrap_or_else(|_| udf_log!(Critical: "add function panicked for `{}`", type_name::<U>()));
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
 
 #[inline]
@@ -212,21 +185,17 @@ pub unsafe fn wrap_clear<W: UdfConverter<U>, U: AggregateUdf>(
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_clear_call::<U>(initid, error);
+    log_call!(enter: "clear", U, &*initid, &*error);
 
-    panic::catch_unwind(|| {
-        let cfg = UdfCfg::from_raw_ptr(initid);
-        let err = *(error as *const Option<NonZeroU8>);
-        let mut b = cfg.retrieve_box::<W>();
-        let res = U::clear(b.as_mut_ref(), cfg, err);
-        cfg.store_box(b);
+    let cfg = UdfCfg::from_raw_ptr(initid);
+    let err = *(error as *const Option<NonZeroU8>);
+    let mut b = cfg.retrieve_box::<W>();
+    let res = U::clear(b.as_mut_ref(), cfg, err);
+    cfg.store_box(b);
 
-        if let Err(e) = res {
-            *error = e.into();
-        }
-    })
-    .unwrap_or_else(|_| udf_log!(Critical: "clear function panicked for `{}`", type_name::<U>()));
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
 
 #[inline]
@@ -236,20 +205,16 @@ pub unsafe fn wrap_remove<W: UdfConverter<U>, U: AggregateUdf>(
     _is_null: *mut c_uchar,
     error: *mut c_uchar,
 ) {
-    #[cfg(feature = "logging-debug")]
-    debug::pre_remove_call::<U>(initid, args, error);
+    log_call!(enter: "remove", U, &*initid, &*args, &*error);
 
-    panic::catch_unwind(|| {
-        let cfg = UdfCfg::from_raw_ptr(initid);
-        let arglist = ArgList::from_raw_ptr(args);
-        let err = *(error as *const Option<NonZeroU8>);
-        let mut b = cfg.retrieve_box::<W>();
-        let res = U::remove(b.as_mut_ref(), cfg, arglist, err);
-        cfg.store_box(b);
+    let cfg = UdfCfg::from_raw_ptr(initid);
+    let arglist = ArgList::from_raw_ptr(args);
+    let err = *(error as *const Option<NonZeroU8>);
+    let mut b = cfg.retrieve_box::<W>();
+    let res = U::remove(b.as_mut_ref(), cfg, arglist, err);
+    cfg.store_box(b);
 
-        if let Err(e) = res {
-            *error = e.into();
-        }
-    })
-    .unwrap_or_else(|_| udf_log!(Critical: "remove function panicked for `{}`", type_name::<U>()));
+    if let Err(e) = res {
+        *error = e.into();
+    }
 }
