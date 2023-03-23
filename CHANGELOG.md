@@ -4,12 +4,13 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
-
 ### Changed
 
-### Removed
-
+- Bump dependencies to the latest version
+- Update docs on feature flags
+- [Internal] remove calls to `catch_unwind`
+- [Internal] refactor feature flag calls
+- [CI] refactor CI
 
 
 ## [0.5.1] - 2023-01-04
