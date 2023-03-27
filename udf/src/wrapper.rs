@@ -13,6 +13,7 @@ pub(crate) use helpers::*;
 pub use modded_types::UDF_ARGSx;
 pub use process::{
     wrap_process_basic, wrap_process_basic_option, wrap_process_buf, wrap_process_buf_option,
+    wrap_process_buf_option_ref,
 };
 
 #[cfg(test)]

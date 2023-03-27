@@ -8,12 +8,14 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-udf = { path = "../udf", features = ["mock", "logging-debug"] }
 lipsum = "0.8.2"
+generic-array = "0.14.7"
+sha2 = "0.10.6"
+udf = { path = "../udf", features = ["mock", "logging-debug"] }
 uuid = { version = "1.3.0", features = ["v1", "v3", "v4", "v5", "fast-rng"] }
 
 [dev-dependencies]
-diesel = { version = "2.0.3", features = ["mysql"] }
+diesel = { version = "2.0.3", default-features = false, features = ["mysql"] }
 lazy_static = "1.4.0"
 
 [features]

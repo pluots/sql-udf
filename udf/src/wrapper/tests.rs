@@ -5,6 +5,7 @@ struct ExampleInt;
 struct ExampleIntOpt;
 struct ExampleBufRef;
 struct ExampleBufOpt;
+struct ExampleBufOptRef;
 
 impl BasicUdf for ExampleInt {
     type Returns<'a> = i64;
@@ -91,6 +92,23 @@ impl AggregateUdf for ExampleBufOpt {
     }
 }
 
+impl BasicUdf for ExampleBufOptRef {
+    type Returns<'a> = Option<&'a str>;
+
+    fn init(_cfg: &UdfCfg<crate::Init>, _args: &ArgList<crate::Init>) -> Result<Self, String> {
+        todo!()
+    }
+
+    fn process<'a>(
+        &'a mut self,
+        _cfg: &UdfCfg<crate::Process>,
+        _args: &ArgList<crate::Process>,
+        _error: Option<NonZeroU8>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
+        todo!()
+    }
+}
+
 #[test]
 #[should_panic]
 #[allow(unreachable_code)]
@@ -101,8 +119,8 @@ fn test_fn_sig() {
     unsafe {
         wrap_process_basic::<ExampleInt, _, _>(todo!(), todo!(), todo!(), todo!());
         wrap_process_basic_option::<ExampleIntOpt, _, _>(todo!(), todo!(), todo!(), todo!());
-        wrap_process_buf::<ExampleBufRef, _>(
-            todo!(),
+        wrap_process_buf::<ExampleBufRef, _>(todo!(), todo!(), todo!(), todo!(), todo!(), todo!());
+        wrap_process_buf_option::<ExampleBufOpt, _, _>(
             todo!(),
             todo!(),
             todo!(),
@@ -110,8 +128,7 @@ fn test_fn_sig() {
             todo!(),
             todo!(),
         );
-        wrap_process_buf_option::<ExampleBufOpt, _, _>(
-            todo!(),
+        wrap_process_buf_option_ref::<ExampleBufOptRef, _, _>(
             todo!(),
             todo!(),
             todo!(),

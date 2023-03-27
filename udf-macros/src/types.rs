@@ -49,8 +49,8 @@ pub fn make_type_list() -> Vec<RetType> {
         // Only valid float types
         RetType::new(parse_quote! { f64 }, false, TypeClass::Float),
         RetType::new(parse_quote! { Option<f64> }, true, TypeClass::Float),
-        // Tons of possible byte slice references. These will get copied if they
-        // fit, otherwise the reference returned
+        // Tons of possible byte slice references. We could probably make these
+        // generic somehow in the future, but it is proving tough.
         RetType::new(parse_quote! { &'a [u8] }, false, TypeClass::BytesRef),
         RetType::new(parse_quote! { Option<&'a [u8]> }, true, TypeClass::BytesRef),
         RetType::new(parse_quote! { &str }, false, TypeClass::BytesRef),
