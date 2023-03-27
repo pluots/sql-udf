@@ -4,12 +4,10 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
-
 ### Changed
 
-### Removed
-
+- Fixed compilation for `Option<&'a [u8]>` types. Added example `mishmash` to
+  complement this
 
 
 ## [0.5.2] - 2023-03-23

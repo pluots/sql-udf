@@ -1,9 +1,5 @@
 //! Private module that handles the implementation of the wrapper module
 
-// #![allow(dead_code)]
-
-use std::any::type_name;
-use std::backtrace::Backtrace;
 use std::cmp::min;
 use std::ffi::{c_char, c_ulong};
 use std::ptr;
@@ -33,19 +29,12 @@ pub unsafe fn write_msg_to_buf<const N: usize>(msg: &[u8], buf: *mut c_char) {
 pub struct BufOptions {
     res_buf: *mut c_char,
     length: *mut c_ulong,
-    /// True if we can return a reference to our source buffer. If false, we must
-    /// truncate
-    can_return_ref: bool,
 }
 
 impl BufOptions {
     /// Create a new `BufOptions` struct
-    pub fn new(res_buf: *mut c_char, length: *mut c_ulong, can_return_ref: bool) -> Self {
-        Self {
-            res_buf,
-            length,
-            can_return_ref,
-        }
+    pub fn new(res_buf: *mut c_char, length: *mut c_ulong) -> Self {
+        Self { res_buf, length }
     }
 }
 
@@ -61,10 +50,7 @@ impl BufOptions {
 ///   an error message, return None
 ///
 /// The `U` type parameter is just used for output formatting
-pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
-    input: T,
-    opts: &BufOptions,
-) -> Option<*const c_char> {
+pub unsafe fn buf_result_callback<T: AsRef<[u8]>>(input: T, opts: &BufOptions) -> *const c_char {
     let slice_ref = input.as_ref();
     let slice_len = slice_ref.len();
     let slice_len_ulong: c_ulong = slice_len.try_into().unwrap_or_else(|_| {
@@ -77,25 +63,12 @@ pub unsafe fn buf_result_callback<U, T: AsRef<[u8]>>(
         // If we fit in the buffer, just copy
         ptr::copy(slice_ptr, opts.res_buf, slice_len);
         *opts.length = slice_len_ulong;
-        return Some(opts.res_buf);
-    }
-
-    if !opts.can_return_ref {
-        // We can't return a reference but also can't fit in the buffer
-        *opts.length = 0;
-        udf_log!(
-            Critical: "output overflow, returning NULL. Buffer size: {}, data length: {} at `{}::process`",
-            buf_len, slice_len, type_name::<U>()
-        );
-        udf_log!(Critical: "contact your UDF vendor as this is a serious bug");
-        udf_log!(Critical: "run with `RUST_LIB_BACKTRACE=1` for a full backtrace");
-        eprintln!("{:#?}", Backtrace::capture());
-        return None;
+        return opts.res_buf;
     }
 
     // If we don't fit in the buffer but can return a reference, do so
     *opts.length = slice_len_ulong;
-    Some(slice_ptr)
+    slice_ptr
 }
 
 #[cfg(test)]
@@ -280,11 +253,9 @@ mod buffer_tests {
         let mut res_buf = [0u8; BUF_LEN];
         let zeroes = [0u8; BUF_LEN];
         let mut len = res_buf.len() as c_ulong;
-        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
+        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len);
 
-        let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
-            .unwrap()
-            .cast();
+        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts).cast() };
         let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
 
         assert_eq!(len as usize, input.len());
@@ -303,11 +274,9 @@ mod buffer_tests {
         let input = b"123456789012345";
         let mut res_buf = [0u8; BUF_LEN];
         let mut len = res_buf.len() as c_ulong;
-        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, true);
+        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len);
 
-        let res_ptr: *const u8 = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) }
-            .unwrap()
-            .cast();
+        let res_ptr: *const u8 = unsafe { buf_result_callback(input, &buf_opts).cast() };
         let res_slice = unsafe { slice::from_raw_parts(res_ptr, len as usize) };
 
         assert_eq!(len as usize, input.len());
@@ -315,17 +284,17 @@ mod buffer_tests {
         assert_eq!(res_ptr.cast(), input.as_ptr());
     }
 
-    #[test]
-    fn test_buf_no_fit_no_ref() {
-        // Test a buffer that does not fit but can not be used as a ref
-        // This must return an error
-        let input = b"123456789012345";
-        let mut res_buf = [0u8; BUF_LEN];
-        let mut len = res_buf.len() as c_ulong;
-        let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
+    // #[test]
+    // fn test_buf_no_fit_no_ref() {
+    //     // Test a buffer that does not fit but can not be used as a ref
+    //     // This must return an error
+    //     let input = b"123456789012345";
+    //     let mut res_buf = [0u8; BUF_LEN];
+    //     let mut len = res_buf.len() as c_ulong;
+    //     let buf_opts = BufOptions::new(res_buf.as_mut_ptr().cast(), &mut len, false);
 
-        let res = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) };
-        assert_eq!(len, 0);
-        assert_eq!(res, None);
-    }
+    //     let res = unsafe { buf_result_callback::<u8, _>(input, &buf_opts) };
+    //     assert_eq!(len, 0);
+    //     assert_eq!(res, None);
+    // }
 }

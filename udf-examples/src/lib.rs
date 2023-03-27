@@ -29,5 +29,6 @@ mod lipsum;
 mod log_calls;
 mod lookup;
 mod median;
+mod mishmash;
 mod sequence;
 mod sum_int;

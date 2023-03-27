@@ -181,7 +181,14 @@ fn make_basic_fns_content(
     let init_fn = make_init_fn(dstruct_ident, wrapper_ident, &init_fn_name);
     let deinit_fn = make_deinit_fn(dstruct_ident, wrapper_ident, &deinit_fn_name);
     let process_fn = match rt.type_cls {
-        TypeClass::BytesRef | TypeClass::Bytes => make_proc_buf_fn(
+        TypeClass::Bytes => make_proc_buf_fn(
+            dstruct_ident,
+            wrapper_ident,
+            &process_fn_name,
+            rt.is_optional,
+            false,
+        ),
+        TypeClass::BytesRef => make_proc_buf_fn(
             dstruct_ident,
             wrapper_ident,
             &process_fn_name,
@@ -297,9 +304,11 @@ fn make_proc_buf_fn(
     wrapper_ident: &Ident,
     fn_name: &Ident,
     is_optional: bool,
-    can_return_ref: bool,
+    is_ref: bool,
 ) -> proc_macro2::TokenStream {
-    let wrap_fn_name = if is_optional {
+    let wrap_fn_name = if is_optional && is_ref {
+        quote!(udf::wrapper::wrap_process_buf_option_ref::<#wrapper_ident, #dstruct_ident, _>)
+    } else if is_optional {
         quote!(udf::wrapper::wrap_process_buf_option::<#wrapper_ident, #dstruct_ident, _>)
     } else {
         quote!(udf::wrapper::wrap_process_buf::<#wrapper_ident, #dstruct_ident>)
@@ -322,7 +331,6 @@ fn make_proc_buf_fn(
                 length,
                 is_null,
                 error,
-                #can_return_ref,
             )
         }
     }

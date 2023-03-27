@@ -124,7 +124,6 @@ pub unsafe fn wrap_process_buf<W, U>(
     length: *mut c_ulong,
     is_null: *mut c_uchar,
     error: *mut c_uchar,
-    can_return_ref: bool,
 ) -> *const c_char
 where
     W: UdfConverter<U>,
@@ -139,15 +138,12 @@ where
     let err = *(error as *const Option<NonZeroU8>);
     let binding = b.as_mut_ref();
     let proc_res = U::process(binding, cfg, arglist, err);
-    let buf_opts = BufOptions::new(result, length, can_return_ref);
+    let buf_opts = BufOptions::new(result, length);
 
     let post_effects_val = ret_callback(proc_res, error, is_null);
 
     let ret = match post_effects_val {
-        Some(ref v) => buf_result_callback::<U, _>(v, &buf_opts).unwrap_or_else(|| {
-            *error = 1;
-            ptr::null()
-        }),
+        Some(ref v) => buf_result_callback(v, &buf_opts),
         None => ptr::null(),
     };
 
@@ -168,7 +164,6 @@ pub unsafe fn wrap_process_buf_option<W, U, B>(
     length: *mut c_ulong,
     is_null: *mut c_uchar,
     error: *mut c_uchar,
-    can_return_ref: bool,
 ) -> *const c_char
 where
     W: UdfConverter<U>,
@@ -182,23 +177,52 @@ where
     let err = *(error as *const Option<NonZeroU8>);
     let mut b = cfg.retrieve_box::<W>();
     let proc_res = U::process(b.as_mut_ref(), cfg, arglist, err);
-    let buf_opts = BufOptions::new(result, length, can_return_ref);
+    let buf_opts = BufOptions::new(result, length);
 
     let post_effects_val = ret_callback_option(proc_res, error, is_null);
 
     let ret = match post_effects_val {
-        Some(ref v) => {
-            if let Some(x) = buf_result_callback::<U, _>(v, &buf_opts) {
-                x
-            } else {
-                *error = 1;
-                ptr::null()
-            }
-        }
+        Some(ref v) => buf_result_callback(v, &buf_opts),
         None => ptr::null(),
     };
 
     std::mem::forget(post_effects_val);
+    cfg.store_box(b);
+
+    log_call!(exit: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error, ret);
+    ret
+}
+
+#[inline]
+pub unsafe fn wrap_process_buf_option_ref<W, U, B>(
+    initid: *mut UDF_INIT,
+    args: *mut UDF_ARGS,
+    result: *mut c_char,
+    length: *mut c_ulong,
+    is_null: *mut c_uchar,
+    error: *mut c_uchar,
+) -> *const c_char
+where
+    W: UdfConverter<U>,
+    for<'a> U: BasicUdf<Returns<'a> = Option<&'a B>>,
+    B: AsRef<[u8]> + ?Sized,
+{
+    log_call!(enter: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error);
+
+    let cfg = UdfCfg::from_raw_ptr(initid);
+    let arglist = ArgList::from_raw_ptr(args);
+    let err = *(error as *const Option<NonZeroU8>);
+    let mut b = cfg.retrieve_box::<W>();
+    let proc_res = U::process(b.as_mut_ref(), cfg, arglist, err);
+    let buf_opts = BufOptions::new(result, length);
+
+    let post_effects_val = ret_callback_option(proc_res, error, is_null);
+
+    let ret = match post_effects_val {
+        Some(ref v) => buf_result_callback(v, &buf_opts),
+        None => ptr::null(),
+    };
+
     cfg.store_box(b);
 
     log_call!(exit: "process", U, &*initid, &*args, result, &*length, &*is_null, &*error, ret);
