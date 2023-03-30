@@ -106,11 +106,13 @@ struct Lipsum {
 ### Trait Implementation
 
 The next step is to implement the `BasicUdf` and optionally `AggregateUdf`
-traits. See the docs for more information.
+traits. See [the docs](https://docs.rs/udf/latest/udf/trait.BasicUdf.html)
+for more information.
 
 If you use rust-analyzer with your IDE, it can help you out. Just type
-`impl BasicUdf for MyStruct {}` and place your cursor between the brackets
-- it will offer to autofill the function skeletons.
+`impl BasicUdf for MyStruct {}` and place your cursor between the brackets -
+it will offer to autofill the function skeletons (`ctrl+.` or `cmd+.`
+brings up this menu if it doesn't show up by default).
 
 ```rust
 use udf::prelude::*;
