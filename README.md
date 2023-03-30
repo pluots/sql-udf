@@ -7,6 +7,8 @@ Looking for prewritten useful UDFs? Check out the UDF suite, which provides
 downloadable binaries for some useful functions:
 <https://github.com/pluots/udf-suite>.
 
+View the docs here: <https://docs.rs/udf/latest>
+
 ## UDF Theory
 
 Basic SQL UDFs consist of three exposed functions:
