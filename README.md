@@ -3,6 +3,9 @@
 This crate aims to make it extremely simple to implement UDFs for SQL, in a
 minimally error-prone fashion.
 
+Looking for prewritten useful UDFs? Check out the UDF suite, which provides
+downloadable binaries for some useful functions:
+<https://github.com/pluots/udf-suite>.
 
 ## UDF Theory
 
@@ -10,17 +13,21 @@ Basic SQL UDFs consist of three exposed functions:
 
 - An initialization function where arguments are checked and memory is allocated
 - A processing function where a result is returned
-- A deinitialization function where anything on the heap is cleaned up
+- A deinitialization function where anything on the heap is cleaned up (performed
+  automatically in this library)
 
-This wrapper greatly simplifies the process so that you only need to worry about
-checking arguments and performing the task.
+Aggregate UDFs (those that work on more than one row at a time) simply need to
+register two to three additional functions.
 
-There are also aggregate UDFs, which simply need to register two to three
-additional functions.
+This library handles everything that used to be difficult about writing UDFs
+(dynamic registration, allocation/deallocation, error handling, nullable values,
+logging) and makes it _trivial_ to add any function to your SQL server instance.
+It also inclues a mock interface, for testing your function implementation
+without needing a server.
 
 ## Quickstart
 
-A quick overview of the workflow process is:
+The steps to create a working UDF using this library are:
 
 - Create a new rust project (`cargo new --lib my-udf`), add `udf` as a
   dependency (`cd my-udf; cargo add udf`) and change the crate type to a
@@ -33,7 +40,7 @@ A quick overview of the workflow process is:
 
 - Make a struct or enum that will share data between initializing and processing
   steps (it may be empty). The name of this struct will be the name of your
-  function in SQL, as converted to snake case (adjustable names are planned but
+  function in SQL, as converted to snake case (configurable names are planned but
   not yet available).
 - Implement the `BasicUdf` trait on this struct
 - Implement the `AggregateUdf` trait if you want it to be an aggregate function
@@ -41,10 +48,11 @@ A quick overview of the workflow process is:
 - Compile the project with `cargo build --release` (output will be
   `target/release/libmy_udf.so`)
 - Load the struct into MariaDB/MySql using `CREATE FUNCTION ...`
-- Use the function in SQL
+- Use the function in SQL!
 
-For an example of some UDFs written using this library, see
-<https://github.com/pluots/udf-suite>.
+For an example of some UDFs written using this library, see either the
+`udf-examples/` directory or the [`udf-suite`](https://github.com/pluots/udf-suite)
+repository.
 
 ## Detailed overview
 
