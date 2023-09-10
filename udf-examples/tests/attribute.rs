@@ -7,8 +7,11 @@ use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::sql_types::Text;
 
-const SETUP: [&str; 3] = [
+const SETUP: [&str; 4] = [
     "create or replace function udf_attribute
+        returns string
+        soname 'libudf_examples.so'",
+    "create or replace function attr
         returns string
         soname 'libudf_examples.so'",
     "create or replace table test_attribute (
@@ -27,6 +30,10 @@ fn test_basic() {
         sql::<Text>("select udf_attribute(1, 'string', val, 3.2) from test_attribute")
             .get_result(conn)
             .expect("bad result");
+    assert_eq!(res, "1, 'string', val, 3.2");
 
+    let res: String = sql::<Text>("select attr(1, 'string', val, 3.2) from test_attribute")
+        .get_result(conn)
+        .expect("bad result");
     assert_eq!(res, "1, 'string', val, 3.2");
 }

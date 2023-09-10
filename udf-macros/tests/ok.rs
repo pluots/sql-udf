@@ -1,48 +1,77 @@
-// use udf::BasicUdf;
-// use udf_macros::register;
+#![allow(unused)]
 
-// // Registration is not allowed on non-impls
-// struct X {}
-// struct Y {}
+use udf::prelude::*;
 
-// #[register]
-// impl BasicUdf for crate::X {
-//     type Returns<'a> = &'a str;
+struct MyUdf1;
+struct MyUdf2;
+struct MyUdf3;
 
-//     fn init<'a>(
-//         _cfg: &mut udf::InitCfg,
-//         _args: &'a udf::ArgList<'a, udf::Init>,
-//     ) -> Result<Self, String> {
-//         todo!()
-//     }
+#[register]
+impl BasicUdf for MyUdf1 {
+    type Returns<'a> = Option<i64>;
 
-//     fn process<'a>(
-//         &'a mut self,
-//         _args: &udf::ArgList<udf::Process>,
-//         _error: Option<std::num::NonZeroU8>,
-//     ) -> Result<Self::Returns<'a>, udf::ProcessError> {
-//         todo!()
-//     }
-// }
+    fn init(_cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
+        todo!();
+    }
 
-// #[register]
-// impl BasicUdf for crate::Y {
-//     type Returns<'a> = Option<i64>;
+    fn process<'a>(
+        &'a mut self,
+        cfg: &UdfCfg<Process>,
+        args: &ArgList<Process>,
+        error: Option<NonZeroU8>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
+        todo!();
+    }
+}
 
-//     fn init<'a>(
-//         _cfg: &mut udf::InitCfg,
-//         _args: &'a udf::ArgList<'a, udf::Init>,
-//     ) -> Result<Self, String> {
-//         todo!()
-//     }
+#[register(name = "foo")]
+impl BasicUdf for MyUdf2 {
+    type Returns<'a> = Option<i64>;
 
-//     fn process<'a>(
-//         &'a mut self,
-//         _args: &udf::ArgList<udf::Process>,
-//         _error: Option<std::num::NonZeroU8>,
-//     ) -> Result<Self::Returns<'a>, udf::ProcessError> {
-//         todo!()
-//     }
-// }
+    fn init(_cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
+        todo!();
+    }
 
-// fn main() {}
+    fn process<'a>(
+        &'a mut self,
+        cfg: &UdfCfg<Process>,
+        args: &ArgList<Process>,
+        error: Option<NonZeroU8>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
+        todo!();
+    }
+}
+
+#[register(alias = "banana")]
+impl BasicUdf for MyUdf3 {
+    type Returns<'a> = Option<i64>;
+
+    fn init(_cfg: &UdfCfg<Init>, args: &ArgList<Init>) -> Result<Self, String> {
+        todo!();
+    }
+
+    fn process<'a>(
+        &'a mut self,
+        cfg: &UdfCfg<Process>,
+        args: &ArgList<Process>,
+        error: Option<NonZeroU8>,
+    ) -> Result<Self::Returns<'a>, ProcessError> {
+        todo!();
+    }
+}
+
+fn main() {
+    // check that expected symbols exist
+    let _ = my_udf1 as *const ();
+    let _ = my_udf1_init as *const ();
+    let _ = my_udf1_deinit as *const ();
+    let _ = foo as *const ();
+    let _ = foo_init as *const ();
+    let _ = foo_deinit as *const ();
+    let _ = my_udf3 as *const ();
+    let _ = my_udf3_init as *const ();
+    let _ = my_udf3_deinit as *const ();
+    let _ = banana as *const ();
+    let _ = banana_init as *const ();
+    let _ = banana_deinit as *const ();
+}

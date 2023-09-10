@@ -1,0 +1,5 @@
+error: expected `impl`
+ --> tests/fail/wrong_block.rs:7:1
+  |
+7 | struct X {}
+  | ^^^^^^

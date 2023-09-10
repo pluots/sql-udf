@@ -41,12 +41,12 @@ The steps to create a working UDF using this library are:
   ```
 
 - Make a struct or enum that will share data between initializing and processing
-  steps (it may be empty). The name of this struct will be the name of your
-  function in SQL, as converted to snake case (configurable names are planned but
-  not yet available).
+  steps (it may be empty). The default name of your UDF will be your struct's
+  name converted to snake case.
 - Implement the `BasicUdf` trait on this struct
 - Implement the `AggregateUdf` trait if you want it to be an aggregate function
-- Add `#[udf::register]` to each of these `impl` blocks
+- Add `#[udf::register]` to each of these `impl` blocks (optionally with a
+  `(name = "my_name")` argument)
 - Compile the project with `cargo build --release` (output will be
   `target/release/libmy_udf.so`)
 - Load the struct into MariaDB/MySql using `CREATE FUNCTION ...`

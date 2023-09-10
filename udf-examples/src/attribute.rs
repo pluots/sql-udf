@@ -1,10 +1,15 @@
 //! Just print the attribute of whatever is called, usually variable name
 //!
+//! We also add an alias for demonstration purposes. Note that aliases must
+//! be registered separately.
+//!
 //! # Usage
 //!
 //! ```sql
 //! CREATE FUNCTION udf_attribute RETURNS string SONAME 'libudf_examples.so';
-//! SELECT sum_int(1, 2, 3, 4, '5', 6.2)
+//! CREATE FUNCTION attr RETURNS string SONAME 'libudf_examples.so';
+//! SELECT attribute("abcd");
+//! SELECT attr(1234);
 //! ```
 
 use udf::prelude::*;
@@ -12,7 +17,7 @@ use udf::prelude::*;
 #[derive(Debug, PartialEq, Eq, Default)]
 struct UdfAttribute;
 
-#[register]
+#[register(alias = "attr")]
 impl BasicUdf for UdfAttribute {
     type Returns<'a> = String;
 

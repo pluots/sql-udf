@@ -20,7 +20,9 @@
 //! // If there is no data to store between calls, it can be zero sized
 //! struct MyUdf;
 //!
-//! #[register]
+//! // Specifying a name is optional; `#[register]` uses a snake case version of
+//! // the struct name by default (`my_udf` in this case)
+//! #[register(name = "my_shiny_udf")]
 //! impl BasicUdf for MyUdf {
 //!     // Specify return type of this UDF to be a nullable integer
 //!     type Returns<'a> = Option<i64>;

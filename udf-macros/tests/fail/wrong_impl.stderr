@@ -1,1 +1,5 @@
-NOT RIGHT
+error: Expected trait `BasicUdf` or `AggregateUdf`
+ --> tests/fail/wrong_impl.rs:9:1
+  |
+9 | impl Foo for X {}
+  | ^^^^^^^^^^^^^^^^^

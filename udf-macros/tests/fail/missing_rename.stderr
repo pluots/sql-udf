@@ -1,0 +1,7 @@
+error[E0425]: cannot find value `my_udf` in this scope
+  --> tests/fail/missing_rename.rs:25:1
+   |
+25 | #[register]
+   | ^^^^^^^^^^^ not found in this scope
+   |
+   = note: this error originates in the attribute macro `register` (in Nightly builds, run with -Z macro-backtrace for more info)
