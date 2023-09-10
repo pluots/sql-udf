@@ -1,6 +1,6 @@
 //! Registration should fail no anything that is not an impl
 
-use udf_derive::register;
+use udf_macros::register;
 
 // Registration is not allowed on non-impls
 #[register]

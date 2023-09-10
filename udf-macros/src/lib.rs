@@ -54,22 +54,26 @@ pub(crate) use match_variant;
 /// Its process is as follows:
 ///
 /// - Convert the implemented struct's name to snake case to create the function
-///   name
+///   name (unless a name is specified)
 /// - Obtain the return type from the `Returns` type in `BasicUdf`
 /// - Create functions `fn_name`, `fn_name_init`, and `fn_name_deinit` with
 ///   correct signatures and interfaces
 /// - If applied on an `impl AggregateUdf` block, create `fn_name_clear` and
 ///   `fn_name_add`. `fn_name_remove` is also included if it is redefined
-// Arguments don't yet work
-//
-// # Arguments
-//
-// - `#[udf::register(name = "new_name")]` will specify a name for your SQL
-//   function. If this is not specified, your struct name will be converted to
-//   snake case and used (e.g. `AddAllNumbers` would become `add_all_numbers`
-//   by default).
+///
+/// # Arguments
+///
+/// - `#[udf::register(name = "new_name")]` will specify a name for your SQL
+///   function. If this is not specified, your struct name will be converted to
+///   snake case and used (e.g. `AddAllNumbers` would become `add_all_numbers`
+///   by default).
+/// - `#[udf::register(alias = "alias")]` will specify an alias for this function.
+///   More than one alias can be specified, and it can be combined with a `name` attribute.
+///
+/// **IMPORTANT**: if using aggregate UDFs, the exact same renaming must be applied to
+/// both the `impl BasicUdf` and the `impl AggregateUdf` blocks! If this is not followed,
+/// your function will not act as an aggregate (there may also be a compile error).
 #[proc_macro_attribute]
-// #[cfg(not(test))] // Work around for rust-lang/rust#62127
 pub fn register(args: TokenStream, item: TokenStream) -> TokenStream {
     // Keep this file clean by keeping the dirty work in entry
     register::register(&args, item)

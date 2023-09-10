@@ -1,0 +1,11 @@
+error: unexpected key (only `name` and `alias` are accepted)
+ --> tests/fail/bad_attributes.rs:8:12
+  |
+8 | #[register(foo = "foo")]
+  |            ^^^
+
+error: `name` can only be specified once
+  --> tests/fail/bad_attributes.rs:26:26
+   |
+26 | #[register(name = "bar", name = "name")]
+   |                          ^^^^

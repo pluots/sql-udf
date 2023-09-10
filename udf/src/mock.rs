@@ -394,7 +394,7 @@ impl MockArgList {
             building
                 .attribute_lengths
                 .push(arg.attribute.len() as c_ulong);
-            building.maybe_null.push(arg.maybe_null as c_char);
+            building.maybe_null.push(c_char::from(arg.maybe_null));
             building.arg_types.push(arg.value.as_item_result());
 
             // Args themselves are more difficult

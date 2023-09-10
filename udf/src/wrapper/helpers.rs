@@ -185,23 +185,23 @@ mod tests {
             Item_result::DECIMAL_RESULT,
         ];
 
-        let mut arg_ptrs: [*const u8; ARG_COUNT] = [
+        let arg_ptrs: [*const u8; ARG_COUNT] = [
             ptr::addr_of!(IVAL).cast(),
             ptr::addr_of!(RVAL).cast(),
             SVAL.as_ptr(),
             DVAL.as_ptr(),
         ];
 
-        let mut arg_lens: [c_ulong; 4] = [0, 0, SVAL.len() as c_ulong, DVAL.len() as c_ulong];
-        let mut maybe_null = [true, true, false, false];
+        let arg_lens: [c_ulong; 4] = [0, 0, SVAL.len() as c_ulong, DVAL.len() as c_ulong];
+        let maybe_null = [true, true, false, false];
         let attrs = ["ival", "rval", "sval", "dval"];
-        let mut attr_ptrs = [
+        let attr_ptrs = [
             attrs[0].as_ptr(),
             attrs[1].as_ptr(),
             attrs[2].as_ptr(),
             attrs[3].as_ptr(),
         ];
-        let mut attr_lens: [c_ulong; 4] = [
+        let attr_lens: [c_ulong; 4] = [
             attrs[0].len() as c_ulong,
             attrs[1].len() as c_ulong,
             attrs[2].len() as c_ulong,
@@ -211,11 +211,11 @@ mod tests {
         let mut udf_args = UDF_ARGS {
             arg_count: ARG_COUNT as u32,
             arg_types: arg_types.as_mut_ptr(),
-            args: arg_ptrs.as_mut_ptr() as *const *const c_char,
-            lengths: arg_lens.as_mut_ptr(),
-            maybe_null: maybe_null.as_mut_ptr() as *const c_char,
-            attributes: attr_ptrs.as_mut_ptr() as *const *const c_char,
-            attribute_lengths: attr_lens.as_mut_ptr() as *const c_ulong,
+            args: arg_ptrs.as_ptr().cast::<*const c_char>(),
+            lengths: arg_lens.as_ptr(),
+            maybe_null: maybe_null.as_ptr().cast(),
+            attributes: attr_ptrs.as_ptr().cast::<*const c_char>(),
+            attribute_lengths: attr_lens.as_ptr().cast::<c_ulong>(),
             extension: ptr::null_mut::<c_void>(),
         };
 

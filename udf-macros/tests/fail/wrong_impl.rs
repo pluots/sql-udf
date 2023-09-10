@@ -1,19 +1,11 @@
 //! Registration should fail no anything that is not an impl
 
-use std::ops::Add;
-
-use udf_derive::register;
+use udf_macros::register;
 
 // Registration is not allowed on non-impls
-struct X {}
+struct X;
 
 #[register]
-impl Add for X {
-    type Output = u8;
-
-    fn add(self, _other: Self) -> u8 {
-        0
-    }
-}
+impl Foo for X {}
 
 fn main() {}
