@@ -110,8 +110,8 @@ impl BasicUdf for ExampleBufOptRef {
 }
 
 #[test]
-#[should_panic]
 #[allow(unreachable_code)]
+#[should_panic = "not yet implemented"]
 #[allow(clippy::diverging_sub_expression)]
 fn test_fn_sig() {
     // Just validate our function signatures with compile tests
@@ -140,8 +140,8 @@ fn test_fn_sig() {
 }
 
 #[test]
-#[should_panic]
 #[allow(unreachable_code)]
+#[should_panic = "not yet implemented"]
 #[allow(clippy::diverging_sub_expression)]
 fn test_wrapper_basic() {
     type ExampleIntWrapper = ExampleInt;
@@ -151,8 +151,8 @@ fn test_wrapper_basic() {
 }
 
 #[test]
-#[should_panic]
 #[allow(unreachable_code)]
+#[should_panic = "not yet implemented"]
 #[allow(clippy::diverging_sub_expression)]
 fn test_wrapper_bufwrapper() {
     unsafe {
