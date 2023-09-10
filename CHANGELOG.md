@@ -4,13 +4,12 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
+Update the `register` macro to allow specifying a custom name or aliases
 
-### Changed
-
-### Removed
-
-
+```rust
+#[register(name = "foo", alias = "bar")]
+impl BasicUdf for MyUdfTy { /* ... */ }
+```
 
 ## [0.5.3] - 2023-03-29
 
