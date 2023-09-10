@@ -4,6 +4,26 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+### Changed
+
+### Removed
+
+
+
+## [0.5.4] - 2023-09-10
+
+### Added
+
+### Changed
+
+### Removed
+
+
+
+## [0.5.4] - 2023-09-10
+
 Update the `register` macro to allow specifying a custom name or aliases
 
 ```rust
@@ -217,7 +237,9 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/pluots/sql-udf/compare/v0.5.4...v0.5.4
+[0.5.4]: https://github.com/pluots/sql-udf/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/pluots/sql-udf/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/pluots/sql-udf/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/pluots/sql-udf/compare/v0.5.0...v0.5.1
