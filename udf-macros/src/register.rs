@@ -280,7 +280,6 @@ fn make_agg_fns(
         .filter_map(match_variant!(ImplItem::Fn))
         .map(|m| &m.sig.ident)
         .any(|id| *id == "remove");
-    let base_fn_ident = Ident::new(base_fn_name, Span::call_site());
 
     let clear_fn = make_clear_fn(dstruct_path, wrapper_ident, &clear_fn_name);
     let add_fn = make_add_fn(dstruct_path, wrapper_ident, &add_fn_name);
@@ -295,10 +294,6 @@ fn make_agg_fns(
     };
 
     quote! {
-        // Sanity check that we implemented
-        #[allow(dead_code, non_upper_case_globals)]
-        const did_you_apply_the_same_aliases_to_the_BasicUdf_impl: *const () = #base_fn_ident as _;
-
         #clear_fn
 
         #add_fn
