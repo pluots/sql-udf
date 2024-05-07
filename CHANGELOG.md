@@ -4,6 +4,16 @@
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+
+### Changed
+
+### Removed
+
+
+
+## [0.5.5] - 2024-05-07
+
 Rework the validation of names and aliases for aggregate UDFs. This fixes an
 issue where aliases could not be used for aggregate UDFs, and provides better
 error messages.
@@ -224,7 +234,8 @@ these have little to no impact:
 
 
 <!-- next-url -->
-[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/pluots/sql-udf/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/pluots/sql-udf/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/pluots/sql-udf/compare/v0.5.4...v0.5.4
 [0.5.4]: https://github.com/pluots/sql-udf/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/pluots/sql-udf/compare/v0.5.2...v0.5.3
