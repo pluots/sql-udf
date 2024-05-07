@@ -161,30 +161,14 @@ mod tests {
     // Verify no size issues
     #[test]
     fn args_size_init() {
-        assert_eq!(
-            size_of::<UDF_ARGS>(),
-            size_of::<ArgList<Init>>(),
-            concat!("Size of: ", stringify!(UDF_ARGS))
-        );
-        assert_eq!(
-            align_of::<UDF_ARGS>(),
-            align_of::<ArgList<Init>>(),
-            concat!("Alignment of ", stringify!(UDF_ARGS))
-        );
+        assert_eq!(size_of::<UDF_ARGS>(), size_of::<ArgList<Init>>(),);
+        assert_eq!(align_of::<UDF_ARGS>(), align_of::<ArgList<Init>>(),);
     }
 
     // Verify no size issues
     #[test]
     fn args_size_process() {
-        assert_eq!(
-            size_of::<UDF_ARGS>(),
-            size_of::<ArgList<Process>>(),
-            concat!("Size of: ", stringify!(UDF_ARGS))
-        );
-        assert_eq!(
-            align_of::<UDF_ARGS>(),
-            align_of::<ArgList<Process>>(),
-            concat!("Alignment of ", stringify!(UDF_ARGS))
-        );
+        assert_eq!(size_of::<UDF_ARGS>(), size_of::<ArgList<Process>>(),);
+        assert_eq!(align_of::<UDF_ARGS>(), align_of::<ArgList<Process>>(),);
     }
 }

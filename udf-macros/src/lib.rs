@@ -13,6 +13,7 @@
 )]
 
 mod register;
+mod simplified;
 mod types;
 
 use proc_macro::TokenStream;
@@ -77,4 +78,11 @@ pub(crate) use match_variant;
 pub fn register(args: TokenStream, item: TokenStream) -> TokenStream {
     // Keep this file clean by keeping the dirty work in entry
     register::register(&args, item)
+}
+
+/// Apply `#[udf::udf]` to any function to make it a UDF
+#[proc_macro_attribute]
+pub fn udf(args: TokenStream, item: TokenStream) -> TokenStream {
+    // Keep this file clean by keeping the dirty work in entry
+    simplified::simple_udf(&args, item)
 }
