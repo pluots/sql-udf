@@ -12,14 +12,14 @@ publish = true
 proc-macro = true
 
 [dependencies]
-heck = "0.4.1"
+heck = "0.5.0"
 lazy_static = "1.4.0"
-proc-macro2 = "1.0.53"
-quote = "1.0.26"
-syn = { version = "2.0.6", features = ["full", "extra-traits"] }
+proc-macro2 = "1.0.82"
+quote = "1.0.36"
+syn = { version = "2.0.61", features = ["full", "extra-traits"] }
 
 [dev-dependencies]
-trybuild = { version = "1.0.80", features = ["diff"] }
+trybuild = { version = "1.0.94", features = ["diff"] }
 udf = { path = "../udf" }
 udf-sys = { path = "../udf-sys" }
 

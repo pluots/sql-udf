@@ -11,7 +11,7 @@ keywords = ["sql", "udf"]
 publish = true
 
 [dependencies]
-chrono = "0.4.24"
+chrono = "0.4.38"
 udf-macros = { path = "../udf-macros", version = "0.5.4" }
 udf-sys = { path = "../udf-sys", version = "0.5.4" }
 cfg-if = "1.0"
