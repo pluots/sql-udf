@@ -16,6 +16,7 @@ name: Rust Validation
 env:
   RUSTDOCFLAGS: -D warnings
   RUSTFLAGS: -D warnings -C debuginfo=1
+  RUST_BACKTRACE: 1
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:

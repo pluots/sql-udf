@@ -22,7 +22,7 @@
 
 mod attribute;
 mod avg2;
-mod avgcost;
+mod avg_cost;
 mod empty;
 mod is_const;
 mod lipsum;
