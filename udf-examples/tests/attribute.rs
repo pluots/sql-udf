@@ -3,11 +3,9 @@
 mod backend;
 
 use backend::get_db_connection;
-use diesel::dsl::sql;
-use diesel::prelude::*;
-use diesel::sql_types::Text;
+use mysql::prelude::*;
 
-const SETUP: [&str; 4] = [
+const SETUP: &[&str] = &[
     "create or replace function udf_attribute
         returns string
         soname 'libudf_examples.so'",
@@ -24,16 +22,17 @@ const SETUP: [&str; 4] = [
 
 #[test]
 fn test_basic() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: String =
-        sql::<Text>("select udf_attribute(1, 'string', val, 3.2) from test_attribute")
-            .get_result(conn)
-            .expect("bad result");
+    let res: String = conn
+        .query_first("select udf_attribute(1, 'string', val, 3.2) from test_attribute")
+        .unwrap()
+        .unwrap();
     assert_eq!(res, "1, 'string', val, 3.2");
 
-    let res: String = sql::<Text>("select attr(1, 'string', val, 3.2) from test_attribute")
-        .get_result(conn)
-        .expect("bad result");
+    let res: String = conn
+        .query_first("select attr(1, 'string', val, 3.2) from test_attribute")
+        .unwrap()
+        .unwrap();
     assert_eq!(res, "1, 'string', val, 3.2");
 }

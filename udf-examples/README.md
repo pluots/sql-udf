@@ -49,7 +49,7 @@ docker container. If you used the provided command above, the password
 is `example`.
 
 ```sh
-docker exec -it mariadb_udf_test mysql -pexample
+docker exec -it mariadb_udf_test mariadb -pexample
 ```
 
 Note that this won't work immediately after launching the server, it takes a few

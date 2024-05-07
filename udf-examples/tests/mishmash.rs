@@ -3,44 +3,41 @@
 mod backend;
 
 use backend::get_db_connection;
-use diesel::dsl::sql;
-use diesel::prelude::*;
-use diesel::sql_types::{Binary, Nullable};
+use mysql::prelude::*;
 
-const SETUP: [&str; 1] = ["create or replace function mishmash
+const SETUP: &[&str] = &["create or replace function mishmash
         returns string
         soname 'libudf_examples.so'"];
 
 #[test]
 fn test_empty() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: Option<Vec<u8>> = sql::<Nullable<Binary>>("select mishmash()")
-        .get_result(conn)
-        .expect("bad result");
+    let res: Option<Vec<u8>> = conn.query_first("select mishmash()").unwrap().unwrap();
 
     assert!(res.is_none());
 }
 
 #[test]
 fn test_single() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: Option<Vec<u8>> = sql::<Nullable<Binary>>("select mishmash('banana')")
-        .get_result(conn)
-        .expect("bad result");
+    let res: Option<Vec<u8>> = conn
+        .query_first("select mishmash('banana')")
+        .unwrap()
+        .unwrap();
 
     assert_eq!(res.unwrap(), b"banana");
 }
 
 #[test]
 fn test_many() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: Option<Vec<u8>> =
-        sql::<Nullable<Binary>>("select mishmash('banana', 'is', 'a', 'fruit')")
-            .get_result(conn)
-            .expect("bad result");
+    let res: Option<Vec<u8>> = conn
+        .query_first("select mishmash('banana', 'is', 'a', 'fruit')")
+        .unwrap()
+        .unwrap();
 
     assert_eq!(res.unwrap(), b"bananaisafruit");
 }

@@ -3,12 +3,9 @@
 mod backend;
 
 use backend::get_db_connection;
-use diesel::dsl::sql;
-use diesel::prelude::*;
-use diesel::result::Error as DieselError;
-use diesel::sql_types::Text;
+use mysql::prelude::*;
 
-const SETUP: [&str; 3] = [
+const SETUP: &[&str] = &[
     "create or replace function is_const
         returns string
         soname 'libudf_examples.so'",
@@ -22,35 +19,34 @@ const SETUP: [&str; 3] = [
 
 #[test]
 fn test_true() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: String = sql::<Text>("select is_const(1)")
-        .get_result(conn)
-        .expect("bad result");
+    let res: String = conn.query_first("select is_const(1)").unwrap().unwrap();
 
     assert_eq!(res, "const");
 }
 
 #[test]
 fn test_false() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res: String = sql::<Text>("select is_const(val) from test_is_const")
-        .get_result(conn)
-        .expect("bad result");
+    let res: String = conn
+        .query_first("select is_const(val) from test_is_const")
+        .unwrap()
+        .unwrap();
 
     assert_eq!(res, "not const");
 }
 
 #[test]
 fn test_too_many_args() {
-    let conn = &mut get_db_connection(&SETUP);
+    let conn = &mut get_db_connection(SETUP);
 
-    let res = sql::<Text>("select is_const(1, 2)").get_result::<String>(conn);
+    let res = conn.query_first::<String, _>("select is_const(1, 2)");
 
-    let Err(DieselError::DatabaseError(_, info)) = res else {
+    let Err(mysql::Error::MySqlError(e)) = res else {
         panic!("Got unexpected response: {res:?}");
     };
 
-    assert!(info.message().contains("only accepts one argument"));
+    assert!(e.message.contains("only accepts one argument"));
 }

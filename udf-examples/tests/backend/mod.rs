@@ -9,23 +9,16 @@
 #![cfg(feature = "backend")]
 use std::collections::HashSet;
 use std::env;
-use std::sync::{Mutex, Once};
+use std::sync::{Mutex, OnceLock};
 
-use diesel::dsl::sql;
-use diesel::mysql::MysqlConnection;
-use diesel::prelude::*;
-use diesel::sql_types::Untyped;
-use diesel::Connection;
-use lazy_static::lazy_static;
+use mysql::prelude::*;
+use mysql::{Pool, PooledConn};
 
 const URI_ENV: &str = "UDF_TEST_BACKEND_URI";
 const DEFAULT_DATABASE_URI: &str = "mysql://root:example@0.0.0.0:12300/udf_tests";
 
-static INIT: Once = Once::new();
-
-lazy_static! {
-    static ref SETUP_STATE: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
-}
+static POOL: OnceLock<Pool> = OnceLock::new();
+static SETUP_STATE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 
 fn get_database_uri() -> String {
     match env::var(URI_ENV) {
@@ -34,33 +27,54 @@ fn get_database_uri() -> String {
     }
 }
 
-/// Ensure the init items have been run
-pub fn get_db_connection(init: &[&str]) -> MysqlConnection {
+fn build_pool() -> Pool {
     let db_url = get_database_uri();
 
-    INIT.call_once(|| {
-        let mut conn = MysqlConnection::establish(db_url.rsplit_once('/').unwrap().0)
-            .expect("initial connection failed");
+    {
+        // Ensure the database exists then reconnect
+        let (url, db) = db_url.rsplit_once('/').unwrap();
+        let pool = Pool::new(url).expect("pool failed");
+        let mut conn = pool.get_conn().expect("initial connection failed");
 
-        sql::<Untyped>("create or replace database udf_tests")
-            .execute(&mut conn)
-            .expect("could not create databases");
-    });
+        // Create default database
+        conn.query_drop(format!("CREATE OR REPLACE DATABASE {db}"))
+            .unwrap();
+    }
 
-    let hset = &mut *SETUP_STATE.lock().unwrap();
-    let mut conn = MysqlConnection::establish(&db_url).expect("initial connection failed");
+    Pool::new(db_url.as_str()).expect("pool failed")
+}
+
+/// Ensures that init items have been run
+pub fn get_db_connection(init: &[&str]) -> PooledConn {
+    let mut conn = POOL
+        .get_or_init(build_pool)
+        .get_conn()
+        .expect("failed to get conn");
+
+    let ran_stmts = &mut *SETUP_STATE
+        .get_or_init(|| Mutex::new(HashSet::new()))
+        .lock()
+        .unwrap();
 
     // Store a list of our init calls so we don't repeat them
     for stmt in init {
-        if hset.contains(*stmt) {
+        if ran_stmts.contains(*stmt) {
             continue;
         }
-        sql::<Untyped>(stmt)
-            .execute(&mut conn)
-            .expect("could not run setup");
 
-        hset.insert((*stmt).to_owned());
+        conn.query_drop(stmt).expect("could not run setup");
+
+        ran_stmts.insert((*stmt).to_owned());
     }
 
     conn
+}
+
+/// Check if two floats are within a tolerance. Also prints them for debugging.
+#[allow(dead_code)]
+pub fn approx_eq(a: f32, b: f32) -> bool {
+    const TOLERANCE: f32 = 0.001;
+
+    println!("a: {a}, b: {b}");
+    (a - b).abs() < TOLERANCE
 }
