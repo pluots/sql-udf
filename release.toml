@@ -1,4 +1,4 @@
-allow-branch = ["main"]
+allow-branch = ["main", "release"]
 shared-version = true
 # Single commit for all crates since we are in one repo
 consolidate-commits = true
