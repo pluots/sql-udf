@@ -27,7 +27,7 @@ logging) and makes it _trivial_ to add any function to your SQL server instance.
 It also inclues a mock interface, for testing your function implementation
 without needing a server.
 
-## Quickstart
+## Quickstartc
 
 The steps to create a working UDF using this library are:
 
