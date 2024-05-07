@@ -355,7 +355,7 @@ pub struct MockArgList {
     /// pinned!
     built_args: Option<BuiltArgs>,
 
-    /// The resulting UDF_ARGS struct that points to `built_args`
+    /// The resulting `UDF_ARGS` struct that points to `built_args`
     udf_args: Option<UnsafeCell<UDF_ARGS>>,
 
     /// We use a phantom pin here because our `out_list` item will reference
