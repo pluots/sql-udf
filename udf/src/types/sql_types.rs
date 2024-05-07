@@ -149,7 +149,7 @@ impl<'a> SqlResult<'a> {
         ptr: *const u8,
         tag: Item_result,
         len: usize,
-    ) -> Result<SqlResult<'a>, String> {
+    ) -> Result<Self, String> {
         // Handle nullptr right away here
 
         let marker =

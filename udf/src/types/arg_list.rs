@@ -19,7 +19,7 @@ use crate::{Init, SqlArg, UdfState};
 #[repr(transparent)]
 pub struct ArgList<'a, S: UdfState>(
     /// `UnsafeCell` indicates to the compiler that this struct may have interior
-    /// mutability (i.e., cannot make som optimizations)
+    /// mutability (i.e., cannot make some optimizations)
     pub(super) UnsafeCell<UDF_ARGSx>,
     /// We use this zero-sized marker to hold our state
     PhantomData<&'a S>,

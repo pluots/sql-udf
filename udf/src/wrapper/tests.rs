@@ -159,3 +159,58 @@ fn test_wrapper_bufwrapper() {
         wrap_init::<ExampleBufOpt, _>(todo!(), todo!(), todo!());
     }
 }
+
+#[test]
+fn test_verify_aggregate_attributes() {
+    struct Foo;
+    impl RegisteredBasicUdf for Foo {
+        const NAME: &'static str = "foo";
+        const ALIASES: &'static [&'static str] = &["foo", "bar"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+    impl RegisteredAggregateUdf for Foo {
+        const NAME: &'static str = "foo";
+        const ALIASES: &'static [&'static str] = &["foo", "bar"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+
+    verify_aggregate_attributes::<Foo>();
+}
+
+#[test]
+#[should_panic = "#[register]` on `BasicUdf` and `AggregateUdf` must have the same `name` \
+                  argument; got `foo` and `bar`"]
+fn test_verify_aggregate_attributes_mismatch_name() {
+    struct Foo;
+    impl RegisteredBasicUdf for Foo {
+        const NAME: &'static str = "foo";
+        const ALIASES: &'static [&'static str] = &["foo", "bar"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+    impl RegisteredAggregateUdf for Foo {
+        const NAME: &'static str = "bar";
+        const ALIASES: &'static [&'static str] = &["foo", "bar"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+
+    verify_aggregate_attributes::<Foo>();
+}
+
+#[test]
+#[should_panic = "`#[register]` on `BasicUdf` and `AggregateUdf` must have the same `alias` \
+                  arguments; got [`foo`, `bar`, `baz`] and [`foo`, `bar`]"]
+fn test_verify_aggregate_attributes_mismatch_aliases() {
+    struct Foo;
+    impl RegisteredBasicUdf for Foo {
+        const NAME: &'static str = "foo";
+        const ALIASES: &'static [&'static str] = &["foo", "bar", "baz"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+    impl RegisteredAggregateUdf for Foo {
+        const NAME: &'static str = "foo";
+        const ALIASES: &'static [&'static str] = &["foo", "bar"];
+        const DEFAULT_NAME_USED: bool = false;
+    }
+
+    verify_aggregate_attributes::<Foo>();
+}

@@ -4,22 +4,9 @@
 
 ## [Unreleased] - ReleaseDate
 
-### Added
-
-### Changed
-
-### Removed
-
-
-
-## [0.5.4] - 2023-09-10
-
-### Added
-
-### Changed
-
-### Removed
-
+Rework the validation of names and aliases for aggregate UDFs. This fixes an
+issue where aliases could not be used for aggregate UDFs, and provides better
+error messages.
 
 
 ## [0.5.4] - 2023-09-10

@@ -1,7 +1,22 @@
-error[E0425]: cannot find value `my_udf` in this scope
+error[E0080]: evaluation of constant value failed
+  --> $WORKSPACE/udf/src/wrapper.rs
+   |
+   |     panic!("{}", msg);
+   |     ^^^^^^^^^^^^^^^^^ the evaluated program panicked at '`#[register]` on `BasicUdf` and `AggregateUdf` must have the same `name` argument; got `foo` and `my_udf` (default from struct name)', $WORKSPACE/udf/src/wrapper.rs:83:5
+   |
+note: inside `wrapper::verify_aggregate_attributes_name::<MyUdf>`
+  --> $WORKSPACE/udf/src/wrapper.rs
+   |
+   |     panic!("{}", msg);
+   |     ^^^^^^^^^^^^^^^^^
+note: inside `verify_aggregate_attributes::<MyUdf>`
+  --> $WORKSPACE/udf/src/wrapper.rs
+   |
+   |     verify_aggregate_attributes_name::<T>();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: inside `_`
   --> tests/fail/missing_rename.rs:25:1
    |
 25 | #[register]
-   | ^^^^^^^^^^^ not found in this scope
-   |
-   = note: this error originates in the attribute macro `register` (in Nightly builds, run with -Z macro-backtrace for more info)
+   | ^^^^^^^^^^^
+   = note: this error originates in the macro `$crate::panic::panic_2021` which comes from the expansion of the attribute macro `register` (in Nightly builds, run with -Z macro-backtrace for more info)

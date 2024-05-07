@@ -1,0 +1,11 @@
+error[E0277]: the trait bound `MyUdf: BasicUdf` is not satisfied
+ --> tests/fail/agg_missing_basic.rs:7:23
+  |
+7 | impl AggregateUdf for MyUdf {
+  |                       ^^^^^ the trait `BasicUdf` is not implemented for `MyUdf`
+  |
+note: required by a bound in `udf::AggregateUdf`
+ --> $WORKSPACE/udf/src/traits.rs
+  |
+  | pub trait AggregateUdf: BasicUdf {
+  |                         ^^^^^^^^ required by this bound in `AggregateUdf`
