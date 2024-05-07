@@ -24,12 +24,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/rust-toolchain@1.72.0
-        with:
-          components: clippy
+      - run: rustup default 1.78.0 && rustup component add clippy && rustup update
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --all-features --all-targets -- -D warnings
-      - run: cargo clippy --no-default-features --all-targets -- -D warnings
+      - run: cargo clippy --all-features --all-targets
+      - run: cargo clippy --no-default-features --all-targets
+
+  msrv:
+    name: "Check MSRV"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup default 1.65.0 && rustup update
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --all-features --all-targets
+      - run: cargo check --no-default-features --all-targets
 
   test:
     strategy:
@@ -50,22 +58,24 @@ jobs:
     name: "Test on ${{ matrix.os }} (cargo test)"
     runs-on: ${{ matrix.os }}
     env:
-      MYSQLCLIENT_LIB_DIR: C:\mysql\lib
+      MYSQLCLIENT_LIB_DIR: 'C:\Program Files\MySQL\MySQL Server 8.0\lib'
+      # will be accepted by a later Diesel version
+      MYSQLCLIENT_LIB_DIR_X86_64_PC_WINDOWS_MSVC: 'C:\Program Files\MySQL\MySQL Server 8.0\lib'
     steps:
       - uses: actions/checkout@v2
-      - name: List files
-        run: |
-          pwd
-          ls
+      # use a version later than MSRV for trybuild consistency
+      - run: rustup default 1.70 && rustup update
+      - run: rustc -vV
       - uses: Swatinem/rust-cache@v2
-      - uses: dtolnay/rust-toolchain@1.65.0
-      - run: cargo test
+      - run: cargo test -vvv
 
   integration:
     name: "Integration testing (docker)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: rustup default stable && rustup update
+      - uses: Swatinem/rust-cache@v2
       - name: Cache Docker layers
         uses: actions/cache@v2
         id: cache-docker
@@ -104,7 +114,6 @@ jobs:
           -e RUST_LIB_BACKTRACE=1
           --name mdb-example-container
           mdb-example-so
-      - uses: dtolnay/rust-toolchain@stable
       - name: Run integration testing
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend
@@ -121,9 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: miri
+      - run: rustup default nightly && rustup component add miri && rustup update
       - uses: Swatinem/rust-cache@v2
       - name: Run Miri
         env:
@@ -136,9 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-            components: rustfmt
+      - run: rustup default nightly && rustup component add rustfmt && rustup update
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - uses: actions/setup-python@v3
@@ -151,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/rust-toolchain@nightly
+      - run: rustup default nightly && rustup update
       - uses: Swatinem/rust-cache@v2
       - run: cargo doc
 
