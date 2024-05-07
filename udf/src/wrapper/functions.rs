@@ -94,7 +94,7 @@ impl<U: BasicUdf> UdfConverter<U> for U {
 /// # Interface
 ///
 /// Based on the SQL UDF spec, we need to perform the following here:
-/// - Verify the number of arguments to XXX() (handled by `U::init`)
+/// - Verify the number of arguments to `XXX()` (handled by `U::init`)
 /// - Verify that the arguments are of a required type or, alternatively, to
 ///   tell `MySQL` to coerce arguments to the required types when the main
 ///   function is called. (handled by `U::init`)

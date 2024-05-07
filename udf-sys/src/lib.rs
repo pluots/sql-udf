@@ -77,7 +77,7 @@ pub struct UDF_ARGS {
     /// Number of arguments present
     pub arg_count: ::std::ffi::c_uint,
 
-    /// Buffer of item_result pointers that indicate argument type
+    /// Buffer of `item_result` pointers that indicate argument type
     ///
     /// Remains mutable because it can be set in `xxx_init`
     pub arg_types: *mut Item_result,

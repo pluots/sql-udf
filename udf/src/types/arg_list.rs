@@ -18,7 +18,7 @@ use crate::{Init, SqlArg, UdfState};
 /// easily work with arguments.
 #[repr(transparent)]
 pub struct ArgList<'a, S: UdfState>(
-    /// UnsafeCell indicates to the compiler that this struct may have interior
+    /// `UnsafeCell` indicates to the compiler that this struct may have interior
     /// mutability (i.e., cannot make som optimizations)
     pub(super) UnsafeCell<UDF_ARGSx>,
     /// We use this zero-sized marker to hold our state
