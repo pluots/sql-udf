@@ -114,6 +114,9 @@ jobs:
           -e RUST_LIB_BACKTRACE=1
           --name mdb-example-container
           mdb-example-so
+          && sleep 4
+        # verify we started successfully
+      - run: mysql -uroot -pexample -h0.0.0.0 -P12300 --protocol=tcp -e 'show databases'
       - name: Run integration testing
         # Run only integration tests with `--test '*'`
         run: cargo test -p udf-examples --test '*' --features backend

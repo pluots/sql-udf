@@ -26,6 +26,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && mkdir /output \
     && cp target/release/libudf_examples.so /output
 
-FROM mariadb:10.10
+FROM mariadb:11.3
 
 COPY --from=build /output/* /usr/lib/mysql/plugin/
