@@ -120,26 +120,15 @@
 //! issues compiling, be sure to update your toolchain.
 
 // Strict clippy
-#![warn(
-    clippy::pedantic,
-    // clippy::cargo,
-    clippy::nursery,
-    clippy::str_to_string,
-    clippy::exhaustive_enums,
-    clippy::pattern_type_mismatch
-)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::str_to_string)]
+#![warn(clippy::exhaustive_enums)]
+#![warn(clippy::pattern_type_mismatc)]
 // Pedantic config
-#![allow(
-    clippy::missing_const_for_fn,
-    // clippy::missing_panics_doc,
-    clippy::must_use_candidate,
-    clippy::cast_possible_truncation
-)]
-
-// We re-export this so we can use it in our macro, but don't need it
-// to show up in our docs
-#[doc(hidden)]
-pub extern crate chrono;
+#![allow(clippy::missing_const_for_fn)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::cast_possible_truncation)]
 
 #[doc(hidden)]
 pub extern crate udf_sys;
@@ -150,17 +139,22 @@ pub use udf_macros::register;
 
 #[macro_use]
 mod macros;
+mod argparse;
+pub mod mock;
 pub mod prelude;
 pub mod traits;
 pub mod types;
-
-// We hide this because it's really only used by our proc macros
-#[doc(hidden)]
-pub mod wrapper;
+mod wrapper;
 
 #[doc(inline)]
 pub use traits::*;
 #[doc(inline)]
 pub use types::{MYSQL_ERRMSG_SIZE, *};
 
-pub mod mock;
+#[doc(hidden)]
+pub mod internal {
+    pub use {chrono, udf_sys};
+
+    // pub use super::argparse::*;
+    pub use super::wrapper;
+}

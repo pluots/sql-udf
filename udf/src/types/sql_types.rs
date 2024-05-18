@@ -126,7 +126,7 @@ impl TryFrom<&SqlResult<'_>> for SqlType {
 ///
 /// This enum is labeled `non_exhaustive` to leave room for future types and
 /// coercion options.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 #[non_exhaustive]
 pub enum SqlResult<'a> {
     // INVALID_RESULT and ROW_RESULT are other options, but not valid for UDFs
@@ -209,6 +209,15 @@ impl<'a> SqlResult<'a> {
         matches!(*self, Self::Decimal(_))
     }
 
+    /// Check if this argument is a null type
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        matches!(
+            self,
+            Self::String(None) | Self::Real(None) | Self::Int(None) | Self::Decimal(None)
+        )
+    }
+
     /// Return this type as an integer if possible
     ///
     /// This will exist if the variant is [`SqlResult::Int`], and it contains a
@@ -265,6 +274,15 @@ impl<'a> SqlResult<'a> {
             Self::String(Some(v)) => Some(v),
             Self::Decimal(Some(v)) => Some(v.as_bytes()),
             _ => None,
+        }
+    }
+
+    pub(crate) fn as_type(&'a self) -> SqlType {
+        match self {
+            SqlResult::String(_) => SqlType::String,
+            SqlResult::Real(_) => SqlType::Real,
+            SqlResult::Int(_) => SqlType::Int,
+            SqlResult::Decimal(_) => SqlType::Decimal,
         }
     }
 }
